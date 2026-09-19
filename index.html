@@ -36,6 +36,29 @@ input,select,textarea{font:inherit;color:inherit}
 <div style="min-height:100vh;display:flex;flex-direction:column">
 
 
+  <div style="{{ floatNavStyle }}">
+    <div style="max-width:1400px;margin:0 auto;padding:10px 16px;display:flex;gap:12px;align-items:center">
+      <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ openMenu }}" aria-label="Abrir menú" style="width:40px;height:40px;display:grid;place-items:center;border:1px solid #1F3244;flex:0 0 auto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#EAF2F8" stroke-width="1.5" style="width:18px;height:18px"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+        </button>
+      </sc-if>
+      <button onClick="{{ goHome }}" aria-label="Inicio" style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex:0 0 auto">
+        <img src="uploads/ChatGPT Image Sep 18, 2026, 10_42_49 PM.png" alt="SGQ" style="width:100%;height:100%;object-fit:cover">
+      </button>
+      <div style="flex:1;min-width:0">
+        <input value="{{ search }}" onChange="{{ onSearch }}" onKeyDown="{{ onSearchKey }}" placeholder="Busca por producto, marca o SKU" aria-label="Buscar" style="width:100%;padding:9px 12px;background:#0F1D2B;border:1px solid #1F3244;border-radius:4px;color:#EAF2F8;font-size:14px" style-focus="border-color:#3CE7FF">
+      </div>
+      <button onClick="{{ goAccount }}" aria-label="Mi cuenta" style="width:40px;height:40px;display:grid;place-items:center;color:#EAF2F8;flex:0 0 auto">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c0-3.5 3.1-5.5 7-5.5s7 2 7 5.5"></path></svg>
+      </button>
+      <button onClick="{{ goCart }}" aria-label="Mi pedido" style="display:flex;gap:6px;align-items:center;padding:9px 12px;background:#3CE7FF;color:#07111C;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);flex:0 0 auto">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:19px;height:19px"><path d="M4 5h2.2l2.3 10.2h9.1L20 8H7"></path><circle cx="10" cy="19" r="1.4"></circle><circle cx="17.5" cy="19" r="1.4"></circle></svg>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500">{{ cartCount }}</span>
+      </button>
+    </div>
+  </div>
+
   <header ref="{{ hdrRef }}" style="{{ headerStyle }}">
     <div style="max-width:1400px;margin:0 auto;padding:clamp(9px,1.1vw,12px) clamp(12px,1.6vw,20px);display:flex;gap:clamp(10px,1.3vw,18px);align-items:center;flex-wrap:wrap">
       <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
@@ -54,6 +77,7 @@ input,select,textarea{font:inherit;color:inherit}
           </span>
         </sc-if>
       </button>
+      <sc-if value="{{ showSubRows }}" hint-placeholder-val="{{ true }}">
       <div style="{{ searchWrapStyle }}">
         <input value="{{ search }}" onChange="{{ onSearch }}" onKeyDown="{{ onSearchKey }}" placeholder="Busca por producto, marca o SKU" aria-label="Buscar" style="width:100%;padding:11px 14px 11px 40px;background:#0F1D2B;border:1px solid #1F3244;border-radius:4px;color:#EAF2F8;font-size:15px" style-focus="border-color:#3CE7FF">
         <svg viewBox="0 0 24 24" fill="none" stroke="#9FB2C3" stroke-width="1.5" style="position:absolute;left:13px;top:12px;width:18px;height:18px;pointer-events:none"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
@@ -71,6 +95,7 @@ input,select,textarea{font:inherit;color:inherit}
           </div>
         </sc-if>
       </div>
+      </sc-if>
 
       <div style="display:flex;align-items:center;gap:clamp(8px,1.1vw,16px);margin-left:auto;flex:0 0 auto">
         <button onClick="{{ goHome }}" aria-label="Avisos" style="display:flex;gap:8px;align-items:center;min-height:44px;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:15px;color:#EAF2F8;white-space:nowrap" style-hover="color:#3CE7FF">
@@ -98,14 +123,17 @@ input,select,textarea{font:inherit;color:inherit}
     </div>
 
     <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
-      <div style="display:flex;gap:9px;align-items:center;padding:0 14px 13px;overflow-x:auto">
-        <sc-for list="{{ chipNav }}" as="c" hint-placeholder-count="6">
-          <button onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.name }}</button>
-        </sc-for>
-      </div>
+      <sc-if value="{{ showSubRows }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;gap:9px;align-items:center;padding:0 14px 13px;overflow-x:auto">
+          <sc-for list="{{ chipNav }}" as="c" hint-placeholder-count="6">
+            <button onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.name }}</button>
+          </sc-for>
+        </div>
+      </sc-if>
     </sc-if>
 
     <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+      <sc-if value="{{ showSubRows }}" hint-placeholder-val="{{ true }}">
       <div style="border-top:1px solid #16283A">
         <div style="max-width:1400px;margin:0 auto;padding:0 clamp(12px,1.6vw,20px);display:flex;align-items:center;gap:2px;overflow-x:auto">
           <button onClick="{{ toggleMega }}" onMouseEnter="{{ openMega }}" style="{{ prodBtnStyle }}">
@@ -143,6 +171,7 @@ input,select,textarea{font:inherit;color:inherit}
           </button>
         </div>
       </div>
+      </sc-if>
     </sc-if>
 
     <sc-if value="{{ servOpen }}" hint-placeholder-val="{{ false }}">
@@ -164,7 +193,6 @@ input,select,textarea{font:inherit;color:inherit}
           <div style="border-right:1px solid #1F3244;padding:16px 0">
             <sc-for list="{{ groupsNav }}" as="g" hint-placeholder-count="6">
               <button onMouseEnter="{{ g.onHover }}" onClick="{{ g.onClick }}" style="{{ g.rowStyle }}">
-                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3CE7FF">{{ g.ch }}</span>
                 <span style="flex:1;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:15px">{{ g.name }}</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;opacity:.6"><path d="m9 6 6 6-6 6"></path></svg>
               </button>
@@ -218,7 +246,6 @@ input,select,textarea{font:inherit;color:inherit}
           </div>
           <sc-for list="{{ menuGroups }}" as="g" hint-placeholder-count="6">
             <button onClick="{{ g.onClick }}" style="display:flex;gap:14px;align-items:center;width:100%;text-align:left;padding:18px;border-bottom:1px solid #1F3244;min-height:60px">
-              <span style="width:34px;height:34px;flex:0 0 auto;display:grid;place-items:center;border:1px solid #1F3244;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#3CE7FF">{{ g.ch }}</span>
               <span style="flex:1;min-width:0">
                 <span style="display:block;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:16px;color:#EAF2F8">{{ g.name }}</span>
                 <span style="display:block;margin-top:2px;font-size:12.5px;color:#9FB2C3">{{ g.count }}</span>
@@ -1961,9 +1988,17 @@ class Component extends DCLogic {
     this.onResize = () => this.setState({ mobile: window.innerWidth < 760, hdrH: this.hdrRef.current ? this.hdrRef.current.offsetHeight : 104 });
     this.onResize();
     window.addEventListener('resize', this.onResize);
+    this.lastY = window.scrollY;
     this.onScroll = () => {
-      const past = window.scrollY > 40;
-      if (past !== this.state.lifted) this.setState({ lifted: past });
+      const y = window.scrollY;
+      const up = y < this.lastY;
+      const down = y > this.lastY;
+      this.lastY = y;
+      let floatNav = this.state.floatNav;
+      if (y < 80) floatNav = false;
+      else if (down) floatNav = false;
+      else if (up) floatNav = true;
+      if (floatNav !== this.state.floatNav) this.setState({ floatNav });
     };
     this.onScroll();
     window.addEventListener('scroll', this.onScroll, { passive: true });
@@ -2098,9 +2133,12 @@ class Component extends DCLogic {
 
     return {
       hdrRef: this.hdrRef,
-      headerStyle: 'position:sticky;top:0;z-index:60;backdrop-filter:blur(8px);border-bottom:1px solid #FFFFFF1A;background:linear-gradient(100deg,' + hs.a + 'E6 0%,' + hs.b + 'E6 65%,#07111CE6 100%)',
+      headerStyle: 'position:relative;z-index:5;backdrop-filter:blur(8px);border-bottom:1px solid #FFFFFF1A;background:linear-gradient(100deg,' + hs.a + 'E6 0%,' + hs.b + 'E6 65%,#07111CE6 100%)',
+      showSubRows: true,
 
-      heroBgStyle: 'position:relative;z-index:1;isolation:isolate;border-bottom:1px solid #16283A;background:#07111C',
+      floatNavStyle: 'position:fixed;top:0;left:0;right:0;z-index:80;transition:transform 260ms ease,opacity 260ms ease;transform:translateY(' + (s.floatNav ? '0' : '-100%') + ');opacity:' + (s.floatNav ? 1 : 0) + ';background:#07111CF2;backdrop-filter:blur(8px);border-bottom:1px solid #1F3244',
+
+      heroBgStyle: 'position:relative;z-index:0;isolation:isolate;border-bottom:1px solid #16283A;background:#07111C',
       heroCardStyle: 'position:relative;display:block;width:100%;aspect-ratio:16/9;padding:0;overflow:hidden;background:#07111C',
       heroLayers: this.heroSlidesData.map((x, i) => {
         const on = hsIdx === i;
