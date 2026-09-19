@@ -35,39 +35,26 @@ input,select,textarea{font:inherit;color:inherit}
 
 <div style="min-height:100vh;display:flex;flex-direction:column">
 
-  <div style="background:#0B1622;border-bottom:1px solid #1F3244;font-size:13px;color:#9FB2C3">
-    <div style="max-width:1400px;margin:0 auto;padding:8px 32px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between">
-      <span>Envíos a domicilio desde Querétaro</span>
-      <div style="display:flex;gap:22px;align-items:center">
-        <button onClick="{{ goComo }}" style="color:#9FB2C3;padding:2px 0" style-hover="color:#EAF2F8">Cómo comprar</button>
-        <button onClick="{{ goDev }}" style="color:#9FB2C3;padding:2px 0" style-hover="color:#EAF2F8">Devoluciones</button>
-        <span style="font-family:'IBM Plex Mono',monospace;color:#EAF2F8">442 000 0000</span>
-      </div>
-    </div>
-  </div>
 
-  <header style="position:sticky;top:0;z-index:60;background:rgba(7,17,28,.94);backdrop-filter:blur(8px);border-bottom:1px solid #1F3244">
-    <div style="max-width:1400px;margin:0 auto;padding:14px 20px;display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+  <header ref="{{ hdrRef }}" style="{{ headerStyle }}">
+    <div style="max-width:1400px;margin:0 auto;padding:clamp(9px,1.1vw,12px) clamp(12px,1.6vw,20px);display:flex;gap:clamp(10px,1.3vw,18px);align-items:center;flex-wrap:wrap">
       <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
         <button onClick="{{ openMenu }}" aria-label="Abrir menú" style="width:44px;height:44px;display:grid;place-items:center;border:1px solid #1F3244;flex:0 0 auto">
           <svg viewBox="0 0 24 24" fill="none" stroke="#EAF2F8" stroke-width="1.5" style="width:20px;height:20px"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
         </button>
       </sc-if>
       <button onClick="{{ goHome }}" style="display:flex;gap:12px;align-items:center;flex:0 0 auto">
-        <span style="position:relative;width:38px;height:38px;display:grid;place-items:center;border:1px solid #3CE7FF;clip-path:polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%);box-shadow:0 0 14px rgba(60,231,255,.28) inset">
-          <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:15px;letter-spacing:.5px;color:#3CE7FF">SG</span>
+        <span style="position:relative;width:40px;height:40px;flex:0 0 auto;border-radius:50%;overflow:hidden;box-shadow:0 0 14px rgba(60,231,255,.28)">
+          <img src="uploads/ChatGPT Image Sep 18, 2026, 10_42_49 PM.png" alt="SGQ" style="width:100%;height:100%;object-fit:cover">
         </span>
-        <span style="text-align:left;line-height:1.05">
-          <span style="display:block;font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:17px;color:#EAF2F8">Seguridad General</span>
-          <span style="display:block;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:#9FB2C3">QUERÉTARO</span>
-        </span>
+        <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+          <span style="text-align:left;line-height:1.05">
+            <span style="display:block;font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:17px;color:#EAF2F8">Seguridad General</span>
+            <span style="display:block;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:#9FB2C3">QUERÉTARO</span>
+          </span>
+        </sc-if>
       </button>
-
-      <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
-        <button onClick="{{ toggleMega }}" onMouseEnter="{{ openMega }}" style="{{ prodBtnStyle }}">Productos</button>
-      </sc-if>
-
-      <div style="position:relative;flex:1 1 320px;min-width:180px">
+      <div style="{{ searchWrapStyle }}">
         <input value="{{ search }}" onChange="{{ onSearch }}" onKeyDown="{{ onSearchKey }}" placeholder="Busca por producto, marca o SKU" aria-label="Buscar" style="width:100%;padding:11px 14px 11px 40px;background:#0F1D2B;border:1px solid #1F3244;border-radius:4px;color:#EAF2F8;font-size:15px" style-focus="border-color:#3CE7FF">
         <svg viewBox="0 0 24 24" fill="none" stroke="#9FB2C3" stroke-width="1.5" style="position:absolute;left:13px;top:12px;width:18px;height:18px;pointer-events:none"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
         <sc-if value="{{ showSuggest }}" hint-placeholder-val="{{ false }}">
@@ -85,20 +72,78 @@ input,select,textarea{font:inherit;color:inherit}
         </sc-if>
       </div>
 
-      <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
-        <button onClick="{{ toggleServ }}" style="{{ servBtnStyle }}">Servicios</button>
-      </sc-if>
+      <div style="display:flex;align-items:center;gap:clamp(8px,1.1vw,16px);margin-left:auto;flex:0 0 auto">
+        <button onClick="{{ goHome }}" aria-label="Avisos" style="display:flex;gap:8px;align-items:center;min-height:44px;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:15px;color:#EAF2F8;white-space:nowrap" style-hover="color:#3CE7FF">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex:0 0 auto"><path d="M5 19a1 1 0 1 0 0-.01"></path><path d="M5 12a7 7 0 0 1 7 7"></path><path d="M5 5a14 14 0 0 1 14 14"></path></svg>
+          <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}"><span>Avisos</span></sc-if>
+        </button>
+        <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ goCatalog }}" aria-label="Ofertas" style="position:relative;display:flex;gap:8px;align-items:center;min-height:44px;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:15px;color:#EAF2F8;white-space:nowrap" style-hover="color:#3CE7FF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex:0 0 auto"><path d="m12 4 2.3 4.9 5.2.7-3.8 3.7 1 5.2-4.7-2.6-4.7 2.6 1-5.2L4.5 9.6l5.2-.7z"></path></svg>
+            <span>Ofertas</span>
+            <span style="position:absolute;top:4px;right:-4px;width:7px;height:7px;border-radius:50%;background:#FF4D5E"></span>
+          </button>
+        </sc-if>
 
-      <button onClick="{{ goAccount }}" style="display:flex;gap:8px;align-items:center;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:15px;color:#EAF2F8;white-space:nowrap" style-hover="color:#3CE7FF">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:19px;height:19px"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c0-3.5 3.1-5.5 7-5.5s7 2 7 5.5"></path></svg>
-        {{ accountLabel }}
-      </button>
+        <button onClick="{{ goAccount }}" aria-label="Mi cuenta" style="display:flex;gap:8px;align-items:center;min-height:44px;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:15px;color:#EAF2F8;white-space:nowrap" style-hover="color:#3CE7FF">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex:0 0 auto"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c0-3.5 3.1-5.5 7-5.5s7 2 7 5.5"></path></svg>
+          <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}"><span>{{ accountLabel }}</span></sc-if>
+        </button>
 
-      <button onClick="{{ goCart }}" aria-label="Mi pedido" style="{{ cartBtnStyle }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:21px;height:21px"><path d="M4 5h2.2l2.3 10.2h9.1L20 8H7"></path><circle cx="10" cy="19" r="1.4"></circle><circle cx="17.5" cy="19" r="1.4"></circle></svg>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500">{{ cartCount }}</span>
-      </button>
+        <button onClick="{{ goCart }}" aria-label="Mi pedido" style="{{ cartBtnStyle }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:21px;height:21px"><path d="M4 5h2.2l2.3 10.2h9.1L20 8H7"></path><circle cx="10" cy="19" r="1.4"></circle><circle cx="17.5" cy="19" r="1.4"></circle></svg>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500">{{ cartCount }}</span>
+        </button>
+      </div>
     </div>
+
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:9px;align-items:center;padding:0 14px 13px;overflow-x:auto">
+        <sc-for list="{{ chipNav }}" as="c" hint-placeholder-count="6">
+          <button onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.name }}</button>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+      <div style="border-top:1px solid #16283A">
+        <div style="max-width:1400px;margin:0 auto;padding:0 clamp(12px,1.6vw,20px);display:flex;align-items:center;gap:2px;overflow-x:auto">
+          <button onClick="{{ toggleMega }}" onMouseEnter="{{ openMega }}" style="{{ prodBtnStyle }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex:0 0 auto"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+            Productos
+          </button>
+          <button onClick="{{ goCatalog }}" style="display:flex;gap:8px;align-items:center;padding:13px 13px;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:15px;color:#9FB2C3;white-space:nowrap;border-bottom:2px solid transparent" style-hover="color:#3CE7FF;border-bottom-color:#3CE7FF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex:0 0 auto"><path d="M13 3 5 14h6l-1 7 8-11h-6z"></path></svg>
+            Novedades
+          </button>
+          <button onClick="{{ toggleServ }}" style="display:flex;gap:8px;align-items:center;padding:13px 13px;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:15px;color:#9FB2C3;white-space:nowrap;border-bottom:2px solid transparent" style-hover="color:#3CE7FF;border-bottom-color:#3CE7FF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex:0 0 auto"><rect x="3" y="5" width="18" height="11" rx="1.5"></rect><path d="M9 20h6"></path></svg>
+            Servicios
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;opacity:.7"><path d="m6 9 6 6 6-6"></path></svg>
+          </button>
+          <button onClick="{{ goHome }}" style="display:flex;gap:8px;align-items:center;padding:13px 13px;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:15px;color:#9FB2C3;white-space:nowrap;border-bottom:2px solid transparent" style-hover="color:#3CE7FF;border-bottom-color:#3CE7FF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex:0 0 auto"><path d="M12 4l1.6 4.4L18 10l-4.4 1.6L12 16l-1.6-4.4L6 10l4.4-1.6z"></path></svg>
+            Marcas
+          </button>
+          <button onClick="{{ goCatalog }}" style="display:flex;gap:8px;align-items:center;padding:13px 13px;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:15px;color:#9FB2C3;white-space:nowrap;border-bottom:2px solid transparent" style-hover="color:#3CE7FF;border-bottom-color:#3CE7FF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex:0 0 auto"><path d="M20 12.5 12.5 20 4 11.5V4h7.5z"></path><circle cx="8.5" cy="8.5" r="1.3"></circle></svg>
+            Promociones
+          </button>
+          <button onClick="{{ goComo }}" style="display:flex;gap:8px;align-items:center;padding:13px 13px;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:15px;color:#9FB2C3;white-space:nowrap;border-bottom:2px solid transparent" style-hover="color:#3CE7FF;border-bottom-color:#3CE7FF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex:0 0 auto"><rect x="3" y="5" width="18" height="4"></rect><path d="M5 9v10h14V9M10 13h4"></path></svg>
+            Cómo comprar
+          </button>
+          <button onClick="{{ goDev }}" style="display:flex;gap:8px;align-items:center;padding:13px 13px;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:15px;color:#9FB2C3;white-space:nowrap;border-bottom:2px solid transparent" style-hover="color:#3CE7FF;border-bottom-color:#3CE7FF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex:0 0 auto"><path d="M4 9h11a4 4 0 1 1 0 8H9"></path><path d="m8 5-4 4 4 4"></path></svg>
+            Devoluciones
+          </button>
+          <button onClick="{{ goServices }}" style="display:flex;gap:8px;align-items:center;padding:13px 13px;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:15px;color:#9FB2C3;white-space:nowrap;border-bottom:2px solid transparent" style-hover="color:#3CE7FF;border-bottom-color:#3CE7FF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;flex:0 0 auto"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3.2"></circle><path d="m6.4 6.4 3.3 3.3M17.6 6.4l-3.3 3.3M17.6 17.6l-3.3-3.3M6.4 17.6l3.3-3.3"></path></svg>
+            Soporte
+          </button>
+        </div>
+      </div>
+    </sc-if>
 
     <sc-if value="{{ servOpen }}" hint-placeholder-val="{{ false }}">
       <div style="border-top:1px solid #1F3244;background:#0F1D2B">
@@ -201,104 +246,101 @@ input,select,textarea{font:inherit;color:inherit}
   <main style="flex:1">
 
   <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
-    <section style="position:relative;border-bottom:1px solid #1F3244;background-image:linear-gradient(#1F3244 1px,transparent 1px),linear-gradient(90deg,#1F3244 1px,transparent 1px);background-size:64px 64px;background-position:center">
-      <div style="background:linear-gradient(180deg,rgba(7,17,28,.72),rgba(7,17,28,.93))">
-        <div style="max-width:1400px;margin:0 auto;padding:64px 32px 72px;display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:48px;align-items:center">
-          <div style="max-width:620px">
-            <h1 style="margin:0;font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:clamp(34px,4.2vw,56px);line-height:1.08;letter-spacing:-.5px;text-wrap:pretty">Equipo de seguridad y tecnología, listo para instalar.</h1>
-            <p style="margin:20px 0 0;font-size:18px;line-height:1.55;color:#9FB2C3;max-width:56ch">Cámaras, control de acceso, energía, automatización y más para casas, negocios e industria. Enviamos desde Querétaro.</p>
-            <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:32px">
-              <button onClick="{{ goCatalog }}" style="padding:15px 26px;background:#3CE7FF;color:#07111C;font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:16px;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);box-shadow:0 0 18px rgba(60,231,255,.35)" style-hover="background:#6FEEFF;box-shadow:0 0 26px rgba(60,231,255,.55)">Ver catálogo</button>
-              <button onClick="{{ goServices }}" style="padding:15px 26px;border:1px solid #3CE7FF;color:#3CE7FF;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:16px;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%)" style-hover="background:rgba(60,231,255,.08)">Cotizar un servicio</button>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:26px;margin-top:38px;padding-top:26px;border-top:1px solid #1F3244">
-              <span style="display:flex;gap:10px;align-items:center;font-size:14px;color:#9FB2C3">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#3CE7FF" stroke-width="1.5" style="width:18px;height:18px"><path d="M3 7h11v9H3z"></path><path d="M14 10h4l3 3v3h-7"></path><circle cx="7" cy="18" r="1.6"></circle><circle cx="17" cy="18" r="1.6"></circle></svg>
-                Envío a domicilio
-              </span>
-              <span style="display:flex;gap:10px;align-items:center;font-size:14px;color:#9FB2C3">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#3CE7FF" stroke-width="1.5" style="width:18px;height:18px"><path d="M6 3h9l4 4v14H6z"></path><path d="M9 11h7M9 15h7"></path></svg>
-                Factura CFDI
-              </span>
-              <span style="display:flex;gap:10px;align-items:center;font-size:14px;color:#9FB2C3">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#3CE7FF" stroke-width="1.5" style="width:18px;height:18px"><path d="M21 12a9 9 0 1 1-3.6-7.2"></path><path d="M12 7v5l4 2"></path></svg>
-                Asesoría técnica por WhatsApp
-              </span>
-            </div>
-          </div>
+    <section style="{{ heroBgStyle }}">
+      <sc-for list="{{ heroLayers }}" as="l" hint-placeholder-count="3">
+        <span style="{{ l.sceneStyle }}"></span>
+      </sc-for>
+      <div style="position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:clamp(12px,2.2vw,26px) clamp(12px,2.4vw,32px);display:flex;flex-wrap:wrap;gap:clamp(12px,1.6vw,18px);align-items:stretch">
 
-          <div style="position:relative;padding:14px;border:1px solid #1F3244;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,0 100%);background:rgba(15,29,43,.55)">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9FB2C3">
-              <span>Productos</span>
-              <span>{{ clock }}</span>
-            </div>
-            <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
-              <div>
-                <button onClick="{{ wallOne.onClick }}" style="position:relative;display:block;width:100%;aspect-ratio:16/10;overflow:hidden;background:linear-gradient(160deg,#16303F,#0B1622 70%);border:1px solid #3CE7FF;box-shadow:0 0 18px rgba(60,231,255,.3)">
-                  <img src="{{ wallOne.img }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55">
-                  <span style="position:absolute;inset:0;background-image:repeating-linear-gradient(180deg,rgba(255,255,255,.045) 0 1px,transparent 1px 3px)"></span>
-                  <span style="position:absolute;top:9px;left:10px;right:10px;display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#EAF2F8;text-shadow:0 1px 3px rgba(0,0,0,.8)">
-                    <span>{{ wallOne.label }}</span>
-                    <span>{{ clock }}</span>
-                  </span>
-                  <span style="position:absolute;bottom:10px;left:10px;right:10px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#9FB2C3;line-height:1.5">{{ wallOne.photo }}</span>
-                </button>
-                <div style="display:flex;gap:8px;overflow-x:auto;margin-top:10px;padding-bottom:4px">
-                  <sc-for list="{{ wallMobileChips }}" as="c" hint-placeholder-count="6">
-                    <button onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</button>
-                  </sc-for>
+        <div style="position:relative;flex:1 1 560px;min-width:0;border:1px solid #1F3244;border-radius:14px;overflow:hidden;background:#0B1622">
+          <button onClick="{{ heroCtaClick }}" aria-label="{{ heroTitle }}" style="{{ heroCardStyle }}">
+            <sc-for list="{{ heroLayers }}" as="l" hint-placeholder-count="3">
+              <span style="{{ l.bgStyle }}"></span>
+            </sc-for>
+            <sc-for list="{{ heroLayers }}" as="l" hint-placeholder-count="3">
+              <img src="{{ l.img }}" alt="{{ l.alt }}" style="{{ l.imgStyle }}">
+            </sc-for>
+          </button>
+          <div style="position:absolute;bottom:16px;left:0;right:0;display:flex;gap:8px;justify-content:center">
+            <sc-for list="{{ heroDots }}" as="d" hint-placeholder-count="3">
+              <button onClick="{{ d.onClick }}" aria-label="{{ d.alt }}" style="{{ d.style }}"></button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="flex:1 1 330px;min-width:0;max-width:440px;display:flex;flex-direction:column;border:1px solid #1F3244;border-radius:14px;background:#0B1622;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 18px;border-bottom:1px solid #16283A">
+            <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:16px;color:#EAF2F8">Opiniones de clientes</span>
+            <button onClick="{{ goComo }}" style="font-size:13px;color:#3CE7FF" style-hover="color:#6FEEFF">Ver todas</button>
+          </div>
+          <div style="flex:1;overflow-y:auto;max-height:420px">
+            <sc-for list="{{ reviews }}" as="r" hint-placeholder-count="4">
+              <div style="display:flex;gap:12px;padding:15px 18px;border-bottom:1px solid #16283A">
+                <span style="{{ r.avaStyle }}">{{ r.ini }}</span>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:#9FB2C3">
+                    <span style="color:#EAF2F8;font-weight:600">{{ r.name }}</span>
+                    <span>·</span>
+                    <span>{{ r.when }}</span>
+                    <span>·</span>
+                    <span>{{ r.cat }}</span>
+                  </div>
+                  <div style="margin-top:4px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:2px;color:#3CE7FF">{{ r.stars }}</div>
+                  <p style="margin:7px 0 0;font-size:14px;line-height:1.5;color:#C7D5E0;text-wrap:pretty"><span style="color:#EAF2F8;font-weight:600">{{ r.title }}</span> — {{ r.text }}</p>
                 </div>
               </div>
-            </sc-if>
-            <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-              <sc-for list="{{ wall }}" as="w" hint-placeholder-count="6">
-                <button onClick="{{ w.onClick }}" onMouseEnter="{{ w.onHover }}" aria-label="{{ w.alt }}" style="{{ w.style }}">
-                  <img src="{{ w.img }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55">
-                  <span style="position:absolute;inset:0;background-image:repeating-linear-gradient(180deg,rgba(255,255,255,.045) 0 1px,transparent 1px 3px);pointer-events:none"></span>
-                  <span style="position:absolute;top:7px;left:8px;right:8px;display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#EAF2F8;text-shadow:0 1px 3px rgba(0,0,0,.8)">
-                    <span>{{ w.label }}</span>
-                    <span>{{ clock }}</span>
-                  </span>
-                  <span style="position:absolute;bottom:8px;left:8px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#9FB2C3">{{ w.photo }}</span>
-                  <sc-if value="{{ w.rec }}" hint-placeholder-val="{{ false }}">
-                    <span style="position:absolute;top:7px;left:8px;display:flex;gap:5px;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#FF4D5E;transform:translateY(16px)">
-                      <span style="width:6px;height:6px;border-radius:50%;background:#FF4D5E;animation:sgRec 1.6s infinite"></span>REC
-                    </span>
-                  </sc-if>
-                </button>
-              </sc-for>
-            </div>
-            </sc-if>
+            </sc-for>
           </div>
         </div>
       </div>
+
+      <div style="position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:0 clamp(14px,2.4vw,32px) clamp(20px,2.6vw,30px);display:flex;flex-wrap:wrap;gap:clamp(14px,2vw,26px)">
+        <span style="display:flex;gap:10px;align-items:center;font-size:14px;color:#9FB2C3">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#3CE7FF" stroke-width="1.5" style="width:18px;height:18px"><path d="M3 7h11v9H3z"></path><path d="M14 10h4l3 3v3h-7"></path><circle cx="7" cy="18" r="1.6"></circle><circle cx="17" cy="18" r="1.6"></circle></svg>
+          Envío a domicilio desde Querétaro
+        </span>
+        <span style="display:flex;gap:10px;align-items:center;font-size:14px;color:#9FB2C3">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#3CE7FF" stroke-width="1.5" style="width:18px;height:18px"><path d="M6 3h9l4 4v14H6z"></path><path d="M9 11h7M9 15h7"></path></svg>
+          Factura CFDI
+        </span>
+        <span style="display:flex;gap:10px;align-items:center;font-size:14px;color:#9FB2C3">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#3CE7FF" stroke-width="1.5" style="width:18px;height:18px"><path d="M21 12a9 9 0 1 1-3.6-7.2"></path><path d="M12 7v5l4 2"></path></svg>
+          Asesoría técnica por WhatsApp
+        </span>
+      </div>
     </section>
 
-    <section style="max-width:1400px;margin:0 auto;padding:72px 32px 0">
-      <h2 style="margin:0 0 8px;font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:clamp(26px,2.6vw,40px);line-height:1.15">Productos</h2>
-      <p style="margin:0 0 28px;color:#9FB2C3;font-size:16px">Mas de sesenta productos.</p>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px">
-        <sc-for list="{{ groupCards }}" as="g" hint-placeholder-count="6">
-          <div style="{{ g.cardStyle }}">
-            <button onClick="{{ g.onClick }}" style="display:block;width:100%;text-align:left">
-              <span style="{{ g.photoStyle }}">
-                <img src="{{ g.img }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.6">
-                <span style="position:absolute;inset:0;background-image:repeating-linear-gradient(180deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px)"></span>
-                <span style="position:absolute;top:10px;left:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3CE7FF">{{ g.ch }}</span>
-              </span>
-              <span style="display:flex;align-items:baseline;gap:10px;margin-top:16px">
-                <span style="flex:1;font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:20px;line-height:1.2;color:#EAF2F8">{{ g.name }}</span>
-                <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9FB2C3">{{ g.subCount }}</span>
-              </span>
-            </button>
-            <div style="display:flex;flex-direction:column;gap:4px;margin-top:12px">
-              <sc-for list="{{ g.top }}" as="s" hint-placeholder-count="3">
-                <button onClick="{{ s.onClick }}" style="text-align:left;font-size:14px;color:#9FB2C3;padding:2px 0" style-hover="color:#3CE7FF">{{ s.name }}</button>
-              </sc-for>
-            </div>
-          </div>
+    <section style="max-width:1400px;margin:0 auto;padding:clamp(40px,4.5vw,64px) clamp(14px,2.4vw,32px) 0">
+      <h2 style="margin:0 0 18px;font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:clamp(26px,2.6vw,40px);line-height:1.15">Para Ti</h2>
+
+      <div style="display:flex;gap:10px;overflow-x:auto;padding:2px 2px 4px">
+        <sc-for list="{{ ptTabs }}" as="t" hint-placeholder-count="8">
+          <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.name }}</button>
         </sc-for>
+      </div>
+
+      <div style="position:relative;margin-top:20px" onMouseEnter="{{ ptPause }}" onMouseLeave="{{ ptResume }}">
+        <div ref="{{ ptRail }}" style="display:flex;gap:0;overflow-x:auto;border-left:1px solid #1F3244">
+          <sc-for list="{{ ptItems }}" as="p" hint-placeholder-count="6">
+            <div style="flex:0 0 278px;display:flex;flex-direction:column;border-right:1px solid #1F3244;border-top:1px solid #1F3244;border-bottom:1px solid #1F3244;background:#0B1622" style-hover="background:#0F1D2B">
+              <button onClick="{{ p.onOpen }}" style="display:grid;place-items:center;width:100%;height:258px;padding:22px">
+                <img src="{{ p.img }}" alt="" style="display:block;max-width:100%;max-height:214px;width:auto;height:auto;object-fit:contain">
+              </button>
+              <button onClick="{{ p.onOpen }}" style="flex:1;display:flex;flex-direction:column;gap:9px;padding:0 20px 18px;text-align:left">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.3px;color:#7E93A6">{{ p.brand }}</span>
+                <span style="font-size:14.5px;line-height:1.45;color:#EAF2F8">{{ p.name }}</span>
+                <span style="margin-top:auto;display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9FB2C3">{{ p.sku }}</span>
+              </button>
+              <button onClick="{{ goAccount }}" style="padding:14px 12px;border-top:1px solid #1F3244;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:14.5px;color:#3CE7FF" style-hover="background:#16283A">Acceder a mi cuenta</button>
+            </div>
+          </sc-for>
+        </div>
+        <button onClick="{{ ptPrev }}" aria-label="Anterior" style="position:absolute;left:-8px;top:118px;width:42px;height:42px;display:grid;place-items:center;border-radius:50%;background:#16283A;border:1px solid #2C4560;color:#EAF2F8" style-hover="border-color:#3CE7FF;color:#3CE7FF">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:17px;height:17px"><path d="m14 6-6 6 6 6"></path></svg>
+        </button>
+        <button onClick="{{ ptNext }}" aria-label="Siguiente" style="position:absolute;right:-8px;top:118px;width:42px;height:42px;display:grid;place-items:center;border-radius:50%;background:#16283A;border:1px solid #2C4560;color:#EAF2F8" style-hover="border-color:#3CE7FF;color:#3CE7FF">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:17px;height:17px"><path d="m10 6 6 6-6 6"></path></svg>
+        </button>
       </div>
     </section>
 
@@ -1808,7 +1850,7 @@ class Component extends DCLogic {
     screen: 'home', gid: 'vv', sub: null, sku: null,
     cart: [], loggedIn: false, mega: false, megaGroup: 'vv', serv: false,
     search: '', qty: 1, shot: 0, tab: 'desc', faq: null, sort: 'Más vendidos',
-    filters: [], toast: '', flash: false, clock: '--:--:--', wallActive: 0, page: 1,
+    filters: [], toast: '', flash: false, clock: '--:--:--', wallActive: 0, heroSlide: 0, ptTab: 0, lifted: false, hdrH: 104, page: 1,
     regStep: 1, invoice: false, acctSec: 'pedidos', folio: 'SGQ-00248', srvId: 'monitoreo',
     addr: 0, agree: false, useSaldo: false, uploadStage: 'form', hasFile: false, fileErr: false,
     phoneErr: '', rfcErr: '', legal: 'privacidad',
@@ -1883,6 +1925,19 @@ class Component extends DCLogic {
     { sku:'SGQ-GP-0005', g:'gp', sub:'Rastreadores GPS', name:'Rastreador GPS 4G con corte de motor', price:1650, stock:14, specs:['4G','Corte de motor','App'], photo:'FOTO 4:3 · Rastreador GPS con arnés' }
   ];
 
+  heroSlidesData = [
+    { brand:'VIDEOVIGILANCIA', title:'Tu tranquilidad, nuestra prioridad', gid:'vv', img:'uploads/hero1.png', a:'#2E9E5B', b:'#0B2A17' },
+    { brand:'ENERGÍA Y CLIMATIZACIÓN', title:'Energía eficiente, clima perfecto', gid:'ec', img:'uploads/hero2.png', a:'#1D5C9E', b:'#0A2038' },
+    { brand:'ENERGÍA SOLAR', title:'Energía limpia, ahorro real', gid:'ec', img:'uploads/hero3.png', a:'#1E8A4F', b:'#082A19' }
+  ];
+
+  reviewsData = [
+    { ini:'RM', name:'Ricardo M.', when:'2 d', cat:'Videovigilancia', title:'Kit de 8 cámaras', text:'Llegó completo y ya configurado. El asesor nos ayudó por WhatsApp a dejar el grabador en la nube.', st:5 },
+    { ini:'LT', name:'Laura T.', when:'1 sem', cat:'Control de Acceso', title:'Biométrico de oficina', text:'Dimos de alta 24 gafetes en una tarde. La factura llegó el mismo día de la transferencia.', st:5 },
+    { ini:'JC', name:'Jorge C.', when:'2 sem', cat:'Energía', title:'No-break 1500 VA', text:'Pedí el viernes y me lo entregaron el lunes en Juriquilla. Mejor precio que en tienda física.', st:4 },
+    { ini:'AS', name:'Ana S.', when:'3 sem', cat:'Cableado', title:'Bobina UTP Cat 6', text:'Me orientaron para elegir cable de exterior y resolvieron mis dudas antes de comprar.', st:5 }
+  ];
+
   servicesData = [
     { id:'monitoreo', img:'https://images.pexels.com/photos/11783119/pexels-photo-11783119.jpeg?auto=compress&cs=tinysrgb&w=800', name:'Monitoreo de alarmas 24/7', line:'Conectamos tu sistema a central de monitoreo, atendemos eventos y te enviamos reportes.', photo:'FOTO 16:9 · Operadores en central de monitoreo' },
     { id:'guardias', img:'https://images.pexels.com/photos/7388699/pexels-photo-7388699.jpeg?auto=compress&cs=tinysrgb&w=800', name:'Guardias de seguridad', line:'Guardias intramuros, control de acceso en recepción y rondines en turnos 12×12 y 24×24.', photo:'FOTO 16:9 · Guardia en lobby de edificio' },
@@ -1898,17 +1953,22 @@ class Component extends DCLogic {
   ];
 
   componentDidMount() {
-    this.tick = setInterval(() => {
-      const d = new Date();
-      const p = n => String(n).padStart(2, '0');
-      this.setState({ clock: p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) });
-    }, 1000);
-    if (this.props.heroAutoCycle !== false) this.cycle = setInterval(() => this.setState(s => ({ wallActive: (s.wallActive + 1) % 6 })), 4000);
-    this.onResize = () => this.setState({ mobile: window.innerWidth < 760 });
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    this.setState({ clock: p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) });
+    this.ptAuto = setInterval(() => { if (!this.ptPaused) this.ptScroll(1); }, 2600);
+    if (this.props.heroAutoCycle !== false) this.cycle = setInterval(() => this.setState(s => ({ wallActive: (s.wallActive + 1) % 6, heroSlide: (s.heroSlide + 1) % this.heroSlidesData.length })), 5000);
+    this.onResize = () => this.setState({ mobile: window.innerWidth < 760, hdrH: this.hdrRef.current ? this.hdrRef.current.offsetHeight : 104 });
     this.onResize();
     window.addEventListener('resize', this.onResize);
+    this.onScroll = () => {
+      const past = window.scrollY > 40;
+      if (past !== this.state.lifted) this.setState({ lifted: past });
+    };
+    this.onScroll();
+    window.addEventListener('scroll', this.onScroll, { passive: true });
   }
-  componentWillUnmount() { clearInterval(this.tick); clearInterval(this.cycle); window.removeEventListener('resize', this.onResize); }
+  componentWillUnmount() { clearInterval(this.tick); clearInterval(this.cycle); clearInterval(this.ptAuto); cancelAnimationFrame(this.ptRaf); window.removeEventListener('resize', this.onResize); window.removeEventListener('scroll', this.onScroll); }
 
   money(n) { return '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   go(screen, extra) { this.setState(Object.assign({ screen, mega: false, serv: false, search: '' }, extra || {})); window.scrollTo(0, 0); }
@@ -1957,9 +2017,71 @@ class Component extends DCLogic {
     };
   }
 
+  ptRailRef = React.createRef();
+  hdrRef = React.createRef();
+
+  ptPhotos = [
+    'https://images.pexels.com/photos/7364948/pexels-photo-7364948.jpeg?auto=compress&cs=tinysrgb&w=700',
+    'https://images.pexels.com/photos/13657415/pexels-photo-13657415.jpeg?auto=compress&cs=tinysrgb&w=700',
+    'https://images.pexels.com/photos/13168513/pexels-photo-13168513.jpeg?auto=compress&cs=tinysrgb&w=700',
+    'https://images.pexels.com/photos/4254165/pexels-photo-4254165.jpeg?auto=compress&cs=tinysrgb&w=700',
+    'https://images.pexels.com/photos/11783119/pexels-photo-11783119.jpeg?auto=compress&cs=tinysrgb&w=700',
+    'https://images.pexels.com/photos/7508683/pexels-photo-7508683.jpeg?auto=compress&cs=tinysrgb&w=700',
+    'https://images.pexels.com/photos/7388699/pexels-photo-7388699.jpeg?auto=compress&cs=tinysrgb&w=700',
+    'https://images.pexels.com/photos/8470836/pexels-photo-8470836.jpeg?auto=compress&cs=tinysrgb&w=700'
+  ];
+  ptBrands = ['NORTVISION', 'AXELOCK', 'PERIMETRA', 'VOLTARA', 'FIBRANET', 'RUTAVIVA', 'CENTINEL', 'DOMOTEK'];
+
+  ptMeta(sku) {
+    const i = this.products.findIndex(p => p.sku === sku);
+    const k = i < 0 ? 0 : i;
+    return { img: this.ptPhotos[k % this.ptPhotos.length], brand: this.ptBrands[(k * 3) % this.ptBrands.length] };
+  }
+
+  ptTabList() {
+    if (this._ptTabs) return this._ptTabs;
+    const subs = [];
+    this.products.forEach(p => { if (subs.indexOf(p.sub) < 0) subs.push(p.sub); });
+    this._ptTabs = subs.slice(0, 12).map(sub => {
+      const exact = this.products.filter(p => p.sub === sub);
+      const gid = exact[0].g;
+      const sameGroup = this.products.filter(p => p.g === gid && p.sub !== sub);
+      const rest = this.products.filter(p => p.g !== gid);
+      return { name: sub, items: exact.concat(sameGroup, rest).slice(0, 9) };
+    });
+    return this._ptTabs;
+  }
+
+  ptTween(el, to, ms) {
+    cancelAnimationFrame(this.ptRaf);
+    const from = el.scrollLeft, d = to - from, t0 = performance.now();
+    const step = now => {
+      const k = Math.min(1, (now - t0) / ms);
+      el.scrollLeft = from + d * (k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
+      if (k < 1) this.ptRaf = requestAnimationFrame(step);
+    };
+    this.ptRaf = requestAnimationFrame(step);
+    clearTimeout(this.ptFallback);
+    this.ptFallback = setTimeout(() => { if (Math.abs(el.scrollLeft - to) > 2) el.scrollLeft = to; }, ms + 60);
+  }
+
+  ptScroll(dir) {
+    const el = this.ptRailRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    let to = el.scrollLeft + 278 * dir;
+    if (dir > 0 && el.scrollLeft >= max - 12) to = 0;
+    else if (dir < 0 && el.scrollLeft <= 4) to = max;
+    this.ptTween(el, Math.max(0, Math.min(max, to)), 420);
+  }
+
   renderVals() {
     const s = this.state;
     const g = this.group(s.gid);
+    const ptTabs = this.ptTabList();
+    const ptIdx = Math.min(s.ptTab || 0, ptTabs.length - 1);
+    const hsIdx = ((s.heroSlide % this.heroSlidesData.length) + this.heroSlidesData.length) % this.heroSlidesData.length;
+    const hs = this.heroSlidesData[hsIdx];
     const cartCount = s.cart.reduce((a, c) => a + c.qty, 0);
     const cartTotal = s.cart.reduce((a, c) => a + this.prod(c.sku).price * c.qty, 0);
 
@@ -1975,6 +2097,34 @@ class Component extends DCLogic {
       (s.tab === k ? '#3CE7FF' : '#9FB2C3') + ';border-top:2px solid ' + (s.tab === k ? '#3CE7FF' : 'transparent');
 
     return {
+      hdrRef: this.hdrRef,
+      headerStyle: 'position:sticky;top:0;z-index:60;backdrop-filter:blur(8px);border-bottom:1px solid #FFFFFF1A;background:linear-gradient(100deg,' + hs.a + 'E6 0%,' + hs.b + 'E6 65%,#07111CE6 100%)',
+
+      heroBgStyle: 'position:relative;z-index:1;isolation:isolate;border-bottom:1px solid #16283A;background:#07111C',
+      heroCardStyle: 'position:relative;display:block;width:100%;aspect-ratio:16/9;padding:0;overflow:hidden;background:#07111C',
+      heroLayers: this.heroSlidesData.map((x, i) => {
+        const on = hsIdx === i;
+        return {
+          img: x.img, alt: x.title,
+          sceneStyle: 'position:absolute;inset:0;pointer-events:none;opacity:' + (on ? 1 : 0) + ';transition:opacity 900ms ease;background:radial-gradient(120% 130% at 14% 0%,' + x.a + ' 0%,rgba(7,17,28,0) 60%),radial-gradient(95% 100% at 92% 6%,' + x.b + ' 0%,rgba(7,17,28,0) 62%)',
+          bgStyle: 'position:absolute;inset:0;opacity:' + (on ? 1 : 0) + ';transition:opacity 900ms ease;background:linear-gradient(112deg,' + x.a + ' 0%,' + x.b + ' 58%,#07111C 100%)',
+          imgStyle: 'position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;opacity:' + (on ? 1 : 0) + ';transition:opacity 900ms ease'
+        };
+      }),
+      heroBrand: hs.brand, heroTitle: hs.title, heroSub: hs.sub, heroCta: hs.cta, heroImg: hs.img,
+      heroCtaClick: () => this.go('group', { gid: hs.gid, sub: null }),
+      heroPrev: () => this.setState(st => ({ heroSlide: (st.heroSlide - 1 + this.heroSlidesData.length) % this.heroSlidesData.length })),
+      heroNext: () => this.setState(st => ({ heroSlide: (st.heroSlide + 1) % this.heroSlidesData.length })),
+      heroDots: this.heroSlidesData.map((x, i) => ({
+        alt: 'Banner ' + (i + 1) + ': ' + x.title,
+        style: 'width:' + (hsIdx === i ? '26px' : '9px') + ';height:9px;border-radius:999px;transition:width 300ms ease,background 300ms ease;background:' + (hsIdx === i ? '#3CE7FF' : 'rgba(255,255,255,.4)'),
+        onClick: () => this.setState({ heroSlide: i })
+      })),
+      reviews: this.reviewsData.map(r => ({
+        ini: r.ini, name: r.name, when: r.when, cat: r.cat, title: r.title, text: r.text,
+        stars: '★★★★★'.slice(0, r.st) + '☆☆☆☆☆'.slice(0, 5 - r.st),
+        avaStyle: 'width:38px;height:38px;flex:0 0 auto;display:grid;place-items:center;border-radius:50%;background:#16283A;border:1px solid #1F3244;font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#3CE7FF'
+      })),
       clock: s.clock, search: s.search, qty: s.qty, sort: s.sort, toast: s.toast,
       cartCount: cartCount, accountLabel: s.loggedIn ? 'Mi cuenta' : 'Iniciar sesión',
       megaOpen: s.mega, servOpen: s.serv,
@@ -1997,7 +2147,24 @@ class Component extends DCLogic {
 
       prodBtnStyle: 'display:flex;gap:8px;align-items:center;font-family:\'Chakra Petch\',sans-serif;font-weight:500;font-size:16px;white-space:nowrap;padding:6px 0;border-bottom:2px solid ' + (s.mega ? '#3CE7FF' : 'transparent') + ';color:' + (s.mega ? '#3CE7FF' : '#EAF2F8'),
       servBtnStyle: 'padding:9px 18px;font-family:\'Chakra Petch\',sans-serif;font-weight:500;font-size:15px;white-space:nowrap;border:1px solid ' + (s.serv ? '#3CE7FF' : '#1F3244') + ';color:' + (s.serv ? '#3CE7FF' : '#EAF2F8') + ';clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);background:' + (s.serv ? 'rgba(60,231,255,.08)' : 'transparent'),
-      cartBtnStyle: 'display:flex;gap:9px;align-items:center;padding:9px 14px;border:1px solid ' + (s.flash ? '#3CE7FF' : '#1F3244') + ';color:' + (s.flash ? '#3CE7FF' : '#EAF2F8') + ';clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);' + (s.flash ? 'animation:sgFlash .7s both;' : ''),
+      cartBtnStyle: s.mobile
+        ? 'display:flex;gap:8px;align-items:center;min-height:44px;padding:9px 13px;background:#3CE7FF;color:#07111C;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);' + (s.flash ? 'animation:sgFlash .7s both;' : '')
+        : 'display:flex;gap:9px;align-items:center;padding:9px 14px;border:1px solid ' + (s.flash ? '#3CE7FF' : '#1F3244') + ';color:' + (s.flash ? '#3CE7FF' : '#EAF2F8') + ';clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);' + (s.flash ? 'animation:sgFlash .7s both;' : ''),
+
+      searchWrapStyle: 'position:relative;' + (s.mobile ? 'order:9;flex:1 1 100%;min-width:0' : 'flex:1 1 240px;min-width:160px'),
+
+      chipNav: [
+        { name: 'Para Ti', go: () => this.go('home') },
+        { name: 'Novedades', go: () => this.go('group', { gid: 'vv', sub: null }) },
+        { name: 'Servicios', go: () => this.go('services', { srvSent: false, faq: null }) },
+        { name: 'Marcas', go: () => this.go('home') },
+        { name: 'Promociones', go: () => this.go('group', { gid: 'ca', sub: null }) },
+        { name: 'Cómo comprar', go: () => this.go('como') },
+        { name: 'Devoluciones', go: () => this.go('devoluciones', { faq: null }) }
+      ].map((c, i) => ({
+        name: c.name, onClick: c.go,
+        style: 'flex:0 0 auto;min-height:40px;padding:9px 15px;border-radius:9px;background:' + (i === 0 ? 'rgba(60,231,255,.14)' : '#16283A') + ';border:1px solid ' + (i === 0 ? '#3CE7FF' : '#1F3244') + ';font-family:\'Chakra Petch\',sans-serif;font-weight:500;font-size:14.5px;white-space:nowrap;color:' + (i === 0 ? '#3CE7FF' : '#EAF2F8')
+      })),
 
       onSearch: e => this.setState({ search: e.target.value }),
       onSearchKey: e => { if (e.key === 'Enter') { const q = e.target.value; this.go('search', { query: q }); } },
@@ -2035,6 +2202,21 @@ class Component extends DCLogic {
         top: x.subs.slice(0, 3).map(n => ({ name: n, onClick: () => this.go('list', { gid: x.id, sub: n, page: 1 }) })),
         onClick: () => this.go('group', { gid: x.id, sub: null })
       })),
+
+      ptRail: this.ptRailRef,
+      ptPause: () => { this.ptPaused = true; },
+      ptResume: () => { this.ptPaused = false; },
+      ptPrev: () => this.ptScroll(-1),
+      ptNext: () => this.ptScroll(1),
+      ptTabs: ptTabs.map((t, i) => ({
+        name: t.name,
+        onClick: () => { this.setState({ ptTab: i }); const el = this.ptRailRef.current; if (el) { cancelAnimationFrame(this.ptRaf); el.scrollLeft = 0; } },
+        style: 'flex:0 0 auto;padding:9px 15px;border:1px solid ' + (ptIdx === i ? '#3CE7FF' : '#1F3244') + ';background:' + (ptIdx === i ? 'rgba(60,231,255,.1)' : 'transparent') + ';font-size:14px;white-space:nowrap;color:' + (ptIdx === i ? '#3CE7FF' : '#9FB2C3')
+      })),
+      ptItems: (ptTabs[ptIdx] ? ptTabs[ptIdx].items : []).map(p => {
+        const m = this.ptMeta(p.sku);
+        return { sku: p.sku, name: p.name, img: m.img, brand: m.brand, onOpen: () => this.go('pdp', { sku: p.sku, qty: 1, shot: 0, tab: 'desc' }) };
+      }),
 
       bestSellers: ['SGQ-VV-0012', 'SGQ-VV-0031', 'SGQ-CA-0008', 'SGQ-EC-0003', 'SGQ-VV-0090'].map(k => this.card(this.prod(k))),
       kitImg: this.group('vv').img,
