@@ -355,12 +355,19 @@ Criterios: correos de bienvenida/verificación, recuperación de contraseña, pe
 
 ### 8.1 Bloquean la arquitectura o el código (necesitan respuesta antes de implementar)
 
+**Cerradas — decididas por la dueña del proyecto, ya no bloquean nada:**
+
+| # | Pregunta | Decisión final | Dónde vive |
+|---|---|---|---|
+| ~~PA-2~~ | ¿Cuándo se descuenta el inventario? | **Tres momentos, no uno**: la pieza sigue a la venta al generar el pedido; se **aparta** al subir el comprobante; el stock físico baja al marcar **Enviado**. | `estado.md` #9, `modelo-datos.md` §1, `arquitectura.md` §9.1 |
+| ~~PA-6~~ | ¿Uno o varios administradores? | **Dos roles**: `admin` (acceso total) e `inventario` (solo catálogo/stock). | `estado.md` #11 |
+| ~~PA-4~~ | ¿Cómo se calcula el envío? | **El asesor lo confirma al marcar "Enviado"**; no se calcula en línea. | `estado.md` #12 |
+
+**Sigue abierta:**
+
 | # | Pregunta | Por qué importa | Recomendación por defecto si no hay respuesta |
 |---|---|---|---|
-| **PA-2** | ¿El inventario se descuenta al **generar** el pedido o al **validar** el comprobante? | Define el modelo de datos de stock y el riesgo de sobreventa. Es la decisión técnica más costosa de cambiar después. | **Reservar al generar el pedido**, con liberación automática si no se paga en el plazo de PA-7. Es lo que menos molesta al cliente final que ya transfirió. |
-| **PA-5** | ¿Qué proveedor para WhatsApp: Meta Cloud API oficial, Twilio, u otro? | Cambia costo mensual, tiempos de aprobación de Meta (días/semanas) y complejidad. Enviar **imágenes** por WhatsApp requiere API oficial o proveedor; no hay atajo gratuito confiable. | Diseñar la notificación detrás de una interfaz intercambiable y arrancar con **correo funcionando desde el día 1** + WhatsApp conectable después, para no bloquear el lanzamiento con los trámites de Meta. |
-| **PA-6** | ¿Un solo administrador o varios con permisos distintos? | Define si hace falta un sistema de roles desde el inicio. Agregarlo después es caro. | Construir con **roles desde el inicio** (admin / operador), con un solo usuario creado. Costo bajo ahora, costo alto después. |
-| **PA-4** | ¿Cómo se calcula o cobra el envío? | Afecta el importe exacto a transferir, que es el corazón del flujo de pago. | Mantener **"el envío se confirma con tu asesor"** y que el importe del pedido sea solo de producto, como en el demo. |
+| **PA-5** | ¿Qué proveedor para WhatsApp: Meta Cloud API oficial, Twilio, u otro? | Cambia costo mensual, tiempos de aprobación de Meta (días/semanas) y complejidad. Enviar **imágenes** por WhatsApp requiere API oficial o proveedor; no hay atajo gratuito confiable. | Ya implementado como capa intercambiable en `arquitectura.md` §7.3: correo funcionando desde el día 1, WhatsApp conectable después sin rediseñar nada. **No bloquea el arranque del código**, solo el trámite con Meta (ver §8.3). |
 
 ### 8.2 Necesitan respuesta del cliente final, pero no bloquean el arranque
 
