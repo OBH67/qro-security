@@ -37,7 +37,7 @@ Los 6 grupos principales (confirmados, sin cambio):
   - Gabinetes y Carcasas: Carcasas · Gabinetes para Paneles · Gabinetes para Sirena
   - Generadores de Niebla: (sin sub-subcategoría)
   - Protección Perimetral: Cámaras Térmicas · Cable Sensor Perimetral · Sensores de Movimiento para Exterior · Sensores de Rayo Láser y PIRs Inteligentes · Sensores Fotoeléctricos y Microondas · Transmisor RF Largo Alcance
-  - Señalamientos: (pendiente, no venía en esta captura)
+  - Señalamientos: (sin sub-subcategoría)
   - Sistemas de Emergencia: Accesorios para Puertas de Emergencia · Atención Sociosanitaria · Barras para Puertas de Emergencia · Estaciones Manuales de Emergencia · Puertas de Emergencia · Señalización
 - **Energía y Climatización (10): Baterías y Cargadores · Bombeo · Calidad de la Energía · Climatización / Refrigeración · Energía Solar · Fuentes de Poder · Gabinetes y Cajas · PDU · Protectores Sobretensiones · Respaldo de Energía** (2026-09-20; sin sub-subcategoría todavía). Todas las subcategorías que muestra la navegación tienen punto de marcado — se conservan las 10, sin descartar ninguna.
 - **Cableado Estructurado (9): Cable - Bobinas · Cableado de Cobre · Canalización · Charola · Conectores · Fibra Óptica · PDU · Racks y Gabinetes · Transceptores de Fibra / (Mini-GBICs)** (2026-09-20; sin sub-subcategoría todavía). Todas las subcategorías que muestra la navegación aplican, sin descartar ninguna.
