@@ -53,7 +53,17 @@ Los 6 grupos principales (confirmados, sin cambio):
   - Protección Perimetral: Cámaras Térmicas · Cable Sensor Perimetral · Sensores de Movimiento para Exterior · Sensores de Rayo Láser y PIRs Inteligentes · Sensores Fotoeléctricos y Microondas · Transmisor RF Largo Alcance
   - Señalamientos: (sin sub-subcategoría)
   - Sistemas de Emergencia: Accesorios para Puertas de Emergencia · Atención Sociosanitaria · Barras para Puertas de Emergencia · Estaciones Manuales de Emergencia · Puertas de Emergencia · Señalización
-- **Energía y Climatización (10): Baterías y Cargadores · Bombeo · Calidad de la Energía · Climatización / Refrigeración · Energía Solar · Fuentes de Poder · Gabinetes y Cajas · PDU · Protectores Sobretensiones · Respaldo de Energía** (2026-09-20; sin sub-subcategoría todavía). Todas las subcategorías que muestra la navegación tienen punto de marcado — se conservan las 10, sin descartar ninguna.
+- **Energía y Climatización (10 subcategorías, todas con punto de marcado — ninguna se descarta):**
+  - Baterías y Cargadores: Baterías · Cargadores de Baterías · Cargadores de Vehículos (EV Chargers) · Terminales y Accesorios
+  - Bombeo: Bombas · Variadores y Accesorios
+  - Calidad de la Energía: Accesorios para Tierra Física · Banco de Capacitores · Pararrayos · Reguladores · Supresores de Picos · Tierras Físicas
+  - Climatización / Refrigeración: Accesorios / Herramientas · Aire de Precisión (Telecom) · Boilers / Refrigeradores / Congeladores · Minisplits y Aire Acondicionado · Refacciones · Termostatos y Control HVAC
+  - Energía Solar: Accesorios / Cables / Jumpers · Baterías Solares · Controladores de Carga MPPT/PWM · Inversores Aislados (Off Grid) · Inversores Híbridos / Cargadores · Inversores Interconexión (On Grid) · Kits de Montajes Solares · Kits Solares · Módulos Solares · Microinversores · Montajes para Módulos · Piezas Montajes Solares · Protecciones Vcc
+  - Fuentes de Poder: Accesorios / Divisores / Conectores · Convertidores (Vcc a Vcc) · Eliminadores y Transformadores de Pared · Fuente de Alimentación con Respaldo · Fuentes con Distribuidor · Fuentes de Salida Única · Fuentes de Uso Industrial / Riel DIN · Fuentes en Kit
+  - Gabinetes y Cajas: Cajas para Conexiones / Registros · Gabinetes para Exterior / Interior · Gabinetes y Accesorios Antiexplosión · Glándulas y Accesorios
+  - PDU: Básicos · Especializados
+  - Protectores Sobretensiones: Protección Térmica
+  - Respaldo de Energía: Accesorios · Estaciones de Energía Portables · Generadores de Diesel · Generadores de Gasolina · Remolques para Energía Solar · UPS / No Break
 - **Cableado Estructurado (9): Cable - Bobinas · Cableado de Cobre · Canalización · Charola · Conectores · Fibra Óptica · PDU · Racks y Gabinetes · Transceptores de Fibra / (Mini-GBICs)** (2026-09-20; sin sub-subcategoría todavía). Todas las subcategorías que muestra la navegación aplican, sin descartar ninguna.
 - **GPS, Telemática y Equipamiento Vehicular (1): Video Móvil y Cámaras Vehiculares** (2026-09-20; sin sub-subcategoría todavía). De todas las que muestra la navegación (barras de luz, estrobos, IoT/GPS/Telemática, LoRaWAN, luces auxiliares, señalización industrial, sirenas...), solo esta aplica al catálogo de SG Querétaro.
 
