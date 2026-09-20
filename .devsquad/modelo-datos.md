@@ -664,10 +664,10 @@ una URL pública adivinable.
 
 Se suman a las 11 que ya están en `.devsquad/requerimientos.md`.
 
-- **PA-12 · Subcategorías y sub-subcategorías de los 6 grupos** — **reiniciada
-  (2026-09-20)**: toda la información de subcategorías se eliminó a petición
-  de la dueña (versiones anteriores con inconsistencias) y se está
-  recapturando desde cero. Ver `docs/contexto-negocio.md` §3 y `estado.md`.
+- ~~**PA-12 · Subcategorías de los 6 grupos**~~ — **cerrada (2026-09-20)**:
+  subcategorías (segundo nivel) confirmadas para los 6 grupos. Ver
+  `docs/contexto-negocio.md` §3. **Sigue pendiente el tercer nivel
+  (sub-subcategoría) de todos los grupos** — ninguno lo tiene todavía.
 - **PA-13 · Marcas reales:** el demo usa "Marca Demo A/B/C". ¿Cuál es el catálogo
   real de marcas que distribuye SG Querétaro? Sigue abierta.
 - **PA-14 · Reseñas:** ¿se van a habilitar reseñas reales de clientes (requiere

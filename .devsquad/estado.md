@@ -91,6 +91,21 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
     (`parent_id`, `modelo-datos.md` D7) — es una capacidad general del
     esquema, no depende de qué subcategorías termine teniendo cada grupo, y
     ya se confirmó que al menos un grupo va a necesitar un tercer nivel.
+22. **PA-1/PA-12 cerradas — subcategorías de los 6 grupos completas
+    (2026-09-20):** recapturadas desde cero, cada una filtrada por el punto
+    de marcado en la app de referencia (solo lo marcado aplica; lo repetido
+    en el traslape entre dos capturas del mismo grupo se cuenta una vez, no
+    se descarta). Resultado final, ver `docs/contexto-negocio.md` §3:
+    - Videovigilancia: 10 (de 11 — se descarta "Drones, Robots e Industrial")
+    - Control de Acceso: 14 (de 21)
+    - Automatización e Intrusión: 10 (de 19)
+    - Energía y Climatización: 10 (de 10, todas aplican)
+    - Cableado Estructurado: 9 (de 9, todas aplican)
+    - GPS, Telemática y Equipamiento Vehicular: 1 (de ~19 — solo "Video
+      Móvil y Cámaras Vehiculares")
+
+    **Pendiente para todos:** el tercer nivel (sub-subcategoría) — ninguno
+    lo tiene todavía. Se recaptura después, mismo criterio de marcado.
 
 ## Nota de sesión
 

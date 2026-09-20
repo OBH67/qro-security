@@ -71,7 +71,7 @@ Criterios de aceptación:
 3. Un producto sin stock aparece marcado como "Agotado" y no se puede agregar al pedido.
 4. Un producto inactivo no aparece en ninguna vista pública, ni siquiera por URL directa.
 5. El listado pagina o carga por bloques: nunca se cargan los ~1,050 productos de golpe.
-6. Los 6 grupos existen aunque sus subcategorías estén pendientes de recapturarse ⚠ PA-1 (reiniciado 2026-09-20).
+6. Los 6 grupos y sus subcategorías finales están confirmados (2026-09-20, ver `docs/contexto-negocio.md` §3 — PA-1 cerrada).
 
 **A2 · Buscar por producto, marca o SKU** — `V1` · `M` · Dep. A1
 > Como visitante quiero buscar por nombre, marca o SKU para encontrar un equipo específico rápido.
@@ -409,12 +409,12 @@ Criterios:
 | ~~PA-7~~ | ¿Se cancela automáticamente un pedido no pagado? | **Sí, 3 días** desde que se generó el pedido, con recordatorio por correo al día 2 (2026-09-20). Configurable en H4. |
 | ~~PA-9~~ | Si el saldo cubre el 100%, ¿se acepta sin comprobante? | **Sí se acepta sin comprobante, pero no avanza automático**: entra igual a revisión del admin (RN-11, §5). |
 | ~~PA-10~~ | ¿El producto devuelto reingresa al inventario vendible? | **Sí reingresa, pero nunca como nuevo.** Ver D2.7 y `modelo-datos.md` D6 — se reclasifica como **Usado**, con motivo, precio y stock propios (2026-09-20). |
+| ~~PA-1~~ | Subcategorías finales de los 6 grupos | **Cerrada (2026-09-20), los 6 grupos:** Videovigilancia (10), Control de Acceso (14), Automatización e Intrusión (10), Energía y Climatización (10), Cableado Estructurado (9), GPS Telemática y Equipamiento Vehicular (1). Detalle completo en `docs/contexto-negocio.md` §3. |
 
 **Siguen abiertas:**
 
 | # | Pregunta | Efecto |
 |---|---|---|
-| **PA-1** | Subcategorías finales de los 6 grupos (reiniciado 2026-09-20, ver `docs/contexto-negocio.md` §3). **Cerradas: Automatización e Intrusión (10), Control de Acceso (14), Energía y Climatización (10), Videovigilancia (10), Cableado Estructurado (9).** Falta solo GPS, Telemática y Equipamiento Vehicular. | Son datos, no estructura. Se cargan cuando lleguen. |
 | **PA-8** | Métricas exactas de analítica además de más/menos vendidos. | G1 cubre lo mínimo; G2 se ajusta con la respuesta. |
 | **PA-5b** | Canal para las solicitudes de servicio: ¿correo, WhatsApp o ambos? | Sugerido: correo en v1, WhatsApp cuando PA-5 quede resuelto. |
 | **PA-11** | ¿Existe ya el catálogo en algún archivo (Excel, ERP, sitio del distribuidor)? | Determina qué tan real es F2 y cuánto trabajo manual de captura habrá. **Es la pregunta de mayor impacto en el calendario de lanzamiento.** |
