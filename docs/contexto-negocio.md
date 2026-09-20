@@ -74,7 +74,16 @@ Los 6 grupos principales (confirmados, sin cambio):
   - PDU: Básicos · Especializados
   - Protectores Sobretensiones: Protección Térmica
   - Respaldo de Energía: Accesorios · Estaciones de Energía Portables · Generadores de Diesel · Generadores de Gasolina · Remolques para Energía Solar · UPS / No Break
-- **Cableado Estructurado (9): Cable - Bobinas · Cableado de Cobre · Canalización · Charola · Conectores · Fibra Óptica · PDU · Racks y Gabinetes · Transceptores de Fibra / (Mini-GBICs)** (2026-09-20; sin sub-subcategoría todavía). Todas las subcategorías que muestra la navegación aplican, sin descartar ninguna.
+- **Cableado Estructurado (9 subcategorías, todas aplican):**
+  - Cable - Bobinas: Categoría 5e · Categoría 6 · Categoría 6A · Categoría 7A
+  - Cableado de Cobre: Cajas Superficiales · Faceplates · Herramientas · Jacks / Plugs · Patch Cords · Patch Panels
+  - Canalización: Accesorios para Canaletas · Canaletas · Cinchos / Corbatas · Ducto Cuadrado · Fijación · Tubería Metálica CONDUIT / Accesorios · Tubería PVC / Registros · PVC
+  - Charola: Accesorios · Charola Mallafil · Charola para Fibra Óptica · Charola Tubular · Charolas Tipo Escalerilla · Charolas Tipo Malla · Charolas Tipo Malla Bimetálica · Curvas Pre-Fabricadas · Montajes · Tapas para Charolas · Uniones
+  - Conectores: Para Redes RJ-45
+  - Fibra Óptica: Cable · Conectores · Distribuidores de Fibra Óptica · Herramientas · Jumpers y Pigtails
+  - PDU: Básicos · Fuente Redundante (ATS) · Medibles · Monitoreables · Switcheables
+  - Racks y Gabinetes: Accesorios para Rack/Gabinetes · Gabinetes para Exterior · Gabinetes para Montaje en Pared · Racks Abiertos · Racks Cerrados
+  - Transceptores de Fibra / (Mini-GBICs): 100G Duplex · 10G Duplex · 1G Duplex · 200G Duplex · 25G Duplex · 400G Duplex · 40G Duplex · BiDi (1G/10G) · Cables DAC & AOC · Industrial BiDi · Industrial Duplex · RJ45 SFP
 - **GPS, Telemática y Equipamiento Vehicular (1): Video Móvil y Cámaras Vehiculares** (2026-09-20; sin sub-subcategoría todavía). De todas las que muestra la navegación (barras de luz, estrobos, IoT/GPS/Telemática, LoRaWAN, luces auxiliares, señalización industrial, sirenas...), solo esta aplica al catálogo de SG Querétaro.
 
 Un producto pertenece a un grupo y una subcategoría, y necesita al menos: SKU, nombre, marca, precio (con IVA incluido), stock disponible, fotos, especificaciones técnicas y estado (activo/agotado).
