@@ -37,9 +37,17 @@
   (1 GB, 5 GB egress/mes) se queda corto para el catálogo, y R2 no cobra
   egress, lo cual importa porque cada visita al catálogo genera tráfico de
   salida constante. Solo la URL del archivo se guarda en Supabase; el binario
-  vive en R2. Estimado de costo con este stack: $0/mes en operación normal,
-  con margen amplio antes de empezar a pagar algo.
-- Despliegue esperado: Vercel (a confirmar/formalizar en `arquitectura.md`).
+  vive en R2.
+- Despliegue: **Vercel**, confirmado en `arquitectura.md` §1.1.
+
+> **Corrección de costo (arquitectura, 2026-09-20):** la estimación original de
+> "$0/mes" solo aplica **durante el desarrollo**. Para producción, el plan
+> gratis de Vercel prohíbe uso comercial y el de Supabase no hace respaldos ni
+> mantiene el proyecto activo sin tráfico — hace falta subir ambos a plan de
+> pago antes de lanzar, más un dominio propio. Costo real de producción:
+> **~$45–47 USD/mes** (Vercel Pro $20 + Supabase Pro $25 + dominio ~$15/año).
+> R2 y el resto del stack sí se mantienen en $0. Detalle completo y
+> justificación en `.devsquad/arquitectura.md` §11.2 y §14 (AR-1 a AR-3).
 
 Restricciones ya conocidas que la arquitectura debe respetar:
 - Catálogo de ~1,000–1,050 SKUs con fotos y especificaciones técnicas.

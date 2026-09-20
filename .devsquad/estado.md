@@ -13,7 +13,7 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 - [x] **Contexto de negocio** — documento de la dueña guardado en `docs/contexto-negocio.md`.
 - [x] **Requerimientos (BSA)** — `.devsquad/requerimientos.md`: 8 épicas, 27 historias con criterios de aceptación, 10 reglas de negocio, requisitos no funcionales, alcance V1/V1.5/Futuro, 11 preguntas abiertas y matriz de riesgos.
 - [x] **Modelo de datos** — `.devsquad/modelo-datos.md`: esquema completo derivado de una revisión a fondo de `index.html`, con 20 hallazgos que el documento de negocio no cubría, 5 decisiones de modelado con su trade-off, políticas de RLS y rutas de archivos en R2. **La data del demo es dummy:** solo prueba qué campos necesita la interfaz, nunca volúmenes, marcas ni contenidos reales del catálogo.
-- [ ] **Arquitectura** — Stack y modelo de datos ya definidos; falta formalizar `arquitectura.md` (estructura de carpetas, capas, variables de entorno, atributos no funcionales).
+- [x] **Arquitectura** — `.devsquad/arquitectura.md`: monolito modular en capas, estructura de carpetas completa, tres clientes de Supabase (con 4 candados sobre la service role key), dos buckets en R2, notificaciones con patrón outbox, 9 decisiones de arquitectura con su trade-off (la central: `products.reserved` + función SQL con `FOR UPDATE` para cero sobreventas), 28 variables de entorno, ANF inferidos, y costo real de producción corregido: **~$45–47 USD/mes** (Vercel Pro $20 + Supabase Pro $25 + dominio ~$15/año), no $0 como se había estimado — el desarrollo sí es $0.
 - [ ] **Diseño de UI del panel administrativo** — el sitio público ya tiene diseño (demo de Claude Design); el panel admin no. Se hace después de arquitectura y antes de código.
 - [ ] **Preparación del entorno** — pendiente (skill `preparar-entorno`), justo antes de implementar.
 - [ ] **Implementación** — pendiente.
@@ -44,6 +44,15 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 12. **Envío (2026-09-20):** el asesor confirma el envío y en ese acto marca
     el pedido como "Enviado". El costo de envío no se calcula en línea;
     `orders.shipping_cost` queda nulo hasta que el asesor lo captura.
+13. **Corrección de inventario (2026-09-20):** el apartado de stock ocurre al
+    SUBIR el comprobante (no al generar el pedido). El stock físico sigue
+    bajando solo al marcar "Enviado". Ver `modelo-datos.md` §1 y
+    `arquitectura.md` §9.1 para la implementación transaccional.
+14. **Despliegue confirmado (arquitectura, 2026-09-20):** Vercel. Pendiente
+    de decisión de la dueña: subir a plan Pro antes de producción (AR-1),
+    Supabase Pro antes de producción (AR-2), y contratar dominio propio ya
+    (AR-3, es lo único que bloquea — afecta CDN de imágenes y que el correo
+    con datos bancarios no caiga en spam). Ver `arquitectura.md` §14.
 
 ## Nota de sesión
 
