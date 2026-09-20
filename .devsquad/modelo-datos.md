@@ -9,10 +9,30 @@ Se derivó de una revisión a fondo de `index.html` (el demo de Claude Design), 
 contiene toda la dummy data con la que debe operar el sitio, cruzada contra
 `docs/contexto-negocio.md` y `.devsquad/requerimientos.md`.
 
-El demo es la fuente más confiable del modelo porque muestra **campos que el
-documento de negocio no menciona** pero que la UI ya está usando. La sección 2
-lista esos hallazgos: son la razón por la que valía la pena revisar el HTML antes
-de diseñar tablas.
+El demo es la fuente más confiable de la **estructura** del modelo porque muestra
+campos que el documento de negocio no menciona pero que la UI ya está usando. La
+sección 2 lista esos hallazgos: son la razón por la que valía la pena revisar el
+HTML antes de diseñar tablas.
+
+> ### ⚠️ La data del demo es dummy, no es verídica
+>
+> Todo lo que aparece en `index.html` es data de relleno para que el demo se vea
+> completo. **No representa el catálogo real de SG Querétaro y no se puede usar
+> para estimar volúmenes, valores ni contenidos.**
+>
+> Lo que el demo sí prueba es **qué campos necesita la interfaz**: si la pantalla
+> de producto muestra una galería, el modelo necesita soportar varias fotos. Eso
+> es una conclusión válida sobre la estructura.
+>
+> Lo que el demo **no** prueba: cuántas fotos tiene realmente cada producto, cuáles
+> son las marcas, cuántas subcategorías existen, qué atributos se filtran, si hay
+> fichas técnicas en PDF, ni si el cliente tiene reseñas reales.
+>
+> Regla de lectura de este documento: donde aparezca un número o un nombre
+> tomado del demo (5 fotos, "Marca Demo A", 7 subcategorías de Cableado), léase
+> como **capacidad de la interfaz pendiente de confirmar con el cliente**, nunca
+> como un hecho del catálogo. Cada uno de esos puntos tiene su pregunta abierta
+> en la sección 7.
 
 Ubicación de la data en el demo: `index.html` líneas 1875–2753 (clase
 `Component`), principalmente `products` (1935), `groups` (1926), `state.orders`
@@ -26,8 +46,13 @@ generadores de formularios `regFields` (2580), `srvFields` (2474) y
 
 Estas tres respuestas cambian el modelo y quedan reflejadas en él:
 
-1. **El inventario se descuenta cuando el administrador marca el pedido como
-   "Enviado"**, no al generar el pedido ni al validar el comprobante.
+1. **El inventario tiene dos momentos distintos**, aclarados por la dueña:
+   - **Al generar el pedido no pasa nada**: si el cliente arma un pedido pero no
+     manda comprobante, la pieza sigue disponible para todos los demás.
+   - **Al subir el comprobante, la pieza sale de disponibilidad** (queda
+     apartada para ese pedido).
+   - **Al marcar "Enviado", baja el stock físico** del almacén.
+
    Adicionalmente, la validación del pago puede hacerse desde un **enlace simple
    en el correo** que recibe el administrador, sin entrar al panel.
 2. **Dos roles:** `admin` (acceso total) e `inventario` (solo carga y edición de
@@ -35,23 +60,46 @@ Estas tres respuestas cambian el modelo y quedan reflejadas en él:
 3. **El envío lo confirma el asesor al momento de enviar**, y en ese mismo acto
    marca el pedido como "Enviado". El costo de envío no se calcula en línea.
 
-### Consecuencia importante de la decisión 1 (sobreventa)
+### Cómo se traduce esa regla al modelo
 
-Si el stock solo baja al marcar "Enviado", un producto puede estar pagado por un
-cliente y seguir apareciendo como disponible para otros. Con una sola pieza en
-almacén, dos clientes pueden pagarla.
+Se manejan dos números distintos, nunca uno solo:
 
-El modelo lo resuelve **sin cambiar tu decisión**, separando dos números:
+- **`products.stock`** — piezas físicas en el almacén. Solo baja cuando el pedido
+  se marca "Enviado".
+- **Stock disponible** (calculado, no almacenado) — `stock` menos las piezas
+  apartadas. Es lo que el cliente ve en el catálogo.
 
-- `products.stock` — piezas físicas en almacén. Solo baja al marcar "Enviado",
-  exactamente como pediste.
-- `stock_disponible` (calculado, no almacenado) — `stock` menos las piezas de
-  pedidos ya pagados que todavía no se envían. Es lo que ve el cliente en el
-  catálogo.
+Una pieza está **apartada** cuando pertenece a un pedido en estado
+`comprobante_recibido` o `listo_envio`: ya hay un comprobante subido, pero el
+producto todavía no sale del almacén.
 
-Trade-off: el catálogo muestra un número ligeramente más conservador que el
-almacén físico, a cambio de no vender dos veces la misma pieza. El panel admin
-muestra los dos números para que el dueño vea la diferencia.
+```
+stock_disponible = products.stock
+                 − SUM(order_items.qty)
+                   de pedidos en estado comprobante_recibido o listo_envio
+```
+
+Recorrido de una pieza única (stock = 1):
+
+| Momento | Stock físico | Apartado | Disponible en catálogo |
+|---|---|---|---|
+| Nadie la ha pedido | 1 | 0 | **1** |
+| Un cliente genera el pedido, sin comprobante | 1 | 0 | **1** (sigue a la venta) |
+| El cliente sube su comprobante | 1 | 1 | **0** (sale de disponibilidad) |
+| El admin valida el pago (listo para envío) | 1 | 1 | **0** |
+| El admin marca "Enviado" | 0 | 0 | **0** |
+
+**Liberación de piezas apartadas.** El apartado se suelta solo en dos casos:
+cuando el administrador **rechaza** el comprobante, y cuando el pedido se
+**cancela**. Ambos devuelven la pieza al catálogo automáticamente, porque el
+disponible es un cálculo, no un contador que alguien tenga que corregir a mano.
+
+Trade-off asumido: entre que el cliente genera el pedido y sube su comprobante,
+la pieza sigue a la venta, así que dos clientes pueden llegar a comprometerla. Es
+la decisión correcta para este negocio —apartar inventario por pedidos que quizá
+nunca se paguen congelaría el catálogo—, pero implica que el administrador puede
+toparse ocasionalmente con dos comprobantes para la última pieza. El panel debe
+mostrarle el disponible real al validar para que lo detecte antes de aceptarlo.
 
 ### Consecuencia importante del enlace de confirmación por correo
 
@@ -67,12 +115,16 @@ predecible tipo `/confirmar?pedido=SGQ-00248`.
 
 Esto es lo que justifica haber revisado el HTML primero.
 
+Cada hallazgo se lee como **"la interfaz necesita soportar esto"**, no como
+"el catálogo real es así". Los valores concretos del demo son de relleno y están
+listados como preguntas abiertas en la sección 7.
+
 | # | Hallazgo en el demo | Impacto en el modelo |
 |---|---|---|
-| 1 | **Las subcategorías de Cableado Estructurado y GPS ya están inventadas** en el demo (7 y 6 respectivamente, `index.html:1931-1932`), aunque el documento de negocio las marca como "pendiente, el cliente enviará". | Hay que confirmarlas con el cliente: o son buenas y se adoptan, o se reemplazan. No están vacías. |
+| 1 | **El demo rellenó las subcategorías de Cableado Estructurado y GPS** (7 y 6, `index.html:1931-1932`), que el documento de negocio marca como "pendiente, el cliente enviará". Son inventadas, no vienen del cliente. | Sirven como borrador para que el cliente confirme o corrija. No asumir que son las correctas. |
 | 2 | **Marca aparece como filtro y en la ficha técnica, pero no existe como campo** en `products` (usa el texto fijo "Marca Demo"). | Requiere tabla `brands` y `products.brand_id`. El documento de negocio sí la pide. |
-| 3 | **Cada producto tiene 5 fotos** (miniaturas V-1 a V-5, `index.html:2357`), no una. | Tabla `product_images` con orden y foto principal. |
-| 4 | **Cada producto tiene documentos descargables**: ficha técnica y manual de instalación en PDF (`index.html:2352`). No se mencionan en el documento de negocio. | Tabla `product_documents`. También viven en R2. |
+| 3 | **La ficha de producto tiene galería**, no una sola foto (el demo dibuja 5 miniaturas de relleno, `index.html:2357`). | Tabla `product_images` con orden y foto principal, sin fijar cuántas. Cuántas fotos existen de verdad por SKU está en PA-20. |
+| 4 | **La ficha ofrece documentos descargables**: ficha técnica y manual en PDF (`index.html:2352`). No se mencionan en el documento de negocio. | Tabla `product_documents`, archivos en R2. Si el cliente no los tiene, la pestaña simplemente va vacía (PA-19). |
 | 5 | **La ficha técnica es tabla llave/valor** (SKU, Marca, Especificación principal, Secundaria, Terciaria, Garantía, Peso), no una lista plana de strings como sugiere `specs:['4 MP','IR 30 m','IP67']`. | Atributos estructurados en JSONB, más `warranty_months` y `weight_kg` como campos propios. |
 | 6 | **"Qué incluye"**: lista de contenido de la caja (`index.html:2356`). | Campo `includes` en productos. |
 | 7 | **Los filtros son por faceta y dependen de la categoría**: Resolución (2/4/8 MP), Tipo (Bala/Domo/PTZ), Uso (Interior/Exterior) sirven para cámaras, pero no para cable ni paneles solares (`index.html:2316-2321`). | Atributos flexibles en JSONB + tabla que define qué atributos se filtran en cada categoría. Ver decisión D1. |
@@ -533,7 +585,11 @@ Se suman a las 11 que ya están en `.devsquad/requerimientos.md`.
 - **PA-18 · Vigencia del saldo a favor:** el propio demo lo marca como "dato por
   confirmar con el cliente".
 - **PA-19 · Documentos de producto:** ¿el cliente tiene fichas técnicas y manuales
-  en PDF para los ~1,050 SKU, o eso se llena después?
+  en PDF para sus SKU, o eso se llena después?
+- **PA-20 · Volumen real de imágenes:** ¿cuántas fotos hay por producto en
+  promedio, y en qué formato/resolución vienen? Es lo que determina el tamaño
+  real del almacenamiento en R2 y el esfuerzo de la carga inicial. El demo no
+  aporta ningún dato confiable sobre esto.
 
 ---
 
