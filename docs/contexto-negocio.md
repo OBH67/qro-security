@@ -27,7 +27,21 @@
 
 Los 6 grupos principales (confirmados, sin cambio):
 - **Videovigilancia (10): Cámaras IP y NVRs · Cámaras y DVRs HD TurboHD / AHD / HD-TVI · Cables y Conectores · Energía · Kits - Sistemas Completos · Monitores Pantallas y Mobiliario · Servidores / Almacenamiento · Software VMS y Analíticas · Videograbadoras Móviles, Dash Cams y Body Cams · Videoporteros e Interfonos** (2026-09-20; sin sub-subcategoría todavía). De las 11 que muestra la navegación, solo "Drones, Robots e Industrial" no tiene punto de marcado y se descarta.
-- **Control de Acceso (14): Acceso vehicular · Accesorios · Administración de Hoteles · Biométricos · Cerraduras · Fuentes de Alimentación · Inspección por Rayos X y Explosivos · Lectoras y Tarjetas · Paneles de Control de Acceso · Protección Contra Descargas · Sistemas de Emergencia · Software de Asistencia · Torniquetes y Puertas de Cortesía · Videoporteros e Interfonos** (2026-09-20; sin sub-subcategoría todavía). Filtrado por punto de marcado en la app de referencia — de las 21 subcategorías que muestra la navegación, solo estas 14 aplican; las otras 7 (Control de Rondas Para Vigilantes, Detectores de Metal, Equipo Blindado, Identificación y Credencialización, Protección de Mercancía (EAS), Refacciones, Teclados Autónomos) se descartan.
+- **Control de Acceso (14 subcategorías, filtrado por punto de marcado — de las 21 que muestra la navegación, se descartan Control de Rondas Para Vigilantes, Detectores de Metal, Equipo Blindado, Identificación y Credencialización, Protección de Mercancía (EAS), Refacciones, Teclados Autónomos):**
+  - Acceso vehicular: Accesorios · Barreras Vehiculares · Pilonas o Bolardos · Puertas Abatibles y Corredizas · Refacciones · Semáforos, Radares y Señalización · Topes, Picos y Reductores
+  - Accesorios: Bisagras y Pasacables · Botones de Salida · Cables para Control de Acceso · Cierrapuertas · Contactos Magnéticos · Controles Inalámbricos · Mobiliario de Apoyo · Sensores para Puertas Automáticas · Tarjetas de Relevador · Tarjetas y Tags
+  - Administración de Hoteles: (sin sub-subcategoría)
+  - Biométricos: Accesorios · Enroladores y Lectores USB · Para Control de Acceso · Para Tiempo y Asistencia / Checadores
+  - Cerraduras: Accesorios · Autónomas / Inteligentes · Cerrojos y Candados Digitales · Chapas y Contrachapas · Eléctricas · Mecánicas y de Perno
+  - Fuentes de Alimentación: Baterías · Fuentes de Respaldo · Transformadores
+  - Inspección por Rayos X y Explosivos: Escaneo Corporal · Sistemas de Inspección por Rayos X
+  - Lectoras y Tarjetas: Bluetooth · Enroladores y Lectores USB · MIFARE®/iCLASS (13.56 MHz) · NFC / QR · Proximidad (125 KHz) · SEOS · UHF/ RFID
+  - Paneles de Control de Acceso: Accesorios · Controladores de Acceso · Licencias y Softwares
+  - Protección Contra Descargas: Coaxial · Corriente Alterna y Directa · Redes
+  - Sistemas de Emergencia: Barras y Accesorios para Puertas de Emergencia · Estaciones y Señalización de Emergencia · Puertas de Emergencia
+  - Software de Asistencia: Control de Acceso · Estacionamientos · Tiempo y Asistencia
+  - Torniquetes y Puertas de Cortesía: Puertas de Cortesía · Refacciones · Torniquetes (Cuerpo Completo y Medio)
+  - Videoporteros e Interfonos: Accesorios · Intercomunicadores e Interfonos · Intercomunicadores por Radio · Multiapartamentos · Videoporteros Analógicos · Videoporteros IP
 - **Automatización e Intrusión (10 subcategorías, filtrado por punto de marcado — de las 19 que muestra la navegación, se descartan Centrales de Monitoreo, Contactos Magnéticos, Detectores / Sensores, Lutron, Módulos de Expansión, Paneles de Alarma, Paneles de Alarma y Accesorios Hikvision, Teclados, Total Connect Honeywell):**
   - Accesorios: Botones de Pánico · Controles Remotos · Estaciones de Jalón · Sirenas y Estrobos
   - Automatización - Casa Inteligente: Apagadores y Atenuadores Inteligentes · Cámaras Wi-Fi Inteligentes · Cerraduras Inteligentes · Climatización y Termostatos · Difusores y Aromatización Inteligente · Enchufes y Contactos Inteligentes · Focos y Tiras LED Inteligentes · Garage · Hubs, Gateways y Pantallas de Control · Persianas y Cortinas Inteligentes · Sensores y Relevadores · Videoporteros y Timbres Inteligentes · Z-Wave · Zigbee
