@@ -451,6 +451,7 @@ Criterios:
 | **PA-8** | Métricas exactas de analítica además de más/menos vendidos. | G1 cubre lo mínimo; G2 se ajusta con la respuesta. |
 | **PA-5b** | Canal para las solicitudes de servicio: ¿correo, WhatsApp o ambos? | Sugerido: correo en v1, WhatsApp cuando PA-5 quede resuelto. |
 | **PA-11** | ¿Existe ya el catálogo en algún archivo (Excel, ERP, sitio del distribuidor)? | Determina qué tan real es F2 y cuánto trabajo manual de captura habrá. **Es la pregunta de mayor impacto en el calendario de lanzamiento.** |
+| **PA-21** | La portada de `index.html` incluye un banner ancho "Arma tu sistema completo" con un producto/kit fijo, precio y CTA propios (l. 421-441) — no corresponde a ningún kit real, es contenido de demostración con un SKU inventado. ¿Existe un concepto real de "kit destacado" o "producto de la semana" que el admin deba poder fijar desde el panel, o se descarta? | Ninguna tabla de `modelo-datos.md` lo modela (no es lo mismo que `banners`, que es el carrusel de la portada). Mientras no se resuelva, el incremento de catálogo público (Épica A, 2026-09-20) **omite esta sección** en vez de inventar una tabla o un producto fijo. |
 
 ### 8.3 Dependencias externas a gestionar desde ya (tardan, no dependen del código)
 
