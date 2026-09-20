@@ -443,6 +443,7 @@ Criterios:
 | ~~PA-9~~ | Si el saldo cubre el 100%, ¿se acepta sin comprobante? | **Sí se acepta sin comprobante, pero no avanza automático**: entra igual a revisión del admin (RN-11, §5). |
 | ~~PA-10~~ | ¿El producto devuelto reingresa al inventario vendible? | **Sí reingresa, pero nunca como nuevo.** Ver D2.7 y `modelo-datos.md` D6 — se reclasifica como **Usado**, con motivo, precio y stock propios (2026-09-20). |
 | ~~PA-1~~ | Subcategorías finales de los 6 grupos | **Cerrada (2026-09-20), los 6 grupos:** Videovigilancia (10), Control de Acceso (14), Automatización e Intrusión (10), Energía y Climatización (10), Cableado Estructurado (9), GPS Telemática y Equipamiento Vehicular (1). Detalle completo en `docs/contexto-negocio.md` §3. |
+| ~~PA-21~~ | Banner "Arma tu sistema completo" de `index.html` (producto/kit fijo inventado). | **Se descarta (2026-09-20).** No existe un concepto real de "kit destacado"; la sección se elimina de la portada en vez de construirse. |
 
 **Siguen abiertas:**
 
@@ -451,7 +452,6 @@ Criterios:
 | **PA-8** | Métricas exactas de analítica además de más/menos vendidos. | G1 cubre lo mínimo; G2 se ajusta con la respuesta. |
 | **PA-5b** | Canal para las solicitudes de servicio: ¿correo, WhatsApp o ambos? | Sugerido: correo en v1, WhatsApp cuando PA-5 quede resuelto. |
 | **PA-11** | ¿Existe ya el catálogo en algún archivo (Excel, ERP, sitio del distribuidor)? | Determina qué tan real es F2 y cuánto trabajo manual de captura habrá. **Es la pregunta de mayor impacto en el calendario de lanzamiento.** |
-| **PA-21** | La portada de `index.html` incluye un banner ancho "Arma tu sistema completo" con un producto/kit fijo, precio y CTA propios (l. 421-441) — no corresponde a ningún kit real, es contenido de demostración con un SKU inventado. ¿Existe un concepto real de "kit destacado" o "producto de la semana" que el admin deba poder fijar desde el panel, o se descarta? | Ninguna tabla de `modelo-datos.md` lo modela (no es lo mismo que `banners`, que es el carrusel de la portada). Mientras no se resuelva, el incremento de catálogo público (Épica A, 2026-09-20) **omite esta sección** en vez de inventar una tabla o un producto fijo. |
 
 ### 8.3 Dependencias externas a gestionar desde ya (tardan, no dependen del código)
 
