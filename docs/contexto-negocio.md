@@ -28,7 +28,7 @@
 Los 6 grupos principales (confirmados, sin cambio):
 - Videovigilancia — subcategorías pendientes de recapturar
 - Control de Acceso — subcategorías pendientes de recapturar
-- **Automatización e Intrusión: Accesorios · Automatización - Casa Inteligente · Cables · Centrales de Monitoreo · Cercas Eléctricas · Contactos Magnéticos · Detectores / Sensores · Energía · Gabinetes y Carcasas · Generadores de Niebla · Lutron · Módulos de Expansión · Paneles de Alarma · Paneles de Alarma y Accesorios Hikvision · Protección Perimetral · Señalamientos · Sistemas de Emergencia · Teclados · Total Connect Honeywell** (2026-09-20; sin sub-subcategoría todavía)
+- **Automatización e Intrusión (10): Accesorios · Automatización - Casa Inteligente · Cables · Cercas Eléctricas · Energía · Gabinetes y Carcasas · Generadores de Niebla · Protección Perimetral · Señalamientos · Sistemas de Emergencia** (2026-09-20; sin sub-subcategoría todavía). Filtrado por punto morado de marcado en la app de referencia — de las 19 subcategorías que muestra la navegación, solo estas 10 aplican al catálogo de SG Querétaro; las otras 9 (Centrales de Monitoreo, Contactos Magnéticos, Detectores / Sensores, Lutron, Módulos de Expansión, Paneles de Alarma, Paneles de Alarma y Accesorios Hikvision, Teclados, Total Connect Honeywell) se descartan.
 - Energía y Climatización — subcategorías pendientes de recapturar
 - Cableado Estructurado — subcategorías pendientes de recapturar
 - GPS, Telemática y Equipamiento Vehicular — subcategorías pendientes de recapturar
