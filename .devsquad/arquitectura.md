@@ -959,7 +959,7 @@ decidido en `perfil.md` o `estado.md`.
 | **AR-1** | **Vercel Pro, $20 USD/mes.** El plan gratis prohíbe el uso comercial | Cumplimiento de términos + crons frecuentes | Aceptar. Alternativa: VPS a ~$6/mes, pero alguien tiene que administrarlo | No bloquea el desarrollo; **sí el lanzamiento** |
 | **AR-2** | **Supabase Pro, $25 USD/mes antes de producción.** El plan gratis no hace respaldos y pausa el proyecto tras 7 días sin tráfico | Sin respaldos no se cumple el RPO de 24 h de §2 | Desarrollar en el plan gratis; subir a Pro la semana previa al lanzamiento | No bloquea el desarrollo; **sí el lanzamiento** |
 | **AR-3** | **Dominio propio** (~$15 USD/año) con DNS en Cloudflare | Necesario para el CDN de imágenes **y** para que los correos con datos bancarios no caigan en spam | Contratarlo ya: la propagación de DNS y la verificación de correo tardan días | **Sí** — el correo transaccional es parte del flujo central |
-| **AR-4** | **Formato del folio:** aleatorio corto (`SGQ-7K4M2X`) o secuencial como el demo (`SGQ-00248`) | El secuencial es más fácil de dictar, pero publica el volumen de ventas | Aleatorio (§9.2). Cambio de una línea si prefiere el otro | No |
+| ~~AR-4~~ | **Formato del folio.** **Confirmado por la dueña (2026-09-20): aleatorio corto** (`SGQ-7K4M2X`, §9.2), tal como se recomendó | — | — | Cerrado |
 | **AR-5** | **Verificación de correo no bloquea la compra** (§9.9) | Se decidió priorizar conversión; la dueña puede preferir el filtro | Dejar como está; activar el bloqueo si aparecen pedidos falsos | No |
 
 Las preguntas **PA-1 a PA-20** de `requerimientos.md` y `modelo-datos.md` siguen vigentes

@@ -17,13 +17,75 @@
 2. Panel administrativo (dueño): pedidos, stock, catálogo, analítica de ventas. Aún no tiene diseño de UI; este documento define su alcance funcional.
 
 ## 3. Catálogo de productos
-Grupos principales y sus subcategorías (las que el cliente ya confirmó):
-- Videovigilancia: Cámaras IP y NVRs · Cámaras y DVRs HD TurboHD/AHD/HD-TVI · Cables y Conectores · Energía · Kits - Sistemas Completos · Monitores, Pantallas y Mobiliario · Servidores/Almacenamiento · Software VMS y Analíticas · Videograbadoras Móviles, Dash Cams y Body Cams · Videoporteros e Interfonos
-- Control de Acceso: Acceso Vehicular · Accesorios · Administración de Hoteles · Biométricos · Cerraduras · Fuentes de Alimentación · Identificación y Credencialización · Inspección por Rayos X y Explosivos · Lectoras y Tarjetas · Paneles de Control de Acceso · Protección Contra Descargas · Sistemas de Emergencia · Software de Asistencia · Teclados Autónomos · Torniquetes y Puertas de Cortesía · Videoporteros e Interfonos
-- Automatización e Intrusión: Accesorios · Automatización - Casa Inteligente · Cables · Centrales de Monitoreo · Cercas Eléctricas · Energía · Gabinetes y Carcasas · Generadores de Niebla · Protección Perimetral · Señalamientos · Sistemas de Emergencia
-- Energía y Climatización: Baterías y Cargadores · Bombeo · Calidad de la Energía · Climatización/Refrigeración · Energía Solar · Fuentes de Poder · Gabinetes y Cajas · PDU · Protectores Sobretensiones · Respaldo de Energía
-- Cableado Estructurado: pendiente, el cliente enviará las subcategorías
-- GPS, Telemática y Equipamiento Vehicular: pendiente, el cliente enviará las subcategorías
+
+> **Reinicio de subcategorías (2026-09-20):** toda la información de
+> subcategorías y sub-subcategorías se eliminó a petición de la dueña del
+> proyecto — las versiones anteriores tenían inconsistencias. Los 6 grupos
+> principales siguen siendo los correctos y no cambian. Las subcategorías de
+> cada grupo se vuelven a levantar desde cero, grupo por grupo, y se
+> documentarán aquí conforme la dueña las vaya confirmando.
+
+Los 6 grupos principales (confirmados, sin cambio):
+- **Videovigilancia (10 subcategorías — de las 11 que muestra la navegación, se descarta "Drones, Robots e Industrial"; tampoco cuenta "Accesorios Generales", que no forma parte de las subcategorías registradas):**
+  - Cámaras IP y NVRs: 4G · Ambientes Salinos (Anticorrosión) · Antiexplosión · Bala · Codificadores y Decodificadores de Video · Cubo · Domo / Eyeball / Turret · Fisheye y Hemisféricas · Lente Motorizado · NVRs Network Video Recorders · Oculta - Pinhole · Profesionales - Caja · PTZ · Térmicas · WiFi
+  - Cámaras y DVRs HD TurboHD / AHD / HD-TVI: Ambientes Salinos · Antiexplosión · Bala · Domo / Eyeball / Turret · Especiales · Lente Motorizado · Ocultas - Pinhole · Profesionales - Caja · PTZ · Videograbadoras Analógicas - TurboHD TVI / AHD / CVI
+  - Cables y Conectores: Cable Coaxial y Conectores · Cable de Red UTP (Cat5e / 6 / 6A) · Cables A/V (HDMI / VGA / DVI / RCA / Audio) · Fibra Óptica · Para Alimentación y Electricidad · Telefónico
+  - Energía: Baterías · Fuentes de Alimentación · PDU · PoE: Inyectores y Largo Alcance · Protección de Líneas (Red / Coaxial) · Supresores / Corriente AC-DC · UPS - No Break
+  - Kits - Sistemas Completos: IP Megapixel · Móviles (Para Vehículos) · TurboHD de 16 Canales · TurboHD de 4 Canales · TurboHD de 8 Canales
+  - Monitores Pantallas y Mobiliario: Accesorios · Consolas y Mobiliario de Monitoreo · Pantallas / Monitores · Videowall Seguridad
+  - Servidores / Almacenamiento: Accesorios · Almacenamiento NAS / SAN / eSATA · Discos Duros Mecánicos (HDD) · Estaciones de Trabajo (Workstation) · Memorias SD / Memorias Micro SD · Servidores de Aplicación · Unidades de Estado Sólido (SSD)
+  - Software VMS y Analíticas: Digifort · EPCOM Cloud · HIKVISION · Honeywell · IDIS · ISS · Milestone · SYNOLOGY · Wisenet Wave · XMR CEIBAII / KAPOK
+  - Videograbadoras Móviles, Dash Cams y Body Cams: Accesorios · Body Cams (Portátiles) · Cámaras Móviles · Dash Cams · MDVR / MNVR
+  - Videoporteros e Interfonos: Accesorios · Intercomunicadores · Intercomunicadores por Radio · Interfonos · Multiapartamentos · Videoporteros Analógicos · Videoporteros IP · Videoporteros IP Doorbell
+- **Control de Acceso (14 subcategorías, filtrado por punto de marcado — de las 21 que muestra la navegación, se descartan Control de Rondas Para Vigilantes, Detectores de Metal, Equipo Blindado, Identificación y Credencialización, Protección de Mercancía (EAS), Refacciones, Teclados Autónomos):**
+  - Acceso vehicular: Accesorios · Barreras Vehiculares · Pilonas o Bolardos · Puertas Abatibles y Corredizas · Refacciones · Semáforos, Radares y Señalización · Topes, Picos y Reductores
+  - Accesorios: Bisagras y Pasacables · Botones de Salida · Cables para Control de Acceso · Cierrapuertas · Contactos Magnéticos · Controles Inalámbricos · Mobiliario de Apoyo · Sensores para Puertas Automáticas · Tarjetas de Relevador · Tarjetas y Tags
+  - Administración de Hoteles: (sin sub-subcategoría)
+  - Biométricos: Accesorios · Enroladores y Lectores USB · Para Control de Acceso · Para Tiempo y Asistencia / Checadores
+  - Cerraduras: Accesorios · Autónomas / Inteligentes · Cerrojos y Candados Digitales · Chapas y Contrachapas · Eléctricas · Mecánicas y de Perno
+  - Fuentes de Alimentación: Baterías · Fuentes de Respaldo · Transformadores
+  - Inspección por Rayos X y Explosivos: Escaneo Corporal · Sistemas de Inspección por Rayos X
+  - Lectoras y Tarjetas: Bluetooth · Enroladores y Lectores USB · MIFARE®/iCLASS (13.56 MHz) · NFC / QR · Proximidad (125 KHz) · SEOS · UHF/ RFID
+  - Paneles de Control de Acceso: Accesorios · Controladores de Acceso · Licencias y Softwares
+  - Protección Contra Descargas: Coaxial · Corriente Alterna y Directa · Redes
+  - Sistemas de Emergencia: Barras y Accesorios para Puertas de Emergencia · Estaciones y Señalización de Emergencia · Puertas de Emergencia
+  - Software de Asistencia: Control de Acceso · Estacionamientos · Tiempo y Asistencia
+  - Torniquetes y Puertas de Cortesía: Puertas de Cortesía · Refacciones · Torniquetes (Cuerpo Completo y Medio)
+  - Videoporteros e Interfonos: Accesorios · Intercomunicadores e Interfonos · Intercomunicadores por Radio · Multiapartamentos · Videoporteros Analógicos · Videoporteros IP
+- **Automatización e Intrusión (10 subcategorías, filtrado por punto de marcado — de las 19 que muestra la navegación, se descartan Centrales de Monitoreo, Contactos Magnéticos, Detectores / Sensores, Lutron, Módulos de Expansión, Paneles de Alarma, Paneles de Alarma y Accesorios Hikvision, Teclados, Total Connect Honeywell):**
+  - Accesorios: Botones de Pánico · Controles Remotos · Estaciones de Jalón · Sirenas y Estrobos
+  - Automatización - Casa Inteligente: Apagadores y Atenuadores Inteligentes · Cámaras Wi-Fi Inteligentes · Cerraduras Inteligentes · Climatización y Termostatos · Difusores y Aromatización Inteligente · Enchufes y Contactos Inteligentes · Focos y Tiras LED Inteligentes · Garage · Hubs, Gateways y Pantallas de Control · Persianas y Cortinas Inteligentes · Sensores y Relevadores · Videoporteros y Timbres Inteligentes · Z-Wave · Zigbee
+  - Cables: (sin sub-subcategoría)
+  - Cercas Eléctricas: Accesorios · Aisladores · Energizadores · Postes
+  - Energía: Baterías · Fuentes de Poder · Protección Contra Sobretensiones · Transformadores
+  - Gabinetes y Carcasas: Carcasas · Gabinetes para Paneles · Gabinetes para Sirena
+  - Generadores de Niebla: (sin sub-subcategoría)
+  - Protección Perimetral: Cámaras Térmicas · Cable Sensor Perimetral · Sensores de Movimiento para Exterior · Sensores de Rayo Láser y PIRs Inteligentes · Sensores Fotoeléctricos y Microondas · Transmisor RF Largo Alcance
+  - Señalamientos: (sin sub-subcategoría)
+  - Sistemas de Emergencia: Accesorios para Puertas de Emergencia · Atención Sociosanitaria · Barras para Puertas de Emergencia · Estaciones Manuales de Emergencia · Puertas de Emergencia · Señalización
+- **Energía y Climatización (10 subcategorías, todas con punto de marcado — ninguna se descarta):**
+  - Baterías y Cargadores: Baterías · Cargadores de Baterías · Cargadores de Vehículos (EV Chargers) · Terminales y Accesorios
+  - Bombeo: Bombas · Variadores y Accesorios
+  - Calidad de la Energía: Accesorios para Tierra Física · Banco de Capacitores · Pararrayos · Reguladores · Supresores de Picos · Tierras Físicas
+  - Climatización / Refrigeración: Accesorios / Herramientas · Aire de Precisión (Telecom) · Boilers / Refrigeradores / Congeladores · Minisplits y Aire Acondicionado · Refacciones · Termostatos y Control HVAC
+  - Energía Solar: Accesorios / Cables / Jumpers · Baterías Solares · Controladores de Carga MPPT/PWM · Inversores Aislados (Off Grid) · Inversores Híbridos / Cargadores · Inversores Interconexión (On Grid) · Kits de Montajes Solares · Kits Solares · Módulos Solares · Microinversores · Montajes para Módulos · Piezas Montajes Solares · Protecciones Vcc
+  - Fuentes de Poder: Accesorios / Divisores / Conectores · Convertidores (Vcc a Vcc) · Eliminadores y Transformadores de Pared · Fuente de Alimentación con Respaldo · Fuentes con Distribuidor · Fuentes de Salida Única · Fuentes de Uso Industrial / Riel DIN · Fuentes en Kit
+  - Gabinetes y Cajas: Cajas para Conexiones / Registros · Gabinetes para Exterior / Interior · Gabinetes y Accesorios Antiexplosión · Glándulas y Accesorios
+  - PDU: Básicos · Especializados
+  - Protectores Sobretensiones: Protección Térmica
+  - Respaldo de Energía: Accesorios · Estaciones de Energía Portables · Generadores de Diesel · Generadores de Gasolina · Remolques para Energía Solar · UPS / No Break
+- **Cableado Estructurado (9 subcategorías, todas aplican):**
+  - Cable - Bobinas: Categoría 5e · Categoría 6 · Categoría 6A · Categoría 7A
+  - Cableado de Cobre: Cajas Superficiales · Faceplates · Herramientas · Jacks / Plugs · Patch Cords · Patch Panels
+  - Canalización: Accesorios para Canaletas · Canaletas · Cinchos / Corbatas · Ducto Cuadrado · Fijación · Tubería Metálica CONDUIT / Accesorios · Tubería PVC / Registros · PVC
+  - Charola: Accesorios · Charola Mallafil · Charola para Fibra Óptica · Charola Tubular · Charolas Tipo Escalerilla · Charolas Tipo Malla · Charolas Tipo Malla Bimetálica · Curvas Pre-Fabricadas · Montajes · Tapas para Charolas · Uniones
+  - Conectores: Para Redes RJ-45
+  - Fibra Óptica: Cable · Conectores · Distribuidores de Fibra Óptica · Herramientas · Jumpers y Pigtails
+  - PDU: Básicos · Fuente Redundante (ATS) · Medibles · Monitoreables · Switcheables
+  - Racks y Gabinetes: Accesorios para Rack/Gabinetes · Gabinetes para Exterior · Gabinetes para Montaje en Pared · Racks Abiertos · Racks Cerrados
+  - Transceptores de Fibra / (Mini-GBICs): 100G Duplex · 10G Duplex · 1G Duplex · 200G Duplex · 25G Duplex · 400G Duplex · 40G Duplex · BiDi (1G/10G) · Cables DAC & AOC · Industrial BiDi · Industrial Duplex · RJ45 SFP
+- **GPS, Telemática y Equipamiento Vehicular (1 subcategoría — de todas las que muestra la navegación, solo esta aplica):**
+  - Video Móvil y Cámaras Vehiculares: Accesorios · Body Cams · Cámaras Móviles · Dash Cams · MDVR / MNVR
 
 Un producto pertenece a un grupo y una subcategoría, y necesita al menos: SKU, nombre, marca, precio (con IVA incluido), stock disponible, fotos, especificaciones técnicas y estado (activo/agotado).
 
@@ -83,7 +145,7 @@ Aún sin diseño de UI; el alcance funcional a construir es:
 - App móvil nativa; se asume un sitio web responsive.
 
 ## 12. Preguntas abiertas para el cliente
-- Subcategorías finales de Cableado Estructurado y de GPS, Telemática y Equipamiento Vehicular.
+- Subcategorías finales de los 6 grupos (reinicio 2026-09-20 — ver §3).
 - Momento exacto del descuento de inventario (al generar el pedido o al validar el comprobante).
 - Plazo en días para solicitar una devolución.
 - Cómo se calcula o cobra el envío (actualmente el demo dice "se confirma con tu asesor").

@@ -61,10 +61,25 @@ No modificar sin autorización explícita de la persona:
 - `index.html` — demo visual del sitio público generado en Claude Design.
 - `support.js` — runtime del demo de Claude Design.
 - `uploads/` — imágenes del demo (incluye el logo).
+- `panel-admin-maqueta.html` — maqueta visual interactiva del panel administrativo,
+  construida en esta sesión a partir de `.devsquad/diseño.md` y aprobada por la
+  dueña del proyecto (2026-09-20). Mismo estatus que `index.html`: es la
+  referencia del panel, no un borrador.
 
-Estos archivos son **insumo de referencia visual**, no el punto de partida técnico.
-La UI del sitio público ya está resuelta ahí y no debe rediseñarse; debe
-traducirse a código funcional conservando su lenguaje visual.
+**Regla de traducción a código (2026-09-20, instrucción explícita de la dueña):**
+estos dos HTML (`index.html` para el sitio público, `panel-admin-maqueta.html`
+para el panel) son la fuente de verdad del frontend, no una inspiración. El
+coder traduce **literalmente** su estructura, clases, estilos inline, colores,
+tipografías y layout a componentes de Next.js — es un copy-paste de HTML a
+JSX/React, no una reinterpretación. **Nada del frontend se crea por
+asunción**: si una pantalla, estado o componente no está en uno de estos dos
+archivos (o en las secciones de `diseño.md` que los documentan, para los
+estados/casos que el HTML no puede mostrar todos a la vez — cargando, error,
+vacío), no se inventa: se marca como pendiente y se pregunta antes de
+construirlo. Ambos archivos usan el mismo formato de componente
+(`support.js` + `class Component extends DCLogic`) — el coder no ejecuta ese
+runtime, lee el HTML/CSS resultante como referencia exacta de marcado y
+estilo.
 
 ## Reglas de negocio no negociables (resumen)
 1. No hay pasarela de pago: el pago es por transferencia bancaria y se valida

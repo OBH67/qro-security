@@ -71,7 +71,7 @@ Criterios de aceptación:
 3. Un producto sin stock aparece marcado como "Agotado" y no se puede agregar al pedido.
 4. Un producto inactivo no aparece en ninguna vista pública, ni siquiera por URL directa.
 5. El listado pagina o carga por bloques: nunca se cargan los ~1,050 productos de golpe.
-6. Los grupos "Cableado Estructurado" y "GPS, Telemática y Equipamiento Vehicular" existen aunque sus subcategorías estén pendientes ⚠ PA-1.
+6. Los 6 grupos y sus subcategorías finales están confirmados (2026-09-20, ver `docs/contexto-negocio.md` §3 — PA-1 cerrada).
 
 **A2 · Buscar por producto, marca o SKU** — `V1` · `M` · Dep. A1
 > Como visitante quiero buscar por nombre, marca o SKU para encontrar un equipo específico rápido.
@@ -179,7 +179,7 @@ Criterios:
 3. Acciones: validar pago → **Listo para envío**; luego **Enviado**; luego **Entregado**.
 4. Solo se permiten transiciones válidas del flujo; cada cambio guarda quién y cuándo.
 5. Puede rechazar un comprobante, lo que regresa el pedido a **Pendiente de pago** con un motivo que el cliente ve.
-6. Puede **Cancelar** un pedido en cualquier estado previo a Enviado, liberando el stock reservado ⚠ PA-7 (¿cancelación automática por plazo?).
+6. Puede **Cancelar** un pedido en cualquier estado previo a Enviado, liberando el stock apartado. La cancelación automática por plazo vencido está resuelta en D2.7 (PA-7: 3 días).
 
 ---
 
@@ -204,7 +204,11 @@ Criterios:
 3. Aprobar genera un movimiento de saldo a favor a nombre del cliente, con monto, fecha, motivo y pedido de origen.
 4. Rechazar exige un motivo, que el cliente ve.
 5. Toda alta de saldo queda en una bitácora inmutable (nunca se edita un saldo "a mano" sin rastro).
-6. ⚠ Decisión: si el producto devuelto reingresa o no al inventario vendible (relacionado con PA-2).
+6. **Reingreso al catálogo (PA-10, decisión 2026-09-20):** al aprobar la devolución, la pieza física **sí puede volver a venderse**, pero **nunca se mezcla con el stock de producto nuevo**:
+   - **Sellado de fábrica** → reingresa como producto **nuevo**: se suma 1 al `stock` del SKU original, mismo precio.
+   - **Abierto, usado, incompleto o de exhibición** → el administrador puede publicarlo como una **ficha de producto "Usado"** aparte: mismo SKU base + sufijo, con su propio precio (lo fija el admin, no el original), su propia foto real de la pieza y un motivo visible para el cliente (ej. "Usado para prueba", "Incompleto — faltan piezas", "Unidad de exhibición"). Stock siempre 1, porque es una pieza física única, no un lote.
+   - Publicar la ficha de "Usado" es una acción explícita del admin, no automática: puede decidir no revenderla.
+7. **Cancelación automática de pedido no pagado (PA-7, decisión 2026-09-20):** un pedido en **Pendiente de pago** se cancela solo a los **3 días** de generado si no se sube comprobante, con recordatorio por correo al día 2. El plazo es configurable desde H4, no está fijo en el código.
 
 **D3 · Usar el saldo a favor en un pedido** — `V1` · `M` · Dep. D2, C1
 > Como cliente quiero aplicar mi saldo a favor a una compra nueva para pagar menos por transferencia.
@@ -212,7 +216,7 @@ Criterios:
 Criterios:
 1. El saldo disponible es visible en la cuenta y en el momento de generar el pedido.
 2. El cliente elige aplicar todo o parte del saldo; el importe a transferir se recalcula y es el que aparece en las instrucciones de pago.
-3. Si el saldo cubre el total, el pedido no requiere comprobante y pasa directo a **Listo para envío** (⚠ confirmar con el cliente final que esto es deseable).
+3. Si el saldo cubre el total, el pedido **no requiere comprobante de transferencia** (no hay nada que transferir), pero **tampoco avanza automáticamente**: entra a la misma bandeja de revisión del administrador que un pedido con comprobante, mostrando el detalle del saldo aplicado en vez de una imagen. El administrador confirma manualmente antes de que pase a **Listo para envío** — ver RN-11. Decisión de la dueña (2026-09-20): ningún pedido cambia de estado sin una acción humana explícita, precisamente porque validar un pago es un juicio humano sobre un documento no estructurado (captura de pantalla, foto de ticket, PDF del banco), y ese mismo criterio de "alguien lo revisa antes de avanzar" debe aplicar parejo, sin atajos por el método de pago.
 4. El saldo se descuenta al generar el pedido y se devuelve íntegro si el pedido se cancela.
 5. El saldo nunca puede quedar negativo; toda aplicación es una operación atómica.
 
@@ -265,7 +269,7 @@ Criterios:
 **F3 · Administrar grupos y subcategorías** — `V1` · `S` · Dep. F1
 > Como administrador quiero crear y editar grupos y subcategorías para reflejar cambios en mi línea de producto.
 
-Criterios: crear/renombrar/reordenar; no se puede eliminar una subcategoría con productos activos sin reasignarlos; los cambios se reflejan en la navegación pública.
+Criterios: crear/renombrar/reordenar; no se puede eliminar una subcategoría con productos activos sin reasignarlos; los cambios se reflejan en la navegación pública. **Soporta subcategorías anidadas** (2026-09-20): un grupo puede tener subcategorías de un solo nivel o de varios, según lo que el catálogo real necesite (ver `modelo-datos.md` D7). El administrador puede crear una subcategoría "dentro" de otra existente, sin límite de profundidad impuesto por el sistema.
 
 ---
 
@@ -280,10 +284,20 @@ Criterios:
 3. Filtrable por grupo y subcategoría.
 4. Exportable a CSV.
 
-**G2 · Indicadores de operación** — `V1.5` · `M` · Dep. G1
+**G2 · Tablero de indicadores** — `V1` · `L` · Dep. G1 · **Promovido de V1.5 a V1 el 2026-09-20 por decisión de la dueña**
 > Como administrador quiero un tablero con la salud del negocio para actuar a tiempo.
 
-Candidatos (a confirmar ⚠ PA-7): ventas por periodo, ticket promedio, pedidos pendientes de pago con antigüedad, tasa de conversión pedido→pago validado, productos con stock bajo o en cero, tasa de devoluciones y saldo a favor vivo total.
+**Decisión de la dueña (2026-09-20):** el tablero debe estar "bien alimentado con gráficas e información, presentable y agradable para el cliente". Deja de ser un parche posterior y se convierte en la **pantalla de inicio del panel** para el rol `admin` — ver H6, que se modifica en consecuencia.
+
+Criterios:
+1. Es la primera pantalla que ve el rol `admin` al entrar al panel.
+2. Lo primero visible es **lo que requiere atención hoy**: comprobantes por validar, pedidos listos por enviar, productos con stock en cero. Después el panorama del negocio.
+3. Indicadores: ventas por periodo, ticket promedio, pedidos pendientes de pago con antigüedad, tasa de conversión pedido→pago validado, productos con stock bajo o en cero, tasa de devoluciones, saldo a favor vivo total, y el ranking de más/menos vendidos de G1.
+4. Cada gráfica responde una pregunta concreta de negocio; ninguna es decorativa.
+5. **Estado sin datos resuelto explícitamente**: la plataforma arranca de cero, así que los primeros días no hay historial — cada bloque necesita su estado vacío diseñado, no una gráfica rota.
+6. Los colores de datos conviven con el tema oscuro heredado y no se contradicen con los colores semánticos de estado (cian/ámbar/verde) que ya usa el resto del panel.
+7. Responsive: las gráficas se reacomodan en tablet y móvil sin perder legibilidad.
+8. ⚠ PA-8 sigue abierta (métricas exactas adicionales), pero ya no bloquea: este set es suficiente para V1.
 
 ---
 
@@ -297,6 +311,29 @@ Criterios:
 2. El sitio es responsive; no hay app nativa.
 3. Contraste de texto verificado antes de entregar (la plantilla es de fondo oscuro: alto riesgo de texto ilegible).
 4. `index.html`, `support.js` y `uploads/` se conservan como referencia y **no se modifican** (archivos protegidos).
+5. **Traducción literal, no interpretación (2026-09-20):** la implementación es un
+   copy-paste de la estructura, clases, estilos inline, colores, tipografías y
+   layout de `index.html` a componentes de Next.js — no una versión "inspirada
+   en" el demo. Ningún elemento visual del sitio público se crea por asunción;
+   si algo no está en `index.html` ni en `docs/contexto-negocio.md`, se
+   pregunta antes de inventarlo. Aplica igual a **H1-bis** para el panel
+   administrativo, ver abajo.
+
+**H1-bis · Traducir la maqueta del panel a código funcional** — `V1` · `L`
+> Como dueña del proyecto quiero que el panel real coincida exactamente con la maqueta que ya aprobé, no con una interpretación libre de `diseño.md`.
+
+Criterios:
+1. `panel-admin-maqueta.html` (raíz del repo, archivo protegido) es la
+   referencia visual exacta del panel — mismo criterio que H1.5: se traduce
+   literalmente a componentes de Next.js, misma estructura y estilos.
+2. `.devsquad/diseño.md` sigue siendo la fuente para lo que la maqueta no
+   pudo mostrar de una vez: los 4 estados de cada pantalla (cargando, vacío,
+   con datos, error), accesibilidad, responsividad, y las pantallas/pestañas
+   que la maqueta dejó documentadas pero no construidas (§11.7 pestañas
+   secundarias del editor de producto; §11.8 paso 3 del importador CSV).
+3. Ningún componente, color, espaciado o texto del panel se decide por
+   asunción del coder: si no está en la maqueta ni en `diseño.md`, se
+   pregunta antes de construirlo.
 
 **H2 · Acceso seguro al panel administrativo** — `V1` · `M`
 > Como administrador quiero que solo yo pueda entrar al panel.
@@ -307,6 +344,31 @@ Criterios: el panel exige autenticación y rol de administrador; ninguna ruta o 
 > Como cliente quiero recibir correo en los momentos clave para no tener que estar revisando el sitio.
 
 Criterios: correos de bienvenida/verificación, recuperación de contraseña, pedido generado con datos de pago, comprobante recibido, pago validado, enviado, entregado y resolución de devolución. Todos con folio y datos de contacto de SG Querétaro.
+
+**H4 · Configuración del sistema** — `V1` · `S` · Cierra el hueco detectado al preparar la fase de diseño (2026-09-20)
+> Como administrador quiero editar los datos operativos del negocio sin depender de un despliegue de código.
+
+Criterios:
+1. Pantalla de Configuración en el panel, accesible **solo** por el rol `admin` (el rol `inventario` no la ve).
+2. Editable ahí: datos bancarios para las instrucciones de pago (banco, beneficiario, CLABE, número de cuenta), correo del administrador, WhatsApp del administrador, plazo en días para solicitar devolución (PA-3), días para cancelar automáticamente un pedido no pagado (PA-7).
+3. Los cambios quedan en bitácora: quién, cuándo, valor anterior — mismo criterio que F1.5.
+4. Las instrucciones de pago que ve el cliente en C1 siempre leen estos valores de aquí; nunca están fijos en el código.
+
+**H5 · Alcance del rol `inventario`** — `V1` · `S` · Cierra el hueco detectado al preparar la fase de diseño (2026-09-20)
+> Como administrador quiero dar acceso limitado a quien solo carga inventario, sin exponerle pedidos ni clientes.
+
+Criterios:
+1. El menú del panel para `inventario` muestra únicamente Catálogo (F1, F2, F3): Pedidos, Devoluciones, Solicitudes, Analítica y Configuración **no aparecen en el menú**, no solo quedan bloqueados detrás de un clic.
+2. Si escribe a mano una URL fuera de su alcance, recibe una pantalla de acceso denegado clara, en español de negocio, no un error técnico.
+3. El panel muestra siempre su nombre y rol, para que quede claro qué cuenta está operando.
+
+**H6 · Pantalla de inicio del panel** — `V1` · `S` · **Modificada el 2026-09-20** (originalmente definía entrar directo a Pedidos, sin tablero)
+> Como administrador quiero que el panel abra en una vista que me diga de un vistazo cómo va el negocio y qué necesita mi atención.
+
+Criterios:
+1. El rol `admin` abre en el **tablero de indicadores (G2)**, que pasó a V1 por decisión de la dueña — no en la bandeja de Pedidos como se había definido antes.
+2. Lo pendiente urgente (comprobantes por validar, pedidos por enviar) es accionable directamente desde el tablero, con un clic a la bandeja filtrada correspondiente: el tablero informa, pero no deja al admin buscando dónde actuar.
+3. El rol `inventario` abre directo en Catálogo, ya que ni Pedidos ni Analítica son parte de su alcance (H5).
 
 ---
 
@@ -322,6 +384,7 @@ Criterios: correos de bienvenida/verificación, recuperación de contraseña, pe
 - **RN-8** Los servicios (monitoreo, guardias, financiamiento) no son productos y no se venden en línea.
 - **RN-9** Un producto con ventas históricas no se elimina, se desactiva.
 - **RN-10** El precio de un pedido se congela al generarse.
+- **RN-11** Ningún pedido cambia de estado de forma automática. Todo avance —incluido un pedido cubierto al 100% con saldo a favor, que no tiene comprobante que subir— requiere una acción explícita del administrador. La validación de un pago es un juicio humano sobre un documento no estructurado; ese mismo criterio aplica sin excepción, sin importar el método de pago.
 
 ---
 
@@ -341,9 +404,9 @@ Criterios: correos de bienvenida/verificación, recuperación de contraseña, pe
 
 ## 7. Alcance por versión
 
-**V1 (mínimo vendible)**: A1, A2, A3, B1, B2, B3, C1, C2, C3, C4, C5, D1, D2, D3, E1, E2, F1, F2, F3, G1, H1, H2, H3.
+**V1 (mínimo vendible)**: A1, A2, A3, B1, B2, B3, C1, C2, C3, C4, C5, D1, D2, D3, E1, E2, F1, F2, F3, G1, **G2**, H1, **H1-bis**, H2, H3, H4, H5, H6.
 
-**V1.5 (siguiente parche)**: A4 (filtros avanzados), G2 (tablero de indicadores), estados de seguimiento de envío con número de guía, exportaciones adicionales.
+**V1.5 (siguiente parche)**: A4 (filtros avanzados), estados de seguimiento de envío con número de guía, exportaciones adicionales. *(G2 salió de aquí: se promovió a V1 el 2026-09-20.)*
 
 **Futuro**: lista de deseos, comparador de productos, cotizaciones formales para empresa, precios diferenciados por tipo de cliente (mayoreo), portal de instaladores/distribuidores, chat en vivo, multi-sucursal.
 
@@ -355,24 +418,38 @@ Criterios: correos de bienvenida/verificación, recuperación de contraseña, pe
 
 ### 8.1 Bloquean la arquitectura o el código (necesitan respuesta antes de implementar)
 
+**Cerradas — decididas por la dueña del proyecto, ya no bloquean nada:**
+
+| # | Pregunta | Decisión final | Dónde vive |
+|---|---|---|---|
+| ~~PA-2~~ | ¿Cuándo se descuenta el inventario? | **Tres momentos, no uno**: la pieza sigue a la venta al generar el pedido; se **aparta** al subir el comprobante; el stock físico baja al marcar **Enviado**. | `estado.md` #9, `modelo-datos.md` §1, `arquitectura.md` §9.1 |
+| ~~PA-6~~ | ¿Uno o varios administradores? | **Dos roles**: `admin` (acceso total) e `inventario` (solo catálogo/stock). | `estado.md` #11 |
+| ~~PA-4~~ | ¿Cómo se calcula el envío? | **El asesor lo confirma al marcar "Enviado"**; no se calcula en línea. | `estado.md` #12 |
+
+**Sigue abierta:**
+
 | # | Pregunta | Por qué importa | Recomendación por defecto si no hay respuesta |
 |---|---|---|---|
-| **PA-2** | ¿El inventario se descuenta al **generar** el pedido o al **validar** el comprobante? | Define el modelo de datos de stock y el riesgo de sobreventa. Es la decisión técnica más costosa de cambiar después. | **Reservar al generar el pedido**, con liberación automática si no se paga en el plazo de PA-7. Es lo que menos molesta al cliente final que ya transfirió. |
-| **PA-5** | ¿Qué proveedor para WhatsApp: Meta Cloud API oficial, Twilio, u otro? | Cambia costo mensual, tiempos de aprobación de Meta (días/semanas) y complejidad. Enviar **imágenes** por WhatsApp requiere API oficial o proveedor; no hay atajo gratuito confiable. | Diseñar la notificación detrás de una interfaz intercambiable y arrancar con **correo funcionando desde el día 1** + WhatsApp conectable después, para no bloquear el lanzamiento con los trámites de Meta. |
-| **PA-6** | ¿Un solo administrador o varios con permisos distintos? | Define si hace falta un sistema de roles desde el inicio. Agregarlo después es caro. | Construir con **roles desde el inicio** (admin / operador), con un solo usuario creado. Costo bajo ahora, costo alto después. |
-| **PA-4** | ¿Cómo se calcula o cobra el envío? | Afecta el importe exacto a transferir, que es el corazón del flujo de pago. | Mantener **"el envío se confirma con tu asesor"** y que el importe del pedido sea solo de producto, como en el demo. |
+| **PA-5** | ¿Qué proveedor para WhatsApp: Meta Cloud API oficial, Twilio, u otro? | Cambia costo mensual, tiempos de aprobación de Meta (días/semanas) y complejidad. Enviar **imágenes** por WhatsApp requiere API oficial o proveedor; no hay atajo gratuito confiable. | Ya implementado como capa intercambiable en `arquitectura.md` §7.3: correo funcionando desde el día 1, WhatsApp conectable después sin rediseñar nada. **No bloquea el arranque del código**, solo el trámite con Meta (ver §8.3). |
 
 ### 8.2 Necesitan respuesta del cliente final, pero no bloquean el arranque
 
+**Cerradas — decididas por la dueña del proyecto:**
+
+| # | Pregunta | Decisión final |
+|---|---|---|
+| ~~PA-3~~ | Plazo en días para solicitar una devolución | **30 días** naturales desde la entrega (2026-09-20). Configurable en H4. |
+| ~~PA-7~~ | ¿Se cancela automáticamente un pedido no pagado? | **Sí, 3 días** desde que se generó el pedido, con recordatorio por correo al día 2 (2026-09-20). Configurable en H4. |
+| ~~PA-9~~ | Si el saldo cubre el 100%, ¿se acepta sin comprobante? | **Sí se acepta sin comprobante, pero no avanza automático**: entra igual a revisión del admin (RN-11, §5). |
+| ~~PA-10~~ | ¿El producto devuelto reingresa al inventario vendible? | **Sí reingresa, pero nunca como nuevo.** Ver D2.7 y `modelo-datos.md` D6 — se reclasifica como **Usado**, con motivo, precio y stock propios (2026-09-20). |
+| ~~PA-1~~ | Subcategorías finales de los 6 grupos | **Cerrada (2026-09-20), los 6 grupos:** Videovigilancia (10), Control de Acceso (14), Automatización e Intrusión (10), Energía y Climatización (10), Cableado Estructurado (9), GPS Telemática y Equipamiento Vehicular (1). Detalle completo en `docs/contexto-negocio.md` §3. |
+
+**Siguen abiertas:**
+
 | # | Pregunta | Efecto |
 |---|---|---|
-| **PA-1** | Subcategorías finales de *Cableado Estructurado* y *GPS, Telemática y Equipamiento Vehicular*. | Son datos, no estructura. Se cargan cuando lleguen. |
-| **PA-3** | Plazo en días para solicitar una devolución. | Se implementa como parámetro configurable; sugerido 30 días naturales desde la entrega. |
-| **PA-7** | ¿Se cancela automáticamente un pedido no pagado? ¿En cuántos días? | Parámetro configurable; sugerido 5 días hábiles, con recordatorio por correo al día 2. |
 | **PA-8** | Métricas exactas de analítica además de más/menos vendidos. | G1 cubre lo mínimo; G2 se ajusta con la respuesta. |
 | **PA-5b** | Canal para las solicitudes de servicio: ¿correo, WhatsApp o ambos? | Sugerido: correo en v1, WhatsApp cuando PA-5 quede resuelto. |
-| **PA-9** | Si el saldo a favor cubre el 100% del pedido, ¿se acepta sin comprobante? | Sugerido sí, avanzando directo a Listo para envío. |
-| **PA-10** | ¿El producto devuelto reingresa al inventario vendible? | Sugerido: solo si se devolvió sellado de fábrica; los demás quedan fuera del stock en línea. |
 | **PA-11** | ¿Existe ya el catálogo en algún archivo (Excel, ERP, sitio del distribuidor)? | Determina qué tan real es F2 y cuánto trabajo manual de captura habrá. **Es la pregunta de mayor impacto en el calendario de lanzamiento.** |
 
 ### 8.3 Dependencias externas a gestionar desde ya (tardan, no dependen del código)

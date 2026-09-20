@@ -121,7 +121,7 @@ listados como preguntas abiertas en la sección 7.
 
 | # | Hallazgo en el demo | Impacto en el modelo |
 |---|---|---|
-| 1 | **El demo rellenó las subcategorías de Cableado Estructurado y GPS** (7 y 6, `index.html:1931-1932`), que el documento de negocio marca como "pendiente, el cliente enviará". Son inventadas, no vienen del cliente. | Sirven como borrador para que el cliente confirme o corrija. No asumir que son las correctas. |
+| 1 | **El demo rellenó las subcategorías de Cableado Estructurado y GPS** (7 y 6, `index.html:1931-1932`), que el documento de negocio marca como "pendiente, el cliente enviará". Son inventadas, no vienen del cliente. **Las subcategorías de los 6 grupos se reiniciaron el 2026-09-20** (ver `docs/contexto-negocio.md` §3) y se están recapturando desde cero. | El borrador del demo se descarta para todos los grupos. Sí quedó como aprendizaje permanente que al menos un grupo necesita un tercer nivel de navegación — ver D7. |
 | 2 | **Marca aparece como filtro y en la ficha técnica, pero no existe como campo** en `products` (usa el texto fijo "Marca Demo"). | Requiere tabla `brands` y `products.brand_id`. El documento de negocio sí la pide. |
 | 3 | **La ficha de producto tiene galería**, no una sola foto (el demo dibuja 5 miniaturas de relleno, `index.html:2357`). | Tabla `product_images` con orden y foto principal, sin fijar cuántas. Cuántas fotos existen de verdad por SKU está en PA-20. |
 | 4 | **La ficha ofrece documentos descargables**: ficha técnica y manual en PDF (`index.html:2352`). No se mencionan en el documento de negocio. | Tabla `product_documents`, archivos en R2. Si el cliente no los tiene, la pestaña simplemente va vacía (PA-19). |
@@ -203,6 +203,78 @@ reorganizable sin migraciones dolorosas.
 Los precios ya vienen con IVA incluido (regla del negocio). Se guarda
 `price` con IVA y `tax_rate` para poder desglosar en la factura más adelante.
 
+### D6 · Un producto devuelto y usado es una ficha nueva, no un ajuste de stock
+
+Decisión de la dueña del proyecto (2026-09-20, cierra PA-10): un producto que
+vuelve **sellado de fábrica** sí es fungible con el resto del inventario nuevo
+— sumar 1 al `stock` del SKU original es correcto. Pero un producto que vuelve
+**abierto, usado para prueba, incompleto o de exhibición** es una pieza física
+**única**: no hay otras 24 iguales en el almacén con las que se pueda mezclar,
+y venderlo al precio de uno nuevo sería engañoso para el siguiente comprador.
+
+Dos caminos posibles:
+
+- **Ajustar el `stock` del SKU original con una nota interna** — simple, pero
+  mezcla piezas nuevas con usadas bajo el mismo precio y la misma foto: el
+  cliente que compra "el último" no sabe si le va a llegar nuevo o usado.
+- **Crear una ficha de producto aparte, ligada a la original** (elegido) —
+  el admin decide si publicarla, le pone su propio precio, su propia foto real
+  de la pieza (no la foto de catálogo del producto nuevo) y un motivo visible.
+
+`products` gana tres columnas:
+
+| Campo | Tipo | Notas |
+|---|---|---|
+| `condition` | text | `nuevo` (default) / `usado` |
+| `condition_detail` | text | Nulo si `nuevo`. Texto visible al cliente: "Usado para prueba", "Incompleto — faltan piezas", "Unidad de exhibición" |
+| `source_return_id` | uuid FK → returns, nulo | Traza de qué devolución vino esta pieza |
+
+Una ficha `usado` reutiliza el mismo `group_id`/`subcategory_id`/`brand_id` del
+producto original (para que aparezca en la misma categoría), pero es una fila
+propia en `products` con su propio `sku` (ej. `SGQ-VV-0012-U1`), su propio
+`stock` (siempre 1, porque es una pieza física, no un lote) y su propio
+`price`. El catálogo la puede marcar con un filtro/badge de condición.
+
+Trade-off: crear una fila completa de producto por cada devolución revendible
+es más trabajo administrativo que un simple ajuste de número, pero es
+exactamente lo que evita vender una pieza usada al precio y con la foto de
+una nueva — el riesgo que la propia dueña señaló. Publicarla es una acción
+explícita del admin (F1), nunca automática: puede decidir que una pieza
+incompleta no se revende.
+
+### D7 · Subcategorías en árbol, no en dos niveles fijos
+
+El diseño original asumía **grupo → subcategoría**, dos niveles, porque era lo
+único que el demo mostraba. Al revisar catálogos reales de distribuidoras del
+mismo giro (2026-09-20), quedó claro que varios grupos —especialmente
+Cableado Estructurado— suelen tener un **tercer nivel**: la subcategoría trae
+su propia lista (ej. una subcategoría de cable trae "Categoría 5e/6/6A/7A"
+como sub-subcategoría). El catálogo exacto de SG Querétaro todavía está en
+proceso de recapturarse (ver `docs/contexto-negocio.md` §3), pero la
+necesidad de un tercer nivel para al menos un grupo ya es un hecho conocido,
+no una hipótesis — así que el esquema se diseña para soportarlo desde ahora,
+sin esperar a tener la lista definitiva.
+
+Se descartó una tabla `sub_subcategories` aparte (un tercer nivel fijo) porque
+eso solo pospone el mismo problema si algún día aparece un cuarto nivel, y
+porque la mayoría de los grupos (Videovigilancia, Control de Acceso…) **no**
+necesitan ese tercer nivel — forzarlo a todos sería una tabla vacía la mayor
+parte del tiempo.
+
+**Decisión:** `subcategories` se auto-referencia (`parent_id`). Un grupo puede
+tener subcategorías de un solo nivel (como hoy Videovigilancia) o de varios
+(como Cableado Estructurado), sin cambiar el esquema — la profundidad la
+define el contenido real de cada grupo, capturado en F3 (administrar
+subcategorías), no una migración.
+
+> **Trade-off (ATAM):** un árbol auto-referenciado es más flexible que dos
+> columnas fijas, pero las consultas de "dame todos los productos de este
+> grupo" ya no pueden asumir un solo `JOIN`: hay que resolver la profundidad
+> real (recursiva o con una consulta por nivel, acotada porque en la práctica
+> nunca pasa de 3). Se acepta porque el costo de una consulta ligeramente más
+> compleja es mucho menor que rehacer el esquema la próxima vez que otro grupo
+> resulte tener el mismo patrón — y ya sabemos que al menos uno lo tiene.
+
 ---
 
 ## 4. El esquema
@@ -273,15 +345,21 @@ por RLS.
 | position · | int | Orden de despliegue |
 | active · | boolean | |
 
-**`subcategories`**
+**`subcategories`** — árbol auto-referenciado (ver D7)
 | Campo | Tipo | Notas |
 |---|---|---|
 | id · | uuid PK | |
-| group_id · | uuid FK → groups | |
+| group_id · | uuid FK → groups | Siempre el grupo raíz, incluso en un nivel hijo |
+| parent_id | uuid FK → subcategories, nulo | Nulo = subcategoría de primer nivel. Con valor = "sub-subcategoría" |
 | slug · | text | |
-| name · | text | "Cámaras IP y NVRs" |
+| name · | text | "Cámaras IP y NVRs", o "Categoría 6A" si es hija de "Cable - Bobinas" |
 | position · | int | |
 | active · | boolean | |
+
+`products.subcategory_id` siempre apunta al nivel **más específico** disponible
+(la hoja del árbol): si "Categoría 6A" existe, un cable de esa categoría se
+clasifica ahí, no en "Cable - Bobinas". Un producto nunca se cuelga
+directamente de un grupo sin pasar por al menos una subcategoría.
 
 **`brands`**
 | Campo | Tipo | Notas |
@@ -311,6 +389,9 @@ por RLS.
 | includes | text[] | "Qué incluye" |
 | attributes | jsonb | Ficha técnica y facetas (ver D1) |
 | status · | text | `activo` / `agotado` / `descontinuado` |
+| condition · | text | `nuevo` (default) / `usado` — ver D6 |
+| condition_detail | text | Solo si `usado`: motivo visible al cliente |
+| source_return_id | uuid FK → returns | Solo si `usado`: de qué devolución viene |
 | sales_count · | int | Alimenta "Más vendidos" y la analítica |
 | created_at · | timestamptz | |
 | updated_at · | timestamptz | |
@@ -364,10 +445,11 @@ order_status  ENUM('pendiente_pago', 'comprobante_recibido',
 | folio · | text UNIQUE | "SGQ-00248" |
 | user_id · | uuid FK → profiles | |
 | status · | order_status | default `pendiente_pago` |
+| payment_method · | text | `transferencia` / `saldo_completo` (ver nota RN-11 abajo) |
 | subtotal · | numeric(12,2) | Suma de partidas |
 | credit_applied · | numeric(12,2) | Saldo a favor usado, default 0 |
 | shipping_cost | numeric(12,2) | **Nulo hasta que el asesor lo confirma** |
-| total · | numeric(12,2) | Importe exacto a transferir |
+| total · | numeric(12,2) | Importe exacto a transferir. **$0 si `payment_method = saldo_completo`** |
 | wants_invoice · | boolean | |
 | shipping_address · | jsonb | Copia congelada (ver D3) |
 | billing_data | jsonb | Copia congelada, nulo si no pidió factura |
@@ -420,6 +502,18 @@ order_status  ENUM('pendiente_pago', 'comprobante_recibido',
 El panel debe mostrar `orders.total` junto a `payment_proofs.amount` para que el
 administrador compare de un vistazo — es la única defensa contra comprobantes
 alterados en la versión 1.
+
+**Caso sin comprobante — saldo a favor cubre el 100% (RN-11).** Cuando
+`payment_method = 'saldo_completo'`, no existe fila en `payment_proofs`: no hay
+nada que transferir, así que no hay nada que subir. Pero el pedido **igual entra
+a `comprobante_recibido`** — el mismo punto de revisión que cualquier otro
+pedido — porque ningún pedido avanza de estado sin que el administrador lo
+confirme explícitamente. La pantalla de revisión, en este caso, no muestra una
+imagen: muestra el desglose del saldo aplicado (`credit_applied`) contra el
+total original, para que el administrador confirme que la operación es
+legítima antes de pasar a `listo_envio`. Es una decisión de la dueña del
+proyecto (2026-09-20), no una limitación técnica: valida el mismo criterio
+humano que un comprobante, aplicado parejo sin importar el método de pago.
 
 **`payment_confirmation_tokens`** — el enlace de confirmación por correo
 | Campo | Tipo | Notas |
@@ -570,10 +664,14 @@ una URL pública adivinable.
 
 Se suman a las 11 que ya están en `.devsquad/requerimientos.md`.
 
-- **PA-12 · Subcategorías de Cableado Estructurado y GPS:** el demo ya propone 7 y
-  6. ¿El cliente las valida o manda las suyas?
+- ~~**PA-12 · Subcategorías y sub-subcategorías de los 6 grupos**~~ —
+  **cerrada por completo (2026-09-20)**: los tres niveles (grupo →
+  subcategoría → sub-subcategoría) están confirmados para los 6 grupos. Ver
+  `docs/contexto-negocio.md` §3. Con esto el catálogo completo de SG
+  Querétaro ya tiene su taxonomía definitiva — no quedan grupos ni
+  subcategorías pendientes de estructura de navegación.
 - **PA-13 · Marcas reales:** el demo usa "Marca Demo A/B/C". ¿Cuál es el catálogo
-  real de marcas que distribuye SG Querétaro?
+  real de marcas que distribuye SG Querétaro? Sigue abierta.
 - **PA-14 · Reseñas:** ¿se van a habilitar reseñas reales de clientes (requiere
   moderación) o son testimonios curados que el dueño edita?
 - **PA-15 · Banners:** ¿el dueño los va a cambiar por su cuenta (tabla y pantalla
