@@ -12,7 +12,8 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 - [x] **Inicialización** — perfil creado de forma inferida en `.devsquad/perfil.md` (campos marcados "confirmar" pendientes de validación).
 - [x] **Contexto de negocio** — documento de la dueña guardado en `docs/contexto-negocio.md`.
 - [x] **Requerimientos (BSA)** — `.devsquad/requerimientos.md`: 8 épicas, 27 historias con criterios de aceptación, 10 reglas de negocio, requisitos no funcionales, alcance V1/V1.5/Futuro, 11 preguntas abiertas y matriz de riesgos.
-- [ ] **Arquitectura** — Stack ya definido (ver abajo); falta responder las 4 preguntas de la sección 8.1 de requerimientos para poder formalizar `arquitectura.md`.
+- [x] **Modelo de datos** — `.devsquad/modelo-datos.md`: esquema completo derivado de una revisión a fondo de la dummy data de `index.html`, con 20 hallazgos que el documento de negocio no cubría, 5 decisiones de modelado con su trade-off, políticas de RLS y rutas de archivos en R2.
+- [ ] **Arquitectura** — Stack y modelo de datos ya definidos; falta formalizar `arquitectura.md` (estructura de carpetas, capas, variables de entorno, atributos no funcionales).
 - [ ] **Diseño de UI del panel administrativo** — el sitio público ya tiene diseño (demo de Claude Design); el panel admin no. Se hace después de arquitectura y antes de código.
 - [ ] **Preparación del entorno** — pendiente (skill `preparar-entorno`), justo antes de implementar.
 - [ ] **Implementación** — pendiente.
@@ -30,6 +31,18 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
    un solo proyecto, sin backend separado en Python/Node) + Supabase
    (Postgres + Auth) + Cloudflare R2 (fotos de producto y comprobantes de
    pago, no Supabase Storage). Costo estimado: $0/mes en operación normal.
+9. **Descuento de inventario (2026-09-20):** el stock baja cuando el
+   administrador marca el pedido como **"Enviado"**, no al generar el pedido
+   ni al validar el comprobante. Para evitar sobreventa, el catálogo muestra
+   stock disponible = stock físico − piezas de pedidos pagados sin enviar.
+10. **Validación de pago por correo (2026-09-20):** además del panel, el
+    administrador puede confirmar el pago desde un enlace en el correo. Debe
+    ser un token de un solo uso, con vencimiento y guardado como hash.
+11. **Roles (2026-09-20):** dos roles — `admin` (acceso total) e
+    `inventario` (solo carga y edición de productos/stock).
+12. **Envío (2026-09-20):** el asesor confirma el envío y en ese acto marca
+    el pedido como "Enviado". El costo de envío no se calcula en línea;
+    `orders.shipping_cost` queda nulo hasta que el asesor lo captura.
 
 ## Nota de sesión
 
