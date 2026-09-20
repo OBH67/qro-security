@@ -284,10 +284,20 @@ Criterios:
 3. Filtrable por grupo y subcategoría.
 4. Exportable a CSV.
 
-**G2 · Indicadores de operación** — `V1.5` · `M` · Dep. G1
+**G2 · Tablero de indicadores** — `V1` · `L` · Dep. G1 · **Promovido de V1.5 a V1 el 2026-09-20 por decisión de la dueña**
 > Como administrador quiero un tablero con la salud del negocio para actuar a tiempo.
 
-Candidatos (a confirmar ⚠ PA-7): ventas por periodo, ticket promedio, pedidos pendientes de pago con antigüedad, tasa de conversión pedido→pago validado, productos con stock bajo o en cero, tasa de devoluciones y saldo a favor vivo total.
+**Decisión de la dueña (2026-09-20):** el tablero debe estar "bien alimentado con gráficas e información, presentable y agradable para el cliente". Deja de ser un parche posterior y se convierte en la **pantalla de inicio del panel** para el rol `admin` — ver H6, que se modifica en consecuencia.
+
+Criterios:
+1. Es la primera pantalla que ve el rol `admin` al entrar al panel.
+2. Lo primero visible es **lo que requiere atención hoy**: comprobantes por validar, pedidos listos por enviar, productos con stock en cero. Después el panorama del negocio.
+3. Indicadores: ventas por periodo, ticket promedio, pedidos pendientes de pago con antigüedad, tasa de conversión pedido→pago validado, productos con stock bajo o en cero, tasa de devoluciones, saldo a favor vivo total, y el ranking de más/menos vendidos de G1.
+4. Cada gráfica responde una pregunta concreta de negocio; ninguna es decorativa.
+5. **Estado sin datos resuelto explícitamente**: la plataforma arranca de cero, así que los primeros días no hay historial — cada bloque necesita su estado vacío diseñado, no una gráfica rota.
+6. Los colores de datos conviven con el tema oscuro heredado y no se contradicen con los colores semánticos de estado (cian/ámbar/verde) que ya usa el resto del panel.
+7. Responsive: las gráficas se reacomodan en tablet y móvil sin perder legibilidad.
+8. ⚠ PA-8 sigue abierta (métricas exactas adicionales), pero ya no bloquea: este set es suficiente para V1.
 
 ---
 
@@ -329,13 +339,13 @@ Criterios:
 2. Si escribe a mano una URL fuera de su alcance, recibe una pantalla de acceso denegado clara, en español de negocio, no un error técnico.
 3. El panel muestra siempre su nombre y rol, para que quede claro qué cuenta está operando.
 
-**H6 · Pantalla de inicio del panel en V1** — `V1` · `S` · Cierra el hueco detectado al preparar la fase de diseño (2026-09-20)
-> Como administrador quiero llegar directo a lo más urgente al entrar al panel, sin esperar un tablero que todavía no existe.
+**H6 · Pantalla de inicio del panel** — `V1` · `S` · **Modificada el 2026-09-20** (originalmente definía entrar directo a Pedidos, sin tablero)
+> Como administrador quiero que el panel abra en una vista que me diga de un vistazo cómo va el negocio y qué necesita mi atención.
 
 Criterios:
-1. Sin G2 (V1.5), el panel del rol `admin` abre directo en la bandeja de Pedidos filtrada por **"Comprobante recibido"** — es la acción pendiente más urgente y repetida.
-2. El rol `inventario` abre directo en Catálogo, ya que Pedidos no es parte de su alcance (H5).
-3. En V1.5, G2 reemplaza este comportamiento por un tablero real, sin romper la navegación existente.
+1. El rol `admin` abre en el **tablero de indicadores (G2)**, que pasó a V1 por decisión de la dueña — no en la bandeja de Pedidos como se había definido antes.
+2. Lo pendiente urgente (comprobantes por validar, pedidos por enviar) es accionable directamente desde el tablero, con un clic a la bandeja filtrada correspondiente: el tablero informa, pero no deja al admin buscando dónde actuar.
+3. El rol `inventario` abre directo en Catálogo, ya que ni Pedidos ni Analítica son parte de su alcance (H5).
 
 ---
 
@@ -371,9 +381,9 @@ Criterios:
 
 ## 7. Alcance por versión
 
-**V1 (mínimo vendible)**: A1, A2, A3, B1, B2, B3, C1, C2, C3, C4, C5, D1, D2, D3, E1, E2, F1, F2, F3, G1, H1, H2, H3, H4, H5, H6.
+**V1 (mínimo vendible)**: A1, A2, A3, B1, B2, B3, C1, C2, C3, C4, C5, D1, D2, D3, E1, E2, F1, F2, F3, G1, **G2**, H1, H2, H3, H4, H5, H6.
 
-**V1.5 (siguiente parche)**: A4 (filtros avanzados), G2 (tablero de indicadores), estados de seguimiento de envío con número de guía, exportaciones adicionales.
+**V1.5 (siguiente parche)**: A4 (filtros avanzados), estados de seguimiento de envío con número de guía, exportaciones adicionales. *(G2 salió de aquí: se promovió a V1 el 2026-09-20.)*
 
 **Futuro**: lista de deseos, comparador de productos, cotizaciones formales para empresa, precios diferenciados por tipo de cliente (mayoreo), portal de instaladores/distribuidores, chat en vivo, multi-sucursal.
 

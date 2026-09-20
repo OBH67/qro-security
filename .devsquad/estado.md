@@ -117,6 +117,15 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
     10/10, Cableado Estructurado 9/9, GPS 1/1. **PA-1/PA-12 quedan cerradas
     por completo** — la taxonomía del catálogo (grupo → subcategoría →
     sub-subcategoría) ya está definida para los 6 grupos, sin pendientes.
+24. **G2 promovido de V1.5 a V1 — el tablero es la pantalla de inicio
+    (2026-09-20):** la dueña pidió que el tablero esté "bien alimentado con
+    gráficas e información, presentable y agradable para el cliente". Deja
+    de ser un parche posterior: es lo primero que ve el rol `admin` al
+    entrar al panel. **H6 se modificó en consecuencia** — antes decía
+    entrar directo a la bandeja de Pedidos precisamente porque el tablero
+    no existía en V1; ahora el tablero informa y da acceso de un clic a lo
+    accionable. El rol `inventario` sigue entrando a Catálogo. Ver
+    `requerimientos.md` G2 y H6.
 
 ## Nota de sesión
 
