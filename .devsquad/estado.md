@@ -85,15 +85,24 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
     auto-referenciado (`parent_id`) — ver `modelo-datos.md` D7. Cualquier
     grupo puede tener uno o varios niveles según lo necesite, sin volver
     a tocar el esquema.
-21. **PA-1 / PA-12 cerradas también para Automatización e Intrusión
-    (2026-09-20):** 19 subcategorías reales (antes 11 "ya confirmadas" en
-    el documento original — la lista real casi duplica esa cifra). Ver
-    `docs/contexto-negocio.md` §15, incluida una nota de ambigüedad sobre
-    "Paneles de Alarma y Accesorios Hikvision" (posible cuarto nivel, no
-    bloquea porque el esquema ya soporta cualquier profundidad). Pista para
-    PA-13 (marcas reales): Lutron, Hikvision y Honeywell ya aparecen como
-    líneas de producto completas en la navegación. **Solo queda pendiente
-    GPS, Telemática y Equipamiento Vehicular** de los 6 grupos.
+21. **Corrección importante (2026-09-20):** las capturas de sitios de
+    referencia que la dueña comparte **no reemplazan ni amplían** la lista
+    de subcategorías del documento original (`docs/contexto-negocio.md`
+    §3) — esa lista es la que manda, porque SG Querétaro no maneja todo lo
+    que un sitio de referencia muestra. Las capturas solo aportan el
+    **tercer nivel** (sub-subcategoría) para las subcategorías que ya
+    estaban confirmadas; cualquier subcategoría de más en la captura que no
+    estuviera en la lista original **se descarta**. Esto corrige un error
+    de la sesión: la primera versión de la adenda de Automatización e
+    Intrusión había reemplazado las 11 subcategorías originales por las 19
+    de la captura; ya está corregido en `docs/contexto-negocio.md` §15.
+22. **PA-1 / PA-12 cerradas para Automatización e Intrusión y Control de
+    Acceso (2026-09-20, corregido):** mismas 11 y 16 subcategorías de
+    siempre, ahora con su sub-subcategoría real. Ver
+    `docs/contexto-negocio.md` §15 y §16. **Solo queda pendiente GPS,
+    Telemática y Equipamiento Vehicular** de los 6 grupos — ahí sí no hay
+    lista previa, así que la próxima captura será la definición completa,
+    no un filtro.
 
 ## Nota de sesión
 
