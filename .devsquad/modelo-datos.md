@@ -364,10 +364,11 @@ order_status  ENUM('pendiente_pago', 'comprobante_recibido',
 | folio · | text UNIQUE | "SGQ-00248" |
 | user_id · | uuid FK → profiles | |
 | status · | order_status | default `pendiente_pago` |
+| payment_method · | text | `transferencia` / `saldo_completo` (ver nota RN-11 abajo) |
 | subtotal · | numeric(12,2) | Suma de partidas |
 | credit_applied · | numeric(12,2) | Saldo a favor usado, default 0 |
 | shipping_cost | numeric(12,2) | **Nulo hasta que el asesor lo confirma** |
-| total · | numeric(12,2) | Importe exacto a transferir |
+| total · | numeric(12,2) | Importe exacto a transferir. **$0 si `payment_method = saldo_completo`** |
 | wants_invoice · | boolean | |
 | shipping_address · | jsonb | Copia congelada (ver D3) |
 | billing_data | jsonb | Copia congelada, nulo si no pidió factura |
@@ -420,6 +421,18 @@ order_status  ENUM('pendiente_pago', 'comprobante_recibido',
 El panel debe mostrar `orders.total` junto a `payment_proofs.amount` para que el
 administrador compare de un vistazo — es la única defensa contra comprobantes
 alterados en la versión 1.
+
+**Caso sin comprobante — saldo a favor cubre el 100% (RN-11).** Cuando
+`payment_method = 'saldo_completo'`, no existe fila en `payment_proofs`: no hay
+nada que transferir, así que no hay nada que subir. Pero el pedido **igual entra
+a `comprobante_recibido`** — el mismo punto de revisión que cualquier otro
+pedido — porque ningún pedido avanza de estado sin que el administrador lo
+confirme explícitamente. La pantalla de revisión, en este caso, no muestra una
+imagen: muestra el desglose del saldo aplicado (`credit_applied`) contra el
+total original, para que el administrador confirme que la operación es
+legítima antes de pasar a `listo_envio`. Es una decisión de la dueña del
+proyecto (2026-09-20), no una limitación técnica: valida el mismo criterio
+humano que un comprobante, aplicado parejo sin importar el método de pago.
 
 **`payment_confirmation_tokens`** — el enlace de confirmación por correo
 | Campo | Tipo | Notas |

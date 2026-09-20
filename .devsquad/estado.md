@@ -53,6 +53,16 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
     Supabase Pro antes de producción (AR-2), y contratar dominio propio ya
     (AR-3, es lo único que bloquea — afecta CDN de imágenes y que el correo
     con datos bancarios no caiga en spam). Ver `arquitectura.md` §14.
+15. **PA-9 cerrada — RN-11 nueva (2026-09-20):** ningún pedido cambia de
+    estado automáticamente, ni siquiera cuando el saldo a favor cubre el
+    100% del pedido y no hay comprobante que subir. Ese pedido entra igual
+    a la bandeja de revisión del administrador (mismo punto que un
+    comprobante), mostrando el saldo aplicado en vez de una imagen, y
+    requiere confirmación manual antes de pasar a "Listo para envío".
+    Razón de la dueña: validar un pago es un juicio humano sobre un
+    documento no estructurado, y ese criterio debe aplicar parejo sin
+    importar el método de pago. Ver `requerimientos.md` RN-11 y D3.3,
+    `modelo-datos.md` §4.3 (`orders.payment_method`).
 
 ## Nota de sesión
 

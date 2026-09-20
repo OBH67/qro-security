@@ -212,7 +212,7 @@ Criterios:
 Criterios:
 1. El saldo disponible es visible en la cuenta y en el momento de generar el pedido.
 2. El cliente elige aplicar todo o parte del saldo; el importe a transferir se recalcula y es el que aparece en las instrucciones de pago.
-3. Si el saldo cubre el total, el pedido no requiere comprobante y pasa directo a **Listo para envío** (⚠ confirmar con el cliente final que esto es deseable).
+3. Si el saldo cubre el total, el pedido **no requiere comprobante de transferencia** (no hay nada que transferir), pero **tampoco avanza automáticamente**: entra a la misma bandeja de revisión del administrador que un pedido con comprobante, mostrando el detalle del saldo aplicado en vez de una imagen. El administrador confirma manualmente antes de que pase a **Listo para envío** — ver RN-11. Decisión de la dueña (2026-09-20): ningún pedido cambia de estado sin una acción humana explícita, precisamente porque validar un pago es un juicio humano sobre un documento no estructurado (captura de pantalla, foto de ticket, PDF del banco), y ese mismo criterio de "alguien lo revisa antes de avanzar" debe aplicar parejo, sin atajos por el método de pago.
 4. El saldo se descuenta al generar el pedido y se devuelve íntegro si el pedido se cancela.
 5. El saldo nunca puede quedar negativo; toda aplicación es una operación atómica.
 
@@ -322,6 +322,7 @@ Criterios: correos de bienvenida/verificación, recuperación de contraseña, pe
 - **RN-8** Los servicios (monitoreo, guardias, financiamiento) no son productos y no se venden en línea.
 - **RN-9** Un producto con ventas históricas no se elimina, se desactiva.
 - **RN-10** El precio de un pedido se congela al generarse.
+- **RN-11** Ningún pedido cambia de estado de forma automática. Todo avance —incluido un pedido cubierto al 100% con saldo a favor, que no tiene comprobante que subir— requiere una acción explícita del administrador. La validación de un pago es un juicio humano sobre un documento no estructurado; ese mismo criterio aplica sin excepción, sin importar el método de pago.
 
 ---
 
