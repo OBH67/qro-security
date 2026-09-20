@@ -84,7 +84,8 @@ Los 6 grupos principales (confirmados, sin cambio):
   - PDU: Básicos · Fuente Redundante (ATS) · Medibles · Monitoreables · Switcheables
   - Racks y Gabinetes: Accesorios para Rack/Gabinetes · Gabinetes para Exterior · Gabinetes para Montaje en Pared · Racks Abiertos · Racks Cerrados
   - Transceptores de Fibra / (Mini-GBICs): 100G Duplex · 10G Duplex · 1G Duplex · 200G Duplex · 25G Duplex · 400G Duplex · 40G Duplex · BiDi (1G/10G) · Cables DAC & AOC · Industrial BiDi · Industrial Duplex · RJ45 SFP
-- **GPS, Telemática y Equipamiento Vehicular (1): Video Móvil y Cámaras Vehiculares** (2026-09-20; sin sub-subcategoría todavía). De todas las que muestra la navegación (barras de luz, estrobos, IoT/GPS/Telemática, LoRaWAN, luces auxiliares, señalización industrial, sirenas...), solo esta aplica al catálogo de SG Querétaro.
+- **GPS, Telemática y Equipamiento Vehicular (1 subcategoría — de todas las que muestra la navegación, solo esta aplica):**
+  - Video Móvil y Cámaras Vehiculares: Accesorios · Body Cams · Cámaras Móviles · Dash Cams · MDVR / MNVR
 
 Un producto pertenece a un grupo y una subcategoría, y necesita al menos: SKU, nombre, marca, precio (con IVA incluido), stock disponible, fotos, especificaciones técnicas y estado (activo/agotado).
 

@@ -106,6 +106,17 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 
     **Pendiente para todos:** el tercer nivel (sub-subcategoría) — ninguno
     lo tiene todavía. Se recaptura después, mismo criterio de marcado.
+23. **Tercer nivel completo para los 6 grupos (2026-09-20):** cada captura
+    se filtró tomando **solo** la sub-subcategoría de las subcategorías ya
+    registradas en el punto 22 — cualquier subcategoría de la captura que
+    no estuviera en esa lista se ignoró (ej. "Detectores / Sensores" y
+    "Lutron" en Automatización e Intrusión, "Accesorios Generales" y
+    "Drones, Robots e Industrial" en Videovigilancia). Resultado por grupo,
+    ver `docs/contexto-negocio.md` §3: Automatización e Intrusión 10/10,
+    Control de Acceso 14/14, Energía y Climatización 10/10, Videovigilancia
+    10/10, Cableado Estructurado 9/9, GPS 1/1. **PA-1/PA-12 quedan cerradas
+    por completo** — la taxonomía del catálogo (grupo → subcategoría →
+    sub-subcategoría) ya está definida para los 6 grupos, sin pendientes.
 
 ## Nota de sesión
 

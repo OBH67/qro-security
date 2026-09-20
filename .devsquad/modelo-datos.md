@@ -664,10 +664,12 @@ una URL pública adivinable.
 
 Se suman a las 11 que ya están en `.devsquad/requerimientos.md`.
 
-- ~~**PA-12 · Subcategorías de los 6 grupos**~~ — **cerrada (2026-09-20)**:
-  subcategorías (segundo nivel) confirmadas para los 6 grupos. Ver
-  `docs/contexto-negocio.md` §3. **Sigue pendiente el tercer nivel
-  (sub-subcategoría) de todos los grupos** — ninguno lo tiene todavía.
+- ~~**PA-12 · Subcategorías y sub-subcategorías de los 6 grupos**~~ —
+  **cerrada por completo (2026-09-20)**: los tres niveles (grupo →
+  subcategoría → sub-subcategoría) están confirmados para los 6 grupos. Ver
+  `docs/contexto-negocio.md` §3. Con esto el catálogo completo de SG
+  Querétaro ya tiene su taxonomía definitiva — no quedan grupos ni
+  subcategorías pendientes de estructura de navegación.
 - **PA-13 · Marcas reales:** el demo usa "Marca Demo A/B/C". ¿Cuál es el catálogo
   real de marcas que distribuye SG Querétaro? Sigue abierta.
 - **PA-14 · Reseñas:** ¿se van a habilitar reseñas reales de clientes (requiere
