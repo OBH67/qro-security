@@ -196,12 +196,20 @@ qro-security/
     │   ├── layout.tsx · error.tsx · not-found.tsx
     │   └── globals.css
     │
-    ├── components/                        ═══ PRESENTACIÓN REUTILIZABLE ═══
-    │   ├── ui/                            ← átomos: Boton, Campo, Modal, Tabla, Badge…
-    │   ├── catalogo/                      ← TarjetaProducto, Filtros, Galeria, Paginador
-    │   ├── pedido/                        ← ResumenCarrito, LineaPedido, SubidaComprobante
-    │   ├── cuenta/                        ← MovimientosSaldo, FormDireccion
-    │   └── admin/                         ← TablaPedidos, VisorComprobante, ImportadorCSV
+    ├── components/                        ═══ PRESENTACIÓN REUTILIZABLE — Atomic Design ═══
+    │   ├── atoms/                         ← Boton, Campo, Etiqueta, Icono, Badge, Spinner…
+    │   │                                     no saben nada del negocio: reciben props, no SKUs
+    │   ├── molecules/                     ← CampoConError, TarjetaProducto, ChipFiltro,
+    │   │                                     LineaPedido, IndicadorStock, PasoDeFlujo…
+    │   │                                     combinan 2-3 átomos con una responsabilidad
+    │   ├── organisms/                     ← GaleriaProducto, ResumenCarrito, TablaPedidos,
+    │   │                                     FormularioDireccion, VisorComprobante,
+    │   │                                     ImportadorCSV, FiltrosCatalogo…
+    │   │                                     una sección completa de pantalla, con estado propio
+    │   ├── templates/                     ← LayoutTienda, LayoutCuenta, LayoutAdmin
+    │   │                                     el esqueleto de una pantalla, sin datos reales
+    │   └── admin/                         ← organismos exclusivos del panel que no aplican
+    │                                         al sitio público (ImportadorCSV, EditorProducto)
     │
     ├── server/                            ═══ SOLO SERVIDOR — nunca llega al navegador ═══
     │   │                                     (todo archivo aquí importa 'server-only')
@@ -263,6 +271,39 @@ qro-security/
    y es la frontera que permitiría extraerlo a un servicio si el proyecto creciera.
 3. **`src/lib/` es el único lugar que ambos lados pueden importar**, y por eso no puede
    contener secretos ni lógica de negocio sensible.
+
+### 4.1 `components/` sigue Atomic Design (skill `estandares-frontend`)
+
+La regla de dependencia dentro de `components/` va en un solo sentido: **átomo → molécula
+→ organismo → template**. Un átomo nunca importa una molécula; un organismo puede combinar
+varias moléculas y átomos, pero dos organismos no se combinan entre sí (esa composición ya
+es responsabilidad de una página en `app/`).
+
+| Nivel | Qué es | Ejemplo de este proyecto | Sabe de negocio? |
+|---|---|---|---|
+| **Átomo** | La pieza más chica con sentido propio | `Boton`, `Campo`, `Badge`, `Spinner` | No — ni un SKU ni un estado de pedido |
+| **Molécula** | 2–3 átomos con una responsabilidad | `CampoConError` (Campo + mensaje), `IndicadorStock` (Badge + texto), `TarjetaProducto` | Solo la mínima para renderizarse (recibe `producto` ya resuelto, no lo consulta) |
+| **Organismo** | Una sección completa de pantalla, con su propio estado de interacción | `GaleriaProducto`, `ResumenCarrito`, `TablaPedidos`, `ImportadorCSV`, `VisorComprobante` | Sí, pero solo de presentación — sigue sin llamar a Supabase directamente |
+| **Template** | El esqueleto de una pantalla sin datos reales | `LayoutTienda`, `LayoutAdmin` | No — define dónde va cada organismo, no qué contiene |
+| **Página** | Vive en `app/`, no en `components/` | `app/(public)/producto/[slug]/page.tsx` | Sí — aquí es donde se leen datos reales (Server Component) y se arma la página con el template + organismos |
+
+**Por qué el sitio público también lo sigue, aunque ya tenga diseño aprobado.** El demo
+(`index.html`) es la referencia visual, no la referencia de estructura de código — es un
+único archivo de más de 2,700 líneas con toda la lógica mezclada, típico de un prototipo de
+diseño. Traducirlo a Atomic Design es precisamente lo que evita reproducir ese problema en
+el código real: la paleta, tipografía y espaciado que definió el demo se capturan **una vez**
+en los átomos (vía los tokens del Diseñador) y de ahí se heredan hacia arriba, en vez de
+repetirse pantalla por pantalla como pasa en el HTML de referencia.
+
+> **Trade-off (ATAM):** cuatro niveles con reglas de importación agregan una decisión extra
+> cada vez que se crea un componente ("¿esto es molécula u organismo?"), fricción que un
+> proyecto muy pequeño podría no necesitar. Se acepta porque este proyecto tiene **dos
+> superficies** (tienda y panel) que van a compartir átomos y moléculas (un `Badge` de stock
+> se ve igual en la ficha de producto que en la tabla del admin) — sin esta disciplina, el
+> panel terminaría con su propio botón ligeramente distinto al de la tienda, que es
+> exactamente la inconsistencia que la skill `estandares-frontend` pide evitar. La carpeta
+> `admin/` es la única excepción deliberada: organismos que de verdad no tienen sentido fuera
+> del panel (`ImportadorCSV`) no se fuerzan a un nivel genérico solo por seguir la regla.
 
 Lectura: los Server Components **sí** pueden llamar directamente a
 `src/server/db/queries/` (son solo lecturas, ya filtradas por RLS). Exigir que toda
@@ -877,6 +918,11 @@ Marco de referencia, proporcional al tamaño del proyecto (no se impone un proce
 - **ISO/IEC 5055** — expectativa que se le pasa al Coder: TypeScript estricto sin `any`,
   cero secretos en el repositorio, manejo explícito de errores en todo punto de entrada,
   validación de toda entrada externa. Se conecta con la rúbrica de `estandares-backend`.
+- **Atomic Design** (skill `estandares-frontend`) — organización obligatoria de
+  `src/components/` en átomos, moléculas, organismos y templates (§4.1). Aplica tanto al
+  panel admin como a la traducción a código del sitio público, para que ambas superficies
+  compartan una sola fuente de verdad de paleta, tipografía y componentes base en vez de
+  reimplementarlos por separado.
 - **Pruebas mínimas de v1**: unitarias sobre `src/server/domain/` (inventario, saldo,
   folios, porcentajes de devolución, máquina de estados) y **una prueba de concurrencia**
   que dispare dos apartados simultáneos sobre la última pieza y verifique que solo uno
