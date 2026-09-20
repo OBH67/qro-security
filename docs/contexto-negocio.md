@@ -26,7 +26,17 @@
 > documentarán aquí conforme la dueña las vaya confirmando.
 
 Los 6 grupos principales (confirmados, sin cambio):
-- **Videovigilancia (10): Cámaras IP y NVRs · Cámaras y DVRs HD TurboHD / AHD / HD-TVI · Cables y Conectores · Energía · Kits - Sistemas Completos · Monitores Pantallas y Mobiliario · Servidores / Almacenamiento · Software VMS y Analíticas · Videograbadoras Móviles, Dash Cams y Body Cams · Videoporteros e Interfonos** (2026-09-20; sin sub-subcategoría todavía). De las 11 que muestra la navegación, solo "Drones, Robots e Industrial" no tiene punto de marcado y se descarta.
+- **Videovigilancia (10 subcategorías — de las 11 que muestra la navegación, se descarta "Drones, Robots e Industrial"; tampoco cuenta "Accesorios Generales", que no forma parte de las subcategorías registradas):**
+  - Cámaras IP y NVRs: 4G · Ambientes Salinos (Anticorrosión) · Antiexplosión · Bala · Codificadores y Decodificadores de Video · Cubo · Domo / Eyeball / Turret · Fisheye y Hemisféricas · Lente Motorizado · NVRs Network Video Recorders · Oculta - Pinhole · Profesionales - Caja · PTZ · Térmicas · WiFi
+  - Cámaras y DVRs HD TurboHD / AHD / HD-TVI: Ambientes Salinos · Antiexplosión · Bala · Domo / Eyeball / Turret · Especiales · Lente Motorizado · Ocultas - Pinhole · Profesionales - Caja · PTZ · Videograbadoras Analógicas - TurboHD TVI / AHD / CVI
+  - Cables y Conectores: Cable Coaxial y Conectores · Cable de Red UTP (Cat5e / 6 / 6A) · Cables A/V (HDMI / VGA / DVI / RCA / Audio) · Fibra Óptica · Para Alimentación y Electricidad · Telefónico
+  - Energía: Baterías · Fuentes de Alimentación · PDU · PoE: Inyectores y Largo Alcance · Protección de Líneas (Red / Coaxial) · Supresores / Corriente AC-DC · UPS - No Break
+  - Kits - Sistemas Completos: IP Megapixel · Móviles (Para Vehículos) · TurboHD de 16 Canales · TurboHD de 4 Canales · TurboHD de 8 Canales
+  - Monitores Pantallas y Mobiliario: Accesorios · Consolas y Mobiliario de Monitoreo · Pantallas / Monitores · Videowall Seguridad
+  - Servidores / Almacenamiento: Accesorios · Almacenamiento NAS / SAN / eSATA · Discos Duros Mecánicos (HDD) · Estaciones de Trabajo (Workstation) · Memorias SD / Memorias Micro SD · Servidores de Aplicación · Unidades de Estado Sólido (SSD)
+  - Software VMS y Analíticas: Digifort · EPCOM Cloud · HIKVISION · Honeywell · IDIS · ISS · Milestone · SYNOLOGY · Wisenet Wave · XMR CEIBAII / KAPOK
+  - Videograbadoras Móviles, Dash Cams y Body Cams: Accesorios · Body Cams (Portátiles) · Cámaras Móviles · Dash Cams · MDVR / MNVR
+  - Videoporteros e Interfonos: Accesorios · Intercomunicadores · Intercomunicadores por Radio · Interfonos · Multiapartamentos · Videoporteros Analógicos · Videoporteros IP · Videoporteros IP Doorbell
 - **Control de Acceso (14 subcategorías, filtrado por punto de marcado — de las 21 que muestra la navegación, se descartan Control de Rondas Para Vigilantes, Detectores de Metal, Equipo Blindado, Identificación y Credencialización, Protección de Mercancía (EAS), Refacciones, Teclados Autónomos):**
   - Acceso vehicular: Accesorios · Barreras Vehiculares · Pilonas o Bolardos · Puertas Abatibles y Corredizas · Refacciones · Semáforos, Radares y Señalización · Topes, Picos y Reductores
   - Accesorios: Bisagras y Pasacables · Botones de Salida · Cables para Control de Acceso · Cierrapuertas · Contactos Magnéticos · Controles Inalámbricos · Mobiliario de Apoyo · Sensores para Puertas Automáticas · Tarjetas de Relevador · Tarjetas y Tags
