@@ -5,7 +5,7 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 Última actualización: 2026-09-20
 
 ## Fase actual
-**Diseño aprobado y entorno verificado. Lista para arrancar implementación.**
+**Implementación en curso — primer incremento (andamiaje + migraciones) completado.**
 
 ## Progreso por fases
 
@@ -17,7 +17,7 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 - [x] **Diseño de UI del panel administrativo** — `.devsquad/diseño.md` (1885 líneas): tokens heredados del demo del sitio público con 3 correcciones de contraste WCAG AA, navegación por rol, Atomic Design, y las 13 pantallas con sus estados. Incluye el tablero completo (G2, adelantado a V1 el 2026-09-20) con 6 gráficas justificadas y paleta de datos separada de los colores semánticos de estado. **Aprobado por la dueña (2026-09-20).**
 - [x] **Maqueta visual interactiva (Artifact)** — construida sobre `diseño.md`: Login, Tablero completo, Pedidos, Detalle de pedido (normal y variante RN-11), Catálogo, Alta de producto (con el selector de categoría de 3 niveles usando la taxonomía real de 54 subcategorías), Categorías (árbol D7), Devoluciones (con cajón de resolución), Solicitudes de servicio, Analítica, Configuración, e Importador CSV (pasos 1-2). Quedan sin maquetar, documentados en `diseño.md` con su sección exacta: las pestañas de Precio/Fotos/Especificaciones/Documentos del editor de producto (§11.7) y el paso 3 (aplicar) del importador CSV (§11.8) — ninguno bloquea la implementación, están completamente especificados.
 - [x] **Preparación del entorno** — verificado (2026-09-20): Node.js v22.22.2, npm 10.9.7, Git 2.43.0, Supabase CLI funcional vía `npx`. Todo cumple lo requerido en `arquitectura.md` §11.1, nada que instalar en este entorno.
-- [ ] **Implementación** — pendiente, siguiente paso.
+- [~] **Implementación** — en curso. Primer incremento completado (2026-09-20): andamiaje de Next.js + 8 migraciones de base de datos. Ver detalle debajo y "Próxima sesión".
 
 ## Decisiones ya tomadas (no volver a preguntar)
 
@@ -136,6 +136,27 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
     del frontend se crea por asunción: lo que no esté en los HTML ni en
     `diseño.md`/`docs/contexto-negocio.md` se pregunta antes de construirse.
     Ver `perfil.md` §Archivos protegidos y `requerimientos.md` H1/H1-bis.
+26. **Primer incremento de implementación completado (2026-09-20):**
+    andamiaje de Next.js (App Router, TypeScript estricto) inicializado en
+    la raíz del repo sin tocar `index.html`, `support.js`, `uploads/` ni
+    `panel-admin-maqueta.html`; estructura de carpetas completa de
+    `arquitectura.md` §4; `globals.css` con los tokens exactos de
+    `diseño.md` §2 (paleta, Chakra Petch/IBM Plex Sans/IBM Plex Mono vía
+    `next/font/google`, `clip-path`, modo oscuro único) y el CSS de
+    dark-mode/Geist del template de `create-next-app` eliminado por
+    completo; `.env.example` con 25 variables documentadas;
+    `src/server/config/env.ts` validando con Zod al arrancar; regla de
+    ESLint (`no-restricted-imports`) como candado 3 de arquitectura §6.2;
+    8 migraciones SQL (`supabase/migrations/0001`–`0008`) con RLS en todas
+    las tablas y las 4 funciones transaccionales de §9.1
+    (`apartar_pedido`, `liberar_apartado`, `marcar_enviado`,
+    `aplicar_saldo`), **validadas funcionalmente contra un Postgres 16
+    local** (no se pudo levantar el stack completo de `supabase start`
+    porque el proxy de red del entorno bloquea la descarga de las imágenes
+    Docker de Supabase — ver nota en "Próxima sesión"). Se probó
+    explícitamente el escenario de concurrencia de §9.1 (dos pedidos
+    compitiendo por la última pieza: el segundo recibe el error de negocio
+    limpio) y el de saldo insuficiente (RN-7).
 
 ## Nota de sesión
 
@@ -148,17 +169,76 @@ disponible, el arquitecto debe recibir explícitamente las secciones "Stack" y
 ## Próxima sesión
 
 ### Qué se completó
-Perfil inferido, contexto de negocio versionado en el repo y documento de
-requerimientos completo listo para arquitectura.
+Andamiaje de Next.js + `globals.css` con los tokens del diseño + validación
+de entorno con Zod + `.env.example` + las 8 migraciones de base de datos
+(esquema completo, RLS en todas las tablas, las 4 funciones transaccionales
+de concurrencia/saldo). `npm run build` y `npm run lint` pasan limpio.
+`git status` limpio, todo comiteado.
 
-### Qué falta
-Elegir stack, responder las 4 preguntas bloqueantes y ejecutar la fase de
-arquitectura (`arquitectura.md`), luego diseño del panel admin, entorno y código.
+### Próximo incremento: catálogo público
+Listado por grupo/subcategoría, ficha de producto y búsqueda (Épica A de
+`requerimientos.md`), traduciendo **literalmente** `index.html` a
+componentes Atomic Design (`src/components/atoms|molecules|organisms`) —
+regla nueva de la dueña (2026-09-20, decisión #25): copy-paste de
+estructura/clases/estilos, no interpretación libre. Nada que no esté en
+`index.html`, `panel-admin-maqueta.html` o `diseño.md` se inventa: se
+pregunta primero.
+
+### Decisiones técnicas tomadas por el Coder que no estaban 100% explícitas
+(reportadas para que BSA/Arquitecto las revisen si hace falta, no bloquean nada)
+1. **`ORDER_AUTO_CANCEL_DAYS` default en `env.ts` = 3, no 5.**
+   `arquitectura.md` §10.5 sugería 5 como default, pero
+   `requerimientos.md` PA-7 ya tiene la decisión final de la dueña (3 días,
+   2026-09-20). Se usó el valor decidido, no el sugerido.
+2. **`legal_pages.slug` solo admite `privacidad`/`terminos`** (los dos que
+   `modelo-datos.md` §4.6 declara explícitamente), aunque
+   `requerimientos.md` §6 también pide publicar una política de
+   devoluciones antes de producción. No se agregó un tercer slug por
+   cuenta propia — es una ambigüedad entre dos documentos aprobados, queda
+   señalada en el `CHECK` de `0006_servicios_y_contenido.sql` para que se
+   resuelva explícitamente (probablemente: agregar `devoluciones` al
+   enum, o reutilizar `terminos`).
+3. **`notification_outbox` sin FK a `orders`/`returns`/`service_requests`**:
+   se diseñó con `payload jsonb` genérico porque un solo evento de negocio
+   ("comprobante recibido") puede no tener aún todas las relaciones
+   resueltas y porque la tabla es compartida entre varios módulos
+   (arquitectura §7.3 no especifica su esquema exacto de columnas, solo
+   "evento, canal, destino, intentos, estado").
+4. **`subcategories`** no tiene una restricción de base de datos que
+   obligue a que `parent_id` pertenezca al mismo `group_id`: se documentó
+   en un comentario SQL que esa validación vive en `server/domain`, porque
+   una FK compuesta lo hubiera requerido duplicar `group_id` en cada fila
+   hija de forma redundante. Vale la pena que el Arquitecto confirme que
+   está de acuerdo con dejarlo solo en la capa de aplicación.
+
+### Bloqueo real (no de código): no se pudo levantar Supabase local completo
+`npx supabase start` no pudo descargar las imágenes Docker de Supabase — el
+proxy de red de este entorno rechaza las conexiones a
+`production.cloudfront.docker.com` (política del gateway, no arreglable
+desde el código). **Mitigación aplicada:** se instaló Postgres 16 nativo
+(ya estaba disponible vía `apt`) y se aplicaron las 8 migraciones en orden
+contra una base de datos limpia, con roles (`anon`, `authenticated`,
+`service_role`, `supabase_auth_admin`) y un `auth.users`/`auth.uid()`/
+`auth.jwt()` mínimos simulados a mano para poder probar RLS y las 4
+funciones transaccionales de extremo a extremo (incluida la prueba de
+concurrencia de última pieza y la de saldo insuficiente). **Lo que NO se
+validó:** el comportamiento real de Supabase Auth (el Auth Hook de
+`custom_access_token_hook` necesita habilitarse manualmente en el
+dashboard del proyecto real, ya documentado como paso pendiente dentro de
+`0007_rls_policies.sql`), Supabase Studio, y el resto de servicios del
+stack (Storage, Realtime, Kong). Se recomienda repetir
+`npx supabase start` (o `supabase db push` contra el proyecto real una vez
+que la dueña lo cree) desde un entorno sin esa restricción de red antes de
+salir a producción.
 
 ### Tareas manuales de la persona mientras tanto
-1. Leer `.devsquad/requerimientos.md`, en especial la sección 7 (alcance V1) y la 8 (preguntas abiertas), y marcar lo que no coincida con su entendimiento.
-2. Confirmar o corregir los campos "(inferido — confirmar)" de `.devsquad/perfil.md`.
-3. Preguntar al cliente final: PA-11 (¿existe ya el catálogo en Excel o en algún sistema?) — es lo que más puede mover la fecha de lanzamiento.
-4. Iniciar el trámite de WhatsApp Business API (número dedicado + verificación del negocio): tarda días o semanas y no depende del código.
-5. Conseguir los datos bancarios oficiales de SG Querétaro y los textos legales (aviso de privacidad, términos, política de devoluciones).
-6. Recuperar `prompt-claude-design-sg-queretaro.md` si existe: se referencia en el contexto de negocio pero no está en el repositorio, y le sería muy útil al diseñador del panel admin.
+1. Crear el proyecto de Supabase real (aunque sea en el plan gratis para
+   desarrollo) para poder aplicar estas migraciones y habilitar el Auth
+   Hook `custom_access_token_hook` como "Custom Access Token" en
+   Authentication → Hooks (paso manual, no se puede hacer por SQL).
+2. Crear la cuenta de Cloudflare (R2 + Turnstile) y de Resend — son
+   dependencias externas del siguiente incremento en adelante.
+3. Seguir con AR-3 (dominio propio): sigue siendo lo que más bloquea el
+   lanzamiento real, no el desarrollo.
+4. Decidir la ambigüedad de `legal_pages.slug` (punto 2 de arriba) cuando
+   se llegue al incremento de contenido editorial — no urge ahora.
