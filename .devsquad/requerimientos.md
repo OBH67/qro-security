@@ -311,6 +311,29 @@ Criterios:
 2. El sitio es responsive; no hay app nativa.
 3. Contraste de texto verificado antes de entregar (la plantilla es de fondo oscuro: alto riesgo de texto ilegible).
 4. `index.html`, `support.js` y `uploads/` se conservan como referencia y **no se modifican** (archivos protegidos).
+5. **Traducción literal, no interpretación (2026-09-20):** la implementación es un
+   copy-paste de la estructura, clases, estilos inline, colores, tipografías y
+   layout de `index.html` a componentes de Next.js — no una versión "inspirada
+   en" el demo. Ningún elemento visual del sitio público se crea por asunción;
+   si algo no está en `index.html` ni en `docs/contexto-negocio.md`, se
+   pregunta antes de inventarlo. Aplica igual a **H1-bis** para el panel
+   administrativo, ver abajo.
+
+**H1-bis · Traducir la maqueta del panel a código funcional** — `V1` · `L`
+> Como dueña del proyecto quiero que el panel real coincida exactamente con la maqueta que ya aprobé, no con una interpretación libre de `diseño.md`.
+
+Criterios:
+1. `panel-admin-maqueta.html` (raíz del repo, archivo protegido) es la
+   referencia visual exacta del panel — mismo criterio que H1.5: se traduce
+   literalmente a componentes de Next.js, misma estructura y estilos.
+2. `.devsquad/diseño.md` sigue siendo la fuente para lo que la maqueta no
+   pudo mostrar de una vez: los 4 estados de cada pantalla (cargando, vacío,
+   con datos, error), accesibilidad, responsividad, y las pantallas/pestañas
+   que la maqueta dejó documentadas pero no construidas (§11.7 pestañas
+   secundarias del editor de producto; §11.8 paso 3 del importador CSV).
+3. Ningún componente, color, espaciado o texto del panel se decide por
+   asunción del coder: si no está en la maqueta ni en `diseño.md`, se
+   pregunta antes de construirlo.
 
 **H2 · Acceso seguro al panel administrativo** — `V1` · `M`
 > Como administrador quiero que solo yo pueda entrar al panel.
@@ -381,7 +404,7 @@ Criterios:
 
 ## 7. Alcance por versión
 
-**V1 (mínimo vendible)**: A1, A2, A3, B1, B2, B3, C1, C2, C3, C4, C5, D1, D2, D3, E1, E2, F1, F2, F3, G1, **G2**, H1, H2, H3, H4, H5, H6.
+**V1 (mínimo vendible)**: A1, A2, A3, B1, B2, B3, C1, C2, C3, C4, C5, D1, D2, D3, E1, E2, F1, F2, F3, G1, **G2**, H1, **H1-bis**, H2, H3, H4, H5, H6.
 
 **V1.5 (siguiente parche)**: A4 (filtros avanzados), estados de seguimiento de envío con número de guía, exportaciones adicionales. *(G2 salió de aquí: se promovió a V1 el 2026-09-20.)*
 

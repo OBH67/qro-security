@@ -127,6 +127,15 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
     no existía en V1; ahora el tablero informa y da acceso de un clic a lo
     accionable. El rol `inventario` sigue entrando a Catálogo. Ver
     `requerimientos.md` G2 y H6.
+25. **Regla de traducción literal del frontend (2026-09-20):** el frontend
+    (sitio público y panel admin) se implementa como copy-paste de la
+    estructura/clases/estilos de los HTML de referencia a Next.js, no como
+    interpretación libre. Se guardó `panel-admin-maqueta.html` en la raíz
+    del repo (antes solo vivía en el Artifact, fuera del alcance del
+    coder) y se agregó a archivos protegidos junto con `index.html`. Nada
+    del frontend se crea por asunción: lo que no esté en los HTML ni en
+    `diseño.md`/`docs/contexto-negocio.md` se pregunta antes de construirse.
+    Ver `perfil.md` §Archivos protegidos y `requerimientos.md` H1/H1-bis.
 
 ## Nota de sesión
 
