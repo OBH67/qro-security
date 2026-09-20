@@ -414,7 +414,7 @@ Criterios:
 
 | # | Pregunta | Efecto |
 |---|---|---|
-| **PA-1** | Subcategorías finales de los 6 grupos (reiniciado 2026-09-20, ver `docs/contexto-negocio.md` §3). **Cerradas: Automatización e Intrusión (10), Control de Acceso (14).** Faltan Videovigilancia, Energía y Climatización, Cableado Estructurado, GPS. | Son datos, no estructura. Se cargan cuando lleguen. |
+| **PA-1** | Subcategorías finales de los 6 grupos (reiniciado 2026-09-20, ver `docs/contexto-negocio.md` §3). **Cerradas: Automatización e Intrusión (10), Control de Acceso (14), Energía y Climatización (10).** Faltan Videovigilancia, Cableado Estructurado, GPS. | Son datos, no estructura. Se cargan cuando lleguen. |
 | **PA-8** | Métricas exactas de analítica además de más/menos vendidos. | G1 cubre lo mínimo; G2 se ajusta con la respuesta. |
 | **PA-5b** | Canal para las solicitudes de servicio: ¿correo, WhatsApp o ambos? | Sugerido: correo en v1, WhatsApp cuando PA-5 quede resuelto. |
 | **PA-11** | ¿Existe ya el catálogo en algún archivo (Excel, ERP, sitio del distribuidor)? | Determina qué tan real es F2 y cuánto trabajo manual de captura habrá. **Es la pregunta de mayor impacto en el calendario de lanzamiento.** |
