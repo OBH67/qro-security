@@ -203,6 +203,45 @@ reorganizable sin migraciones dolorosas.
 Los precios ya vienen con IVA incluido (regla del negocio). Se guarda
 `price` con IVA y `tax_rate` para poder desglosar en la factura más adelante.
 
+### D6 · Un producto devuelto y usado es una ficha nueva, no un ajuste de stock
+
+Decisión de la dueña del proyecto (2026-09-20, cierra PA-10): un producto que
+vuelve **sellado de fábrica** sí es fungible con el resto del inventario nuevo
+— sumar 1 al `stock` del SKU original es correcto. Pero un producto que vuelve
+**abierto, usado para prueba, incompleto o de exhibición** es una pieza física
+**única**: no hay otras 24 iguales en el almacén con las que se pueda mezclar,
+y venderlo al precio de uno nuevo sería engañoso para el siguiente comprador.
+
+Dos caminos posibles:
+
+- **Ajustar el `stock` del SKU original con una nota interna** — simple, pero
+  mezcla piezas nuevas con usadas bajo el mismo precio y la misma foto: el
+  cliente que compra "el último" no sabe si le va a llegar nuevo o usado.
+- **Crear una ficha de producto aparte, ligada a la original** (elegido) —
+  el admin decide si publicarla, le pone su propio precio, su propia foto real
+  de la pieza (no la foto de catálogo del producto nuevo) y un motivo visible.
+
+`products` gana tres columnas:
+
+| Campo | Tipo | Notas |
+|---|---|---|
+| `condition` | text | `nuevo` (default) / `usado` |
+| `condition_detail` | text | Nulo si `nuevo`. Texto visible al cliente: "Usado para prueba", "Incompleto — faltan piezas", "Unidad de exhibición" |
+| `source_return_id` | uuid FK → returns, nulo | Traza de qué devolución vino esta pieza |
+
+Una ficha `usado` reutiliza el mismo `group_id`/`subcategory_id`/`brand_id` del
+producto original (para que aparezca en la misma categoría), pero es una fila
+propia en `products` con su propio `sku` (ej. `SGQ-VV-0012-U1`), su propio
+`stock` (siempre 1, porque es una pieza física, no un lote) y su propio
+`price`. El catálogo la puede marcar con un filtro/badge de condición.
+
+Trade-off: crear una fila completa de producto por cada devolución revendible
+es más trabajo administrativo que un simple ajuste de número, pero es
+exactamente lo que evita vender una pieza usada al precio y con la foto de
+una nueva — el riesgo que la propia dueña señaló. Publicarla es una acción
+explícita del admin (F1), nunca automática: puede decidir que una pieza
+incompleta no se revende.
+
 ---
 
 ## 4. El esquema
@@ -311,6 +350,9 @@ por RLS.
 | includes | text[] | "Qué incluye" |
 | attributes | jsonb | Ficha técnica y facetas (ver D1) |
 | status · | text | `activo` / `agotado` / `descontinuado` |
+| condition · | text | `nuevo` (default) / `usado` — ver D6 |
+| condition_detail | text | Solo si `usado`: motivo visible al cliente |
+| source_return_id | uuid FK → returns | Solo si `usado`: de qué devolución viene |
 | sales_count · | int | Alimenta "Más vendidos" y la analítica |
 | created_at · | timestamptz | |
 | updated_at · | timestamptz | |

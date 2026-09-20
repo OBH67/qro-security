@@ -63,6 +63,20 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
     documento no estructurado, y ese criterio debe aplicar parejo sin
     importar el método de pago. Ver `requerimientos.md` RN-11 y D3.3,
     `modelo-datos.md` §4.3 (`orders.payment_method`).
+16. **PA-3 cerrada (2026-09-20):** plazo de devolución = **30 días**
+    naturales desde la entrega. Configurable en H4.
+17. **PA-7 cerrada (2026-09-20):** cancelación automática de pedido no
+    pagado = **3 días** desde que se generó, con recordatorio por correo
+    al día 2. Configurable en H4.
+18. **PA-10 cerrada (2026-09-20):** un producto devuelto **sí reingresa**,
+    pero nunca se mezcla con el stock nuevo. Sellado de fábrica → suma al
+    stock del SKU original. Abierto/usado/incompleto/exhibición → el admin
+    puede publicarlo como una **ficha de producto "Usado"** aparte, con su
+    propio precio, foto real y motivo visible; stock siempre 1 porque es
+    una pieza única. Ver `requerimientos.md` D2.6 y `modelo-datos.md` D6
+    (`products.condition`, `condition_detail`, `source_return_id`).
+19. **AR-4 cerrada (2026-09-20):** folio aleatorio, confirmado tal como
+    recomendaba `arquitectura.md` §9.2.
 
 ## Nota de sesión
 

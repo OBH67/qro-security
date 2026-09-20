@@ -179,7 +179,7 @@ Criterios:
 3. Acciones: validar pago → **Listo para envío**; luego **Enviado**; luego **Entregado**.
 4. Solo se permiten transiciones válidas del flujo; cada cambio guarda quién y cuándo.
 5. Puede rechazar un comprobante, lo que regresa el pedido a **Pendiente de pago** con un motivo que el cliente ve.
-6. Puede **Cancelar** un pedido en cualquier estado previo a Enviado, liberando el stock reservado ⚠ PA-7 (¿cancelación automática por plazo?).
+6. Puede **Cancelar** un pedido en cualquier estado previo a Enviado, liberando el stock apartado. La cancelación automática por plazo vencido está resuelta en D2.7 (PA-7: 3 días).
 
 ---
 
@@ -204,7 +204,11 @@ Criterios:
 3. Aprobar genera un movimiento de saldo a favor a nombre del cliente, con monto, fecha, motivo y pedido de origen.
 4. Rechazar exige un motivo, que el cliente ve.
 5. Toda alta de saldo queda en una bitácora inmutable (nunca se edita un saldo "a mano" sin rastro).
-6. ⚠ Decisión: si el producto devuelto reingresa o no al inventario vendible (relacionado con PA-2).
+6. **Reingreso al catálogo (PA-10, decisión 2026-09-20):** al aprobar la devolución, la pieza física **sí puede volver a venderse**, pero **nunca se mezcla con el stock de producto nuevo**:
+   - **Sellado de fábrica** → reingresa como producto **nuevo**: se suma 1 al `stock` del SKU original, mismo precio.
+   - **Abierto, usado, incompleto o de exhibición** → el administrador puede publicarlo como una **ficha de producto "Usado"** aparte: mismo SKU base + sufijo, con su propio precio (lo fija el admin, no el original), su propia foto real de la pieza y un motivo visible para el cliente (ej. "Usado para prueba", "Incompleto — faltan piezas", "Unidad de exhibición"). Stock siempre 1, porque es una pieza física única, no un lote.
+   - Publicar la ficha de "Usado" es una acción explícita del admin, no automática: puede decidir no revenderla.
+7. **Cancelación automática de pedido no pagado (PA-7, decisión 2026-09-20):** un pedido en **Pendiente de pago** se cancela solo a los **3 días** de generado si no se sube comprobante, con recordatorio por correo al día 2. El plazo es configurable desde H4, no está fijo en el código.
 
 **D3 · Usar el saldo a favor en un pedido** — `V1` · `M` · Dep. D2, C1
 > Como cliente quiero aplicar mi saldo a favor a una compra nueva para pagar menos por transferencia.
@@ -397,15 +401,22 @@ Criterios:
 
 ### 8.2 Necesitan respuesta del cliente final, pero no bloquean el arranque
 
+**Cerradas — decididas por la dueña del proyecto:**
+
+| # | Pregunta | Decisión final |
+|---|---|---|
+| ~~PA-3~~ | Plazo en días para solicitar una devolución | **30 días** naturales desde la entrega (2026-09-20). Configurable en H4. |
+| ~~PA-7~~ | ¿Se cancela automáticamente un pedido no pagado? | **Sí, 3 días** desde que se generó el pedido, con recordatorio por correo al día 2 (2026-09-20). Configurable en H4. |
+| ~~PA-9~~ | Si el saldo cubre el 100%, ¿se acepta sin comprobante? | **Sí se acepta sin comprobante, pero no avanza automático**: entra igual a revisión del admin (RN-11, §5). |
+| ~~PA-10~~ | ¿El producto devuelto reingresa al inventario vendible? | **Sí reingresa, pero nunca como nuevo.** Ver D2.7 y `modelo-datos.md` D6 — se reclasifica como **Usado**, con motivo, precio y stock propios (2026-09-20). |
+
+**Siguen abiertas:**
+
 | # | Pregunta | Efecto |
 |---|---|---|
 | **PA-1** | Subcategorías finales de *Cableado Estructurado* y *GPS, Telemática y Equipamiento Vehicular*. | Son datos, no estructura. Se cargan cuando lleguen. |
-| **PA-3** | Plazo en días para solicitar una devolución. | Se implementa como parámetro configurable; sugerido 30 días naturales desde la entrega. |
-| **PA-7** | ¿Se cancela automáticamente un pedido no pagado? ¿En cuántos días? | Parámetro configurable; sugerido 5 días hábiles, con recordatorio por correo al día 2. |
 | **PA-8** | Métricas exactas de analítica además de más/menos vendidos. | G1 cubre lo mínimo; G2 se ajusta con la respuesta. |
 | **PA-5b** | Canal para las solicitudes de servicio: ¿correo, WhatsApp o ambos? | Sugerido: correo en v1, WhatsApp cuando PA-5 quede resuelto. |
-| **PA-9** | Si el saldo a favor cubre el 100% del pedido, ¿se acepta sin comprobante? | Sugerido sí, avanzando directo a Listo para envío. |
-| **PA-10** | ¿El producto devuelto reingresa al inventario vendible? | Sugerido: solo si se devolvió sellado de fábrica; los demás quedan fuera del stock en línea. |
 | **PA-11** | ¿Existe ya el catálogo en algún archivo (Excel, ERP, sitio del distribuidor)? | Determina qué tan real es F2 y cuánto trabajo manual de captura habrá. **Es la pregunta de mayor impacto en el calendario de lanzamiento.** |
 
 ### 8.3 Dependencias externas a gestionar desde ya (tardan, no dependen del código)
