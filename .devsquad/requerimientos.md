@@ -269,7 +269,7 @@ Criterios:
 **F3 · Administrar grupos y subcategorías** — `V1` · `S` · Dep. F1
 > Como administrador quiero crear y editar grupos y subcategorías para reflejar cambios en mi línea de producto.
 
-Criterios: crear/renombrar/reordenar; no se puede eliminar una subcategoría con productos activos sin reasignarlos; los cambios se reflejan en la navegación pública.
+Criterios: crear/renombrar/reordenar; no se puede eliminar una subcategoría con productos activos sin reasignarlos; los cambios se reflejan en la navegación pública. **Soporta subcategorías anidadas** (2026-09-20): un grupo puede tener subcategorías de un solo nivel o de varios, según lo que el catálogo real necesite — Cableado Estructurado ya confirmó que necesita un nivel adicional (ver `docs/contexto-negocio.md` §14 y `modelo-datos.md` D7). El administrador puede crear una subcategoría "dentro" de otra existente, sin límite de profundidad impuesto por el sistema.
 
 ---
 
@@ -414,7 +414,7 @@ Criterios:
 
 | # | Pregunta | Efecto |
 |---|---|---|
-| **PA-1** | Subcategorías finales de *Cableado Estructurado* y *GPS, Telemática y Equipamiento Vehicular*. | Son datos, no estructura. Se cargan cuando lleguen. |
+| **PA-1** | Subcategorías finales de *GPS, Telemática y Equipamiento Vehicular*. (Cableado Estructurado ya se cerró el 2026-09-20 — ver `docs/contexto-negocio.md` §14). | Son datos, no estructura. Se cargan cuando lleguen. |
 | **PA-8** | Métricas exactas de analítica además de más/menos vendidos. | G1 cubre lo mínimo; G2 se ajusta con la respuesta. |
 | **PA-5b** | Canal para las solicitudes de servicio: ¿correo, WhatsApp o ambos? | Sugerido: correo en v1, WhatsApp cuando PA-5 quede resuelto. |
 | **PA-11** | ¿Existe ya el catálogo en algún archivo (Excel, ERP, sitio del distribuidor)? | Determina qué tan real es F2 y cuánto trabajo manual de captura habrá. **Es la pregunta de mayor impacto en el calendario de lanzamiento.** |

@@ -77,6 +77,14 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
     (`products.condition`, `condition_detail`, `source_return_id`).
 19. **AR-4 cerrada (2026-09-20):** folio aleatorio, confirmado tal como
     recomendaba `arquitectura.md` §9.2.
+20. **PA-1 / PA-12 cerradas para Cableado Estructurado (2026-09-20):** la
+    dueña compartió la estructura real de navegación (9 subcategorías,
+    varias con su propia sub-subcategoría). Ver `docs/contexto-negocio.md`
+    §14. GPS sigue pendiente. Esto reveló que el modelo de dos niveles
+    fijos no alcanzaba, así que `subcategories` pasó a ser un árbol
+    auto-referenciado (`parent_id`) — ver `modelo-datos.md` D7. Cualquier
+    grupo puede tener uno o varios niveles según lo necesite, sin volver
+    a tocar el esquema.
 
 ## Nota de sesión
 

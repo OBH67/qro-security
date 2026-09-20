@@ -121,7 +121,7 @@ listados como preguntas abiertas en la sección 7.
 
 | # | Hallazgo en el demo | Impacto en el modelo |
 |---|---|---|
-| 1 | **El demo rellenó las subcategorías de Cableado Estructurado y GPS** (7 y 6, `index.html:1931-1932`), que el documento de negocio marca como "pendiente, el cliente enviará". Son inventadas, no vienen del cliente. | Sirven como borrador para que el cliente confirme o corrija. No asumir que son las correctas. |
+| 1 | **El demo rellenó las subcategorías de Cableado Estructurado y GPS** (7 y 6, `index.html:1931-1932`), que el documento de negocio marca como "pendiente, el cliente enviará". Eran inventadas. ~~Cerrado para Cableado Estructurado (2026-09-20)~~: la dueña compartió la estructura real, con un nivel adicional de sub-subcategorías — ver `docs/contexto-negocio.md` §14 y D7. GPS sigue pendiente. | El borrador del demo se descarta para este grupo; se reemplaza por la lista real, que además obligó a rediseñar `subcategories` como árbol (D7). |
 | 2 | **Marca aparece como filtro y en la ficha técnica, pero no existe como campo** en `products` (usa el texto fijo "Marca Demo"). | Requiere tabla `brands` y `products.brand_id`. El documento de negocio sí la pide. |
 | 3 | **La ficha de producto tiene galería**, no una sola foto (el demo dibuja 5 miniaturas de relleno, `index.html:2357`). | Tabla `product_images` con orden y foto principal, sin fijar cuántas. Cuántas fotos existen de verdad por SKU está en PA-20. |
 | 4 | **La ficha ofrece documentos descargables**: ficha técnica y manual en PDF (`index.html:2352`). No se mencionan en el documento de negocio. | Tabla `product_documents`, archivos en R2. Si el cliente no los tiene, la pestaña simplemente va vacía (PA-19). |
@@ -242,6 +242,38 @@ una nueva — el riesgo que la propia dueña señaló. Publicarla es una acción
 explícita del admin (F1), nunca automática: puede decidir que una pieza
 incompleta no se revende.
 
+### D7 · Subcategorías en árbol, no en dos niveles fijos
+
+El diseño original asumía **grupo → subcategoría**, dos niveles, porque era lo
+único que el demo mostraba. La lista real que la dueña compartió para
+Cableado Estructurado (2026-09-20) tiene **tres**: el grupo, 9 subcategorías
+("Cable - Bobinas", "Fibra Óptica", "Transceptores de Fibra / (Mini-GBICs)"…)
+y, dentro de varias de ellas, una lista propia ("Cable - Bobinas" tiene
+"Categoría 5e/6/6A/7A"; "Transceptores de Fibra" tiene 12 velocidades
+distintas). No es un caso especial de un solo grupo: es la prueba de que la
+profundidad de navegación depende del catálogo real de cada distribuidora, no
+de una regla fija de "siempre dos niveles".
+
+Se descartó una tabla `sub_subcategories` aparte (un tercer nivel fijo) porque
+eso solo pospone el mismo problema si algún día aparece un cuarto nivel, y
+porque la mayoría de los grupos (Videovigilancia, Control de Acceso…) **no**
+necesitan ese tercer nivel — forzarlo a todos sería una tabla vacía la mayor
+parte del tiempo.
+
+**Decisión:** `subcategories` se auto-referencia (`parent_id`). Un grupo puede
+tener subcategorías de un solo nivel (como hoy Videovigilancia) o de varios
+(como Cableado Estructurado), sin cambiar el esquema — la profundidad la
+define el contenido real de cada grupo, capturado en F3 (administrar
+subcategorías), no una migración.
+
+> **Trade-off (ATAM):** un árbol auto-referenciado es más flexible que dos
+> columnas fijas, pero las consultas de "dame todos los productos de este
+> grupo" ya no pueden asumir un solo `JOIN`: hay que resolver la profundidad
+> real (recursiva o con una consulta por nivel, acotada porque en la práctica
+> nunca pasa de 3). Se acepta porque el costo de una consulta ligeramente más
+> compleja es mucho menor que rehacer el esquema la próxima vez que otro grupo
+> resulte tener el mismo patrón — y ya sabemos que al menos uno lo tiene.
+
 ---
 
 ## 4. El esquema
@@ -312,15 +344,21 @@ por RLS.
 | position · | int | Orden de despliegue |
 | active · | boolean | |
 
-**`subcategories`**
+**`subcategories`** — árbol auto-referenciado (ver D7)
 | Campo | Tipo | Notas |
 |---|---|---|
 | id · | uuid PK | |
-| group_id · | uuid FK → groups | |
+| group_id · | uuid FK → groups | Siempre el grupo raíz, incluso en un nivel hijo |
+| parent_id | uuid FK → subcategories, nulo | Nulo = subcategoría de primer nivel. Con valor = "sub-subcategoría" |
 | slug · | text | |
-| name · | text | "Cámaras IP y NVRs" |
+| name · | text | "Cámaras IP y NVRs", o "Categoría 6A" si es hija de "Cable - Bobinas" |
 | position · | int | |
 | active · | boolean | |
+
+`products.subcategory_id` siempre apunta al nivel **más específico** disponible
+(la hoja del árbol): si "Categoría 6A" existe, un cable de esa categoría se
+clasifica ahí, no en "Cable - Bobinas". Un producto nunca se cuelga
+directamente de un grupo sin pasar por al menos una subcategoría.
 
 **`brands`**
 | Campo | Tipo | Notas |
@@ -625,8 +663,10 @@ una URL pública adivinable.
 
 Se suman a las 11 que ya están en `.devsquad/requerimientos.md`.
 
-- **PA-12 · Subcategorías de Cableado Estructurado y GPS:** el demo ya propone 7 y
-  6. ¿El cliente las valida o manda las suyas?
+- ~~**PA-12 · Subcategorías de Cableado Estructurado**~~ — **cerrada (2026-09-20)**:
+  9 subcategorías reales, varias con sub-subcategoría propia. Ver
+  `docs/contexto-negocio.md` §14. **Sigue abierta solo para GPS, Telemática y
+  Equipamiento Vehicular.**
 - **PA-13 · Marcas reales:** el demo usa "Marca Demo A/B/C". ¿Cuál es el catálogo
   real de marcas que distribuye SG Querétaro?
 - **PA-14 · Reseñas:** ¿se van a habilitar reseñas reales de clientes (requiere

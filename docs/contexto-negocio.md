@@ -22,7 +22,7 @@ Grupos principales y sus subcategorías (las que el cliente ya confirmó):
 - Control de Acceso: Acceso Vehicular · Accesorios · Administración de Hoteles · Biométricos · Cerraduras · Fuentes de Alimentación · Identificación y Credencialización · Inspección por Rayos X y Explosivos · Lectoras y Tarjetas · Paneles de Control de Acceso · Protección Contra Descargas · Sistemas de Emergencia · Software de Asistencia · Teclados Autónomos · Torniquetes y Puertas de Cortesía · Videoporteros e Interfonos
 - Automatización e Intrusión: Accesorios · Automatización - Casa Inteligente · Cables · Centrales de Monitoreo · Cercas Eléctricas · Energía · Gabinetes y Carcasas · Generadores de Niebla · Protección Perimetral · Señalamientos · Sistemas de Emergencia
 - Energía y Climatización: Baterías y Cargadores · Bombeo · Calidad de la Energía · Climatización/Refrigeración · Energía Solar · Fuentes de Poder · Gabinetes y Cajas · PDU · Protectores Sobretensiones · Respaldo de Energía
-- Cableado Estructurado: pendiente, el cliente enviará las subcategorías
+- Cableado Estructurado: subcategorías confirmadas — ver adenda al final del documento (§14)
 - GPS, Telemática y Equipamiento Vehicular: pendiente, el cliente enviará las subcategorías
 
 Un producto pertenece a un grupo y una subcategoría, y necesita al menos: SKU, nombre, marca, precio (con IVA incluido), stock disponible, fotos, especificaciones técnicas y estado (activo/agotado).
@@ -93,3 +93,25 @@ Aún sin diseño de UI; el alcance funcional a construir es:
 
 ## 13. Referencias
 - `prompt-claude-design-sg-queretaro.md`: especificación visual completa (paleta, tipografía, componentes, pantallas) ya usada para generar el demo del sitio público en Claude Design. **Nota:** este archivo no se encuentra actualmente en el repositorio; el demo renderizado (`index.html`, `support.js`, `uploads/`) sí está y funciona como referencia visual vigente.
+
+## 14. Adenda — Subcategorías reales de Cableado Estructurado (2026-09-20)
+
+La dueña del proyecto compartió la estructura real de navegación de este grupo
+(captura de un sitio de referencia del distribuidor). A diferencia de los
+demás grupos, aquí las subcategorías tienen **un nivel adicional**: varias
+traen su propia lista de sub-subcategorías. Cierra PA-1 para este grupo (GPS
+sigue pendiente).
+
+- **Cable - Bobinas**: Categoría 5e · Categoría 6 · Categoría 6A · Categoría 7A
+- **Cableado de Cobre**: Cajas Superficiales · Faceplates · Herramientas · Jacks / Plugs · Patch Cords · Patch Panels
+- **Canalización**: Accesorios para Canaletas · Canaletas · Cinchos / Corbatas · Ducto Cuadrado · Fijación · Tubería Metálica CONDUIT / Accesorios · Tubería PVC / Registros · PVC
+- **Charola**: Accesorios · Charola Mallafil · Charola para Fibra Óptica · Charola Tubular · Charolas Tipo Escalerilla · Charolas Tipo Malla · Charolas Tipo Malla Bimetálica · Curvas Pre-Fabricadas · Montajes · Tapas para Charolas · Uniones
+- **Conectores**: Para Redes RJ-45
+- **Fibra Óptica**: Cable · Conectores · Distribuidores de Fibra Óptica · Herramientas · Jumpers y Pigtails
+- **PDU**: Básicos · Fuente Redundante (ATS) · Medibles · Monitoreables · Switcheables
+- **Racks y Gabinetes**: Accesorios para Rack/Gabinetes · Gabinetes para Exterior · Gabinetes para Montaje en Pared · Racks Abiertos · Racks Cerrados
+- **Transceptores de Fibra / (Mini-GBICs)**: 100G Duplex · 10G Duplex · 1G Duplex · 200G Duplex · 25G Duplex · 400G Duplex · 40G Duplex · BiDi (1G/10G) · Cables DAC & AOC · Industrial BiDi · Industrial Duplex · RJ45 SFP
+
+Esta estructura de tres niveles (grupo → subcategoría → sub-subcategoría) es
+la razón por la que el modelo de datos pasó de dos niveles fijos a un árbol
+auto-referenciado — ver `.devsquad/modelo-datos.md` D7.
