@@ -24,10 +24,24 @@
   pedidos, inventario, catálogo, analítica, devoluciones, solicitudes de servicio).
 
 ## Stack
-**NO DEFINIDO AÚN.** No asumir Supabase, Vercel, Next.js ni ninguna otra
-herramienta. La elección de stack es una decisión pendiente de la dueña del
-proyecto, a tomarse en la fase de arquitectura con su análisis de costo, impacto
-y recursos. Restricciones ya conocidas que la arquitectura debe respetar:
+**DEFINIDO por la dueña del proyecto (2026-09-20):**
+- **Frontend + backend:** Next.js (App Router), un solo proyecto full-stack
+  (Route Handlers / Server Actions para toda la lógica de servidor: catálogo,
+  pedidos, comprobantes, WhatsApp). No se separa un backend en Python/Node —
+  la escala del proyecto (~1,050 SKUs, un panel admin, tráfico regional
+  bajo-medio) no lo justifica.
+- **Base de datos + autenticación:** Supabase (Postgres + Row Level Security
+  + Auth).
+- **Almacenamiento de archivos** (fotos de producto y comprobantes de pago):
+  **Cloudflare R2**, no Supabase Storage — el free tier de Supabase Storage
+  (1 GB, 5 GB egress/mes) se queda corto para el catálogo, y R2 no cobra
+  egress, lo cual importa porque cada visita al catálogo genera tráfico de
+  salida constante. Solo la URL del archivo se guarda en Supabase; el binario
+  vive en R2. Estimado de costo con este stack: $0/mes en operación normal,
+  con margen amplio antes de empezar a pagar algo.
+- Despliegue esperado: Vercel (a confirmar/formalizar en `arquitectura.md`).
+
+Restricciones ya conocidas que la arquitectura debe respetar:
 - Catálogo de ~1,000–1,050 SKUs con fotos y especificaciones técnicas.
 - Subida y almacenamiento de archivos (comprobantes de pago y fotos de producto).
 - Integración saliente con WhatsApp (proveedor por definir).

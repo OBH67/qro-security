@@ -12,7 +12,7 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 - [x] **Inicialización** — perfil creado de forma inferida en `.devsquad/perfil.md` (campos marcados "confirmar" pendientes de validación).
 - [x] **Contexto de negocio** — documento de la dueña guardado en `docs/contexto-negocio.md`.
 - [x] **Requerimientos (BSA)** — `.devsquad/requerimientos.md`: 8 épicas, 27 historias con criterios de aceptación, 10 reglas de negocio, requisitos no funcionales, alcance V1/V1.5/Futuro, 11 preguntas abiertas y matriz de riesgos.
-- [ ] **Arquitectura** — BLOQUEADA: falta elegir stack (decisión de la persona) y responder las 4 preguntas de la sección 8.1 de requerimientos.
+- [ ] **Arquitectura** — Stack ya definido (ver abajo); falta responder las 4 preguntas de la sección 8.1 de requerimientos para poder formalizar `arquitectura.md`.
 - [ ] **Diseño de UI del panel administrativo** — el sitio público ya tiene diseño (demo de Claude Design); el panel admin no. Se hace después de arquitectura y antes de código.
 - [ ] **Preparación del entorno** — pendiente (skill `preparar-entorno`), justo antes de implementar.
 - [ ] **Implementación** — pendiente.
@@ -26,6 +26,10 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 5. El demo visual del sitio público (`index.html`, `support.js`, `uploads/`) es referencia intocable; no se rediseña ni se modifica.
 6. La carga masiva de catálogo (CSV/Excel) es parte de V1, no opcional: con ~1,050 SKUs la captura manual es inviable.
 7. La notificación por WhatsApp se diseña como capa intercambiable, con correo funcionando desde el día 1 para no bloquear el lanzamiento.
+8. **Stack técnico (2026-09-20):** Next.js full-stack (frontend + backend en
+   un solo proyecto, sin backend separado en Python/Node) + Supabase
+   (Postgres + Auth) + Cloudflare R2 (fotos de producto y comprobantes de
+   pago, no Supabase Storage). Costo estimado: $0/mes en operación normal.
 
 ## Nota de sesión
 
