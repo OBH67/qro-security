@@ -308,6 +308,31 @@ Criterios: el panel exige autenticación y rol de administrador; ninguna ruta o 
 
 Criterios: correos de bienvenida/verificación, recuperación de contraseña, pedido generado con datos de pago, comprobante recibido, pago validado, enviado, entregado y resolución de devolución. Todos con folio y datos de contacto de SG Querétaro.
 
+**H4 · Configuración del sistema** — `V1` · `S` · Cierra el hueco detectado al preparar la fase de diseño (2026-09-20)
+> Como administrador quiero editar los datos operativos del negocio sin depender de un despliegue de código.
+
+Criterios:
+1. Pantalla de Configuración en el panel, accesible **solo** por el rol `admin` (el rol `inventario` no la ve).
+2. Editable ahí: datos bancarios para las instrucciones de pago (banco, beneficiario, CLABE, número de cuenta), correo del administrador, WhatsApp del administrador, plazo en días para solicitar devolución (PA-3), días para cancelar automáticamente un pedido no pagado (PA-7).
+3. Los cambios quedan en bitácora: quién, cuándo, valor anterior — mismo criterio que F1.5.
+4. Las instrucciones de pago que ve el cliente en C1 siempre leen estos valores de aquí; nunca están fijos en el código.
+
+**H5 · Alcance del rol `inventario`** — `V1` · `S` · Cierra el hueco detectado al preparar la fase de diseño (2026-09-20)
+> Como administrador quiero dar acceso limitado a quien solo carga inventario, sin exponerle pedidos ni clientes.
+
+Criterios:
+1. El menú del panel para `inventario` muestra únicamente Catálogo (F1, F2, F3): Pedidos, Devoluciones, Solicitudes, Analítica y Configuración **no aparecen en el menú**, no solo quedan bloqueados detrás de un clic.
+2. Si escribe a mano una URL fuera de su alcance, recibe una pantalla de acceso denegado clara, en español de negocio, no un error técnico.
+3. El panel muestra siempre su nombre y rol, para que quede claro qué cuenta está operando.
+
+**H6 · Pantalla de inicio del panel en V1** — `V1` · `S` · Cierra el hueco detectado al preparar la fase de diseño (2026-09-20)
+> Como administrador quiero llegar directo a lo más urgente al entrar al panel, sin esperar un tablero que todavía no existe.
+
+Criterios:
+1. Sin G2 (V1.5), el panel del rol `admin` abre directo en la bandeja de Pedidos filtrada por **"Comprobante recibido"** — es la acción pendiente más urgente y repetida.
+2. El rol `inventario` abre directo en Catálogo, ya que Pedidos no es parte de su alcance (H5).
+3. En V1.5, G2 reemplaza este comportamiento por un tablero real, sin romper la navegación existente.
+
 ---
 
 ## 5. Reglas de negocio (invariantes del sistema)
@@ -342,7 +367,7 @@ Criterios: correos de bienvenida/verificación, recuperación de contraseña, pe
 
 ## 7. Alcance por versión
 
-**V1 (mínimo vendible)**: A1, A2, A3, B1, B2, B3, C1, C2, C3, C4, C5, D1, D2, D3, E1, E2, F1, F2, F3, G1, H1, H2, H3.
+**V1 (mínimo vendible)**: A1, A2, A3, B1, B2, B3, C1, C2, C3, C4, C5, D1, D2, D3, E1, E2, F1, F2, F3, G1, H1, H2, H3, H4, H5, H6.
 
 **V1.5 (siguiente parche)**: A4 (filtros avanzados), G2 (tablero de indicadores), estados de seguimiento de envío con número de guía, exportaciones adicionales.
 
