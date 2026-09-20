@@ -121,7 +121,7 @@ listados como preguntas abiertas en la sección 7.
 
 | # | Hallazgo en el demo | Impacto en el modelo |
 |---|---|---|
-| 1 | **El demo rellenó las subcategorías de Cableado Estructurado y GPS** (7 y 6, `index.html:1931-1932`), que el documento de negocio marca como "pendiente, el cliente enviará". Eran inventadas. ~~Cerrado para Cableado Estructurado (2026-09-20)~~: la dueña compartió la estructura real, con un nivel adicional de sub-subcategorías — ver `docs/contexto-negocio.md` §14 y D7. GPS sigue pendiente. | El borrador del demo se descarta para este grupo; se reemplaza por la lista real, que además obligó a rediseñar `subcategories` como árbol (D7). |
+| 1 | **El demo rellenó las subcategorías de Cableado Estructurado y GPS** (7 y 6, `index.html:1931-1932`), que el documento de negocio marca como "pendiente, el cliente enviará". Son inventadas, no vienen del cliente. **Las subcategorías de los 6 grupos se reiniciaron el 2026-09-20** (ver `docs/contexto-negocio.md` §3) y se están recapturando desde cero. | El borrador del demo se descarta para todos los grupos. Sí quedó como aprendizaje permanente que al menos un grupo necesita un tercer nivel de navegación — ver D7. |
 | 2 | **Marca aparece como filtro y en la ficha técnica, pero no existe como campo** en `products` (usa el texto fijo "Marca Demo"). | Requiere tabla `brands` y `products.brand_id`. El documento de negocio sí la pide. |
 | 3 | **La ficha de producto tiene galería**, no una sola foto (el demo dibuja 5 miniaturas de relleno, `index.html:2357`). | Tabla `product_images` con orden y foto principal, sin fijar cuántas. Cuántas fotos existen de verdad por SKU está en PA-20. |
 | 4 | **La ficha ofrece documentos descargables**: ficha técnica y manual en PDF (`index.html:2352`). No se mencionan en el documento de negocio. | Tabla `product_documents`, archivos en R2. Si el cliente no los tiene, la pestaña simplemente va vacía (PA-19). |
@@ -245,14 +245,15 @@ incompleta no se revende.
 ### D7 · Subcategorías en árbol, no en dos niveles fijos
 
 El diseño original asumía **grupo → subcategoría**, dos niveles, porque era lo
-único que el demo mostraba. La lista real que la dueña compartió para
-Cableado Estructurado (2026-09-20) tiene **tres**: el grupo, 9 subcategorías
-("Cable - Bobinas", "Fibra Óptica", "Transceptores de Fibra / (Mini-GBICs)"…)
-y, dentro de varias de ellas, una lista propia ("Cable - Bobinas" tiene
-"Categoría 5e/6/6A/7A"; "Transceptores de Fibra" tiene 12 velocidades
-distintas). No es un caso especial de un solo grupo: es la prueba de que la
-profundidad de navegación depende del catálogo real de cada distribuidora, no
-de una regla fija de "siempre dos niveles".
+único que el demo mostraba. Al revisar catálogos reales de distribuidoras del
+mismo giro (2026-09-20), quedó claro que varios grupos —especialmente
+Cableado Estructurado— suelen tener un **tercer nivel**: la subcategoría trae
+su propia lista (ej. una subcategoría de cable trae "Categoría 5e/6/6A/7A"
+como sub-subcategoría). El catálogo exacto de SG Querétaro todavía está en
+proceso de recapturarse (ver `docs/contexto-negocio.md` §3), pero la
+necesidad de un tercer nivel para al menos un grupo ya es un hecho conocido,
+no una hipótesis — así que el esquema se diseña para soportarlo desde ahora,
+sin esperar a tener la lista definitiva.
 
 Se descartó una tabla `sub_subcategories` aparte (un tercer nivel fijo) porque
 eso solo pospone el mismo problema si algún día aparece un cuarto nivel, y
@@ -663,16 +664,10 @@ una URL pública adivinable.
 
 Se suman a las 11 que ya están en `.devsquad/requerimientos.md`.
 
-- ~~**PA-12 · Sub-subcategorías de Cableado Estructurado, Automatización e
-  Intrusión y Control de Acceso**~~ — **cerrada (2026-09-20)**: tercer nivel
-  recibido para los tres grupos. **Importante:** para Automatización e
-  Intrusión y Control de Acceso, las subcategorías (segundo nivel) ya
-  estaban confirmadas desde el documento original — las capturas de
-  referencia solo aportaron el tercer nivel, no reemplazaron ni ampliaron la
-  lista de subcategorías (corrección del mismo día, ver `estado.md`). Ver
-  `docs/contexto-negocio.md` §14, §15, §16. **Sigue abierta solo para GPS,
-  Telemática y Equipamiento Vehicular**, donde no hay lista previa que
-  filtrar — ahí la próxima captura sí será la definición completa.
+- **PA-12 · Subcategorías y sub-subcategorías de los 6 grupos** — **reiniciada
+  (2026-09-20)**: toda la información de subcategorías se eliminó a petición
+  de la dueña (versiones anteriores con inconsistencias) y se está
+  recapturando desde cero. Ver `docs/contexto-negocio.md` §3 y `estado.md`.
 - **PA-13 · Marcas reales:** el demo usa "Marca Demo A/B/C". ¿Cuál es el catálogo
   real de marcas que distribuye SG Querétaro? Sigue abierta.
 - **PA-14 · Reseñas:** ¿se van a habilitar reseñas reales de clientes (requiere

@@ -17,13 +17,23 @@
 2. Panel administrativo (dueño): pedidos, stock, catálogo, analítica de ventas. Aún no tiene diseño de UI; este documento define su alcance funcional.
 
 ## 3. Catálogo de productos
-Grupos principales y sus subcategorías (las que el cliente ya confirmó):
-- Videovigilancia: Cámaras IP y NVRs · Cámaras y DVRs HD TurboHD/AHD/HD-TVI · Cables y Conectores · Energía · Kits - Sistemas Completos · Monitores, Pantallas y Mobiliario · Servidores/Almacenamiento · Software VMS y Analíticas · Videograbadoras Móviles, Dash Cams y Body Cams · Videoporteros e Interfonos
-- Control de Acceso: mismas 16 subcategorías, ahora con su sub-subcategoría — ver adenda al final del documento (§16)
-- Automatización e Intrusión: mismas 11 subcategorías, ahora con su sub-subcategoría — ver adenda al final del documento (§15)
-- Energía y Climatización: Baterías y Cargadores · Bombeo · Calidad de la Energía · Climatización/Refrigeración · Energía Solar · Fuentes de Poder · Gabinetes y Cajas · PDU · Protectores Sobretensiones · Respaldo de Energía
-- Cableado Estructurado: subcategorías confirmadas — ver adenda al final del documento (§14)
-- GPS, Telemática y Equipamiento Vehicular: pendiente, el cliente enviará las subcategorías
+
+> **Reinicio de subcategorías (2026-09-20):** toda la información de
+> subcategorías y sub-subcategorías se eliminó a petición de la dueña del
+> proyecto — las versiones anteriores tenían inconsistencias. Los 6 grupos
+> principales siguen siendo los correctos y no cambian. Las subcategorías de
+> cada grupo se vuelven a levantar desde cero, grupo por grupo, y se
+> documentarán aquí conforme la dueña las vaya confirmando.
+
+Los 6 grupos principales (confirmados, sin cambio):
+- Videovigilancia
+- Control de Acceso
+- Automatización e Intrusión
+- Energía y Climatización
+- Cableado Estructurado
+- GPS, Telemática y Equipamiento Vehicular
+
+**Subcategorías: pendientes de recapturar para los 6 grupos.**
 
 Un producto pertenece a un grupo y una subcategoría, y necesita al menos: SKU, nombre, marca, precio (con IVA incluido), stock disponible, fotos, especificaciones técnicas y estado (activo/agotado).
 
@@ -83,7 +93,7 @@ Aún sin diseño de UI; el alcance funcional a construir es:
 - App móvil nativa; se asume un sitio web responsive.
 
 ## 12. Preguntas abiertas para el cliente
-- Subcategorías finales de Cableado Estructurado y de GPS, Telemática y Equipamiento Vehicular.
+- Subcategorías finales de los 6 grupos (reinicio 2026-09-20 — ver §3).
 - Momento exacto del descuento de inventario (al generar el pedido o al validar el comprobante).
 - Plazo en días para solicitar una devolución.
 - Cómo se calcula o cobra el envío (actualmente el demo dice "se confirma con tu asesor").
@@ -93,78 +103,3 @@ Aún sin diseño de UI; el alcance funcional a construir es:
 
 ## 13. Referencias
 - `prompt-claude-design-sg-queretaro.md`: especificación visual completa (paleta, tipografía, componentes, pantallas) ya usada para generar el demo del sitio público en Claude Design. **Nota:** este archivo no se encuentra actualmente en el repositorio; el demo renderizado (`index.html`, `support.js`, `uploads/`) sí está y funciona como referencia visual vigente.
-
-## 14. Adenda — Subcategorías reales de Cableado Estructurado (2026-09-20)
-
-La dueña del proyecto compartió la estructura real de navegación de este grupo
-(captura de un sitio de referencia del distribuidor). A diferencia de los
-demás grupos, aquí las subcategorías tienen **un nivel adicional**: varias
-traen su propia lista de sub-subcategorías. Cierra PA-1 para este grupo (GPS
-sigue pendiente).
-
-- **Cable - Bobinas**: Categoría 5e · Categoría 6 · Categoría 6A · Categoría 7A
-- **Cableado de Cobre**: Cajas Superficiales · Faceplates · Herramientas · Jacks / Plugs · Patch Cords · Patch Panels
-- **Canalización**: Accesorios para Canaletas · Canaletas · Cinchos / Corbatas · Ducto Cuadrado · Fijación · Tubería Metálica CONDUIT / Accesorios · Tubería PVC / Registros · PVC
-- **Charola**: Accesorios · Charola Mallafil · Charola para Fibra Óptica · Charola Tubular · Charolas Tipo Escalerilla · Charolas Tipo Malla · Charolas Tipo Malla Bimetálica · Curvas Pre-Fabricadas · Montajes · Tapas para Charolas · Uniones
-- **Conectores**: Para Redes RJ-45
-- **Fibra Óptica**: Cable · Conectores · Distribuidores de Fibra Óptica · Herramientas · Jumpers y Pigtails
-- **PDU**: Básicos · Fuente Redundante (ATS) · Medibles · Monitoreables · Switcheables
-- **Racks y Gabinetes**: Accesorios para Rack/Gabinetes · Gabinetes para Exterior · Gabinetes para Montaje en Pared · Racks Abiertos · Racks Cerrados
-- **Transceptores de Fibra / (Mini-GBICs)**: 100G Duplex · 10G Duplex · 1G Duplex · 200G Duplex · 25G Duplex · 400G Duplex · 40G Duplex · BiDi (1G/10G) · Cables DAC & AOC · Industrial BiDi · Industrial Duplex · RJ45 SFP
-
-Esta estructura de tres niveles (grupo → subcategoría → sub-subcategoría) es
-la razón por la que el modelo de datos pasó de dos niveles fijos a un árbol
-auto-referenciado — ver `.devsquad/modelo-datos.md` D7.
-
-## 15. Adenda — Sub-subcategorías de Automatización e Intrusión (2026-09-20, corregido)
-
-**Corrección (2026-09-20):** la primera versión de esta adenda reemplazó por
-error la lista de 11 subcategorías del §3 con las 19 que aparecían en la
-captura de un sitio de referencia. Regla correcta, confirmada por la dueña:
-**las 11 subcategorías originales del §3 son las que mandan** — SG Querétaro
-no maneja todas las que muestra un sitio de referencia. Las capturas solo
-sirven para aportar el **tercer nivel** (sub-subcategoría) de las
-subcategorías que ya estaban confirmadas. Lo que aparecía de más en la
-captura y no estaba en la lista original (Contactos Magnéticos, Detectores /
-Sensores, Lutron, Módulos de Expansión, Paneles de Alarma, Paneles de Alarma
-y Accesorios Hikvision, Teclados, Total Connect Honeywell) **se descarta**.
-
-Las 11 subcategorías del §3, con su sub-subcategoría real:
-
-- **Accesorios**: Botones de Pánico · Controles Remotos · Estaciones de Jalón · Sirenas y Estrobos
-- **Automatización - Casa Inteligente**: Apagadores y Atenuadores Inteligentes · Cámaras Wi-Fi Inteligentes · Cerraduras Inteligentes · Climatización y Termostatos · Difusores y Aromatización Inteligente · Enchufes y Contactos Inteligentes · Focos y Tiras LED Inteligentes · Garage · Hubs, Gateways y Pantallas de Control · Persianas y Cortinas Inteligentes · Sensores y Relevadores · Videoporteros y Timbres Inteligentes · Z-Wave · Zigbee
-- **Cables**: (sin sub-subcategoría — se vende directo bajo esta subcategoría)
-- **Centrales de Monitoreo**: Comunicadores y Transmisores de Alarma · Receptoras de Alarmas · Software de Monitoreo y Automatización (PSIM): MCDI y Softguard
-- **Cercas Eléctricas**: Accesorios · Aisladores · Energizadores · Postes
-- **Energía**: Baterías · Fuentes de Poder · Protección Contra Sobretensiones · Transformadores
-- **Gabinetes y Carcasas**: Carcasas · Gabinetes para Paneles · Gabinetes para Sirena
-- **Generadores de Niebla**: (sin sub-subcategoría)
-- **Protección Perimetral**: Cámaras Térmicas · Cable Sensor Perimetral · Sensores de Movimiento para Exterior · Sensores de Rayo Láser y PIRs Inteligentes · Sensores Fotoeléctricos y Microondas · Transmisor RF Largo Alcance
-- **Señalamientos**: (sin sub-subcategoría)
-- **Sistemas de Emergencia**: Accesorios para Puertas de Emergencia · Atención Sociosanitaria · Barras para Puertas de Emergencia · Estaciones Manuales de Emergencia · Puertas de Emergencia · Señalización
-
-## 16. Adenda — Sub-subcategorías de Control de Acceso (2026-09-20)
-
-Misma regla que §15: las **16 subcategorías del §3 son las que mandan**. La
-captura de referencia mostraba 5 subcategorías adicionales (Control de
-Rondas Para Vigilantes, Detectores de Metal, Equipo Blindado, Protección de
-Mercancía (EAS), Refacciones como categoría propia) que **no estaban en la
-lista original y se descartan** — solo se usa la captura para completar el
-tercer nivel de las 16 que ya estaban confirmadas.
-
-- **Acceso Vehicular**: Accesorios · Barreras Vehiculares · Pilonas o Bolardos · Puertas Abatibles y Corredizas · Refacciones · Semáforos, Radares y Señalización · Topes, Picos y Reductores
-- **Accesorios**: Bisagras y Pasacables · Botones de Salida · Cables para Control de Acceso · Cierrapuertas · Contactos Magnéticos · Controles Inalámbricos · Mobiliario de Apoyo · Sensores para Puertas Automáticas · Tarjetas de Relevador · Tarjetas y Tags
-- **Administración de Hoteles**: (sin sub-subcategoría)
-- **Biométricos**: Accesorios · Enroladores y Lectores USB · Para Control de Acceso · Para Tiempo y Asistencia / Checadores
-- **Cerraduras**: Accesorios · Autónomas / Inteligentes · Cerrojos y Candados Digitales · Chapas y Contrachapas · Eléctricas · Mecánicas y de Perno
-- **Fuentes de Alimentación**: Baterías · Fuentes de Respaldo · Transformadores
-- **Identificación y Credencialización**: Accesorios · Cintas / Ribbons · Impresoras · Kits todo Incluido
-- **Inspección por Rayos X y Explosivos**: Escaneo Corporal · Sistemas de Inspección por Rayos X
-- **Lectoras y Tarjetas**: Bluetooth · Enroladores y Lectores USB · MIFARE®/iCLASS (13.56 MHz) · NFC / QR · Proximidad (125 KHz) · SEOS · UHF/ RFID
-- **Paneles de Control de Acceso**: Accesorios · Controladores de Acceso · Licencias y Softwares
-- **Protección Contra Descargas**: Coaxial · Corriente Alterna y Directa · Redes
-- **Sistemas de Emergencia**: Barras y Accesorios para Puertas de Emergencia · Estaciones y Señalización de Emergencia · Puertas de Emergencia
-- **Software de Asistencia**: Control de Acceso · Estacionamientos · Tiempo y Asistencia
-- **Teclados Autónomos**: (sin sub-subcategoría)
-- **Torniquetes y Puertas de Cortesía**: Puertas de Cortesía · Refacciones · Torniquetes (Cuerpo Completo y Medio)
-- **Videoporteros e Interfonos**: Accesorios · Intercomunicadores e Interfonos · Intercomunicadores por Radio · Multiapartamentos · Videoporteros Analógicos · Videoporteros IP

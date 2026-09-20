@@ -77,32 +77,20 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
     (`products.condition`, `condition_detail`, `source_return_id`).
 19. **AR-4 cerrada (2026-09-20):** folio aleatorio, confirmado tal como
     recomendaba `arquitectura.md` §9.2.
-20. **PA-1 / PA-12 cerradas para Cableado Estructurado (2026-09-20):** la
-    dueña compartió la estructura real de navegación (9 subcategorías,
-    varias con su propia sub-subcategoría). Ver `docs/contexto-negocio.md`
-    §14. GPS sigue pendiente. Esto reveló que el modelo de dos niveles
-    fijos no alcanzaba, así que `subcategories` pasó a ser un árbol
-    auto-referenciado (`parent_id`) — ver `modelo-datos.md` D7. Cualquier
-    grupo puede tener uno o varios niveles según lo necesite, sin volver
-    a tocar el esquema.
-21. **Corrección importante (2026-09-20):** las capturas de sitios de
-    referencia que la dueña comparte **no reemplazan ni amplían** la lista
-    de subcategorías del documento original (`docs/contexto-negocio.md`
-    §3) — esa lista es la que manda, porque SG Querétaro no maneja todo lo
-    que un sitio de referencia muestra. Las capturas solo aportan el
-    **tercer nivel** (sub-subcategoría) para las subcategorías que ya
-    estaban confirmadas; cualquier subcategoría de más en la captura que no
-    estuviera en la lista original **se descarta**. Esto corrige un error
-    de la sesión: la primera versión de la adenda de Automatización e
-    Intrusión había reemplazado las 11 subcategorías originales por las 19
-    de la captura; ya está corregido en `docs/contexto-negocio.md` §15.
-22. **PA-1 / PA-12 cerradas para Automatización e Intrusión y Control de
-    Acceso (2026-09-20, corregido):** mismas 11 y 16 subcategorías de
-    siempre, ahora con su sub-subcategoría real. Ver
-    `docs/contexto-negocio.md` §15 y §16. **Solo queda pendiente GPS,
-    Telemática y Equipamiento Vehicular** de los 6 grupos — ahí sí no hay
-    lista previa, así que la próxima captura será la definición completa,
-    no un filtro.
+20. **Reinicio total de subcategorías (2026-09-20):** después de varios
+    intentos y correcciones el mismo día (subir de más, luego filtrar de
+    más), la dueña pidió borrar **toda** la información de subcategorías y
+    sub-subcategorías de los 6 grupos y recapturarla desde cero. Se
+    eliminó de `docs/contexto-negocio.md` (adendas §14-16 removidas, §3 y
+    §12 reiniciadas) y de las referencias correspondientes en
+    `requerimientos.md` (PA-1) y `modelo-datos.md` (PA-12). **Los 6 grupos
+    principales no cambian**, solo sus subcategorías. Pendiente: la dueña
+    irá reenviando la información grupo por grupo.
+21. **Lo que sí se conserva de todo ese proceso (2026-09-20):** la decisión
+    de arquitectura de que `subcategories` sea un árbol auto-referenciado
+    (`parent_id`, `modelo-datos.md` D7) — es una capacidad general del
+    esquema, no depende de qué subcategorías termine teniendo cada grupo, y
+    ya se confirmó que al menos un grupo va a necesitar un tercer nivel.
 
 ## Nota de sesión
 
