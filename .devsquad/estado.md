@@ -85,6 +85,15 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
     auto-referenciado (`parent_id`) — ver `modelo-datos.md` D7. Cualquier
     grupo puede tener uno o varios niveles según lo necesite, sin volver
     a tocar el esquema.
+21. **PA-1 / PA-12 cerradas también para Automatización e Intrusión
+    (2026-09-20):** 19 subcategorías reales (antes 11 "ya confirmadas" en
+    el documento original — la lista real casi duplica esa cifra). Ver
+    `docs/contexto-negocio.md` §15, incluida una nota de ambigüedad sobre
+    "Paneles de Alarma y Accesorios Hikvision" (posible cuarto nivel, no
+    bloquea porque el esquema ya soporta cualquier profundidad). Pista para
+    PA-13 (marcas reales): Lutron, Hikvision y Honeywell ya aparecen como
+    líneas de producto completas en la navegación. **Solo queda pendiente
+    GPS, Telemática y Equipamiento Vehicular** de los 6 grupos.
 
 ## Nota de sesión
 

@@ -663,12 +663,18 @@ una URL pública adivinable.
 
 Se suman a las 11 que ya están en `.devsquad/requerimientos.md`.
 
-- ~~**PA-12 · Subcategorías de Cableado Estructurado**~~ — **cerrada (2026-09-20)**:
-  9 subcategorías reales, varias con sub-subcategoría propia. Ver
-  `docs/contexto-negocio.md` §14. **Sigue abierta solo para GPS, Telemática y
-  Equipamiento Vehicular.**
+- ~~**PA-12 · Subcategorías de Cableado Estructurado y Automatización e
+  Intrusión**~~ — **cerrada (2026-09-20)**: estructura real recibida para
+  ambos grupos, con sub-subcategorías. Ver `docs/contexto-negocio.md` §14 y
+  §15. **Sigue abierta solo para GPS, Telemática y Equipamiento Vehicular.**
 - **PA-13 · Marcas reales:** el demo usa "Marca Demo A/B/C". ¿Cuál es el catálogo
-  real de marcas que distribuye SG Querétaro?
+  real de marcas que distribuye SG Querétaro? **Pista de la revisión de
+  Automatización e Intrusión (2026-09-20):** al menos Lutron, Hikvision
+  (subcategoría "Paneles de Alarma y Accesorios Hikvision") y Honeywell
+  ("Total Connect Honeywell") ya aparecen como marcas reales en la
+  navegación — no son solo un filtro, son línea de producto completa. Vale
+  la pena confirmar con el cliente si esas marcas deben tratarse como
+  `brands` normales (D1) o si necesitan su propia sección destacada.
 - **PA-14 · Reseñas:** ¿se van a habilitar reseñas reales de clientes (requiere
   moderación) o son testimonios curados que el dueño edita?
 - **PA-15 · Banners:** ¿el dueño los va a cambiar por su cuenta (tabla y pantalla

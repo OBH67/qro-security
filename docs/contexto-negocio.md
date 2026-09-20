@@ -20,7 +20,7 @@
 Grupos principales y sus subcategorías (las que el cliente ya confirmó):
 - Videovigilancia: Cámaras IP y NVRs · Cámaras y DVRs HD TurboHD/AHD/HD-TVI · Cables y Conectores · Energía · Kits - Sistemas Completos · Monitores, Pantallas y Mobiliario · Servidores/Almacenamiento · Software VMS y Analíticas · Videograbadoras Móviles, Dash Cams y Body Cams · Videoporteros e Interfonos
 - Control de Acceso: Acceso Vehicular · Accesorios · Administración de Hoteles · Biométricos · Cerraduras · Fuentes de Alimentación · Identificación y Credencialización · Inspección por Rayos X y Explosivos · Lectoras y Tarjetas · Paneles de Control de Acceso · Protección Contra Descargas · Sistemas de Emergencia · Software de Asistencia · Teclados Autónomos · Torniquetes y Puertas de Cortesía · Videoporteros e Interfonos
-- Automatización e Intrusión: Accesorios · Automatización - Casa Inteligente · Cables · Centrales de Monitoreo · Cercas Eléctricas · Energía · Gabinetes y Carcasas · Generadores de Niebla · Protección Perimetral · Señalamientos · Sistemas de Emergencia
+- Automatización e Intrusión: subcategorías actualizadas y ampliadas — ver adenda al final del documento (§15)
 - Energía y Climatización: Baterías y Cargadores · Bombeo · Calidad de la Energía · Climatización/Refrigeración · Energía Solar · Fuentes de Poder · Gabinetes y Cajas · PDU · Protectores Sobretensiones · Respaldo de Energía
 - Cableado Estructurado: subcategorías confirmadas — ver adenda al final del documento (§14)
 - GPS, Telemática y Equipamiento Vehicular: pendiente, el cliente enviará las subcategorías
@@ -115,3 +115,41 @@ sigue pendiente).
 Esta estructura de tres niveles (grupo → subcategoría → sub-subcategoría) es
 la razón por la que el modelo de datos pasó de dos niveles fijos a un árbol
 auto-referenciado — ver `.devsquad/modelo-datos.md` D7.
+
+## 15. Adenda — Subcategorías reales de Automatización e Intrusión (2026-09-20)
+
+La dueña del proyecto compartió la estructura real de navegación de este
+grupo (misma fuente que §14). **Esta lista reemplaza** la del §3, que tenía
+11 subcategorías — la real tiene 19, con varias sub-subcategorías nuevas
+(ej. Lutron, Total Connect Honeywell, Paneles de Alarma) que no estaban en la
+versión original marcada como "ya confirmada". No es una corrección menor:
+casi duplica el número de subcategorías de este grupo.
+
+- **Accesorios**: Botones de Pánico · Controles Remotos · Estaciones de Jalón · Sirenas y Estrobos
+- **Automatización - Casa Inteligente**: Apagadores y Atenuadores Inteligentes · Cámaras Wi-Fi Inteligentes · Cerraduras Inteligentes · Climatización y Termostatos · Difusores y Aromatización Inteligente · Enchufes y Contactos Inteligentes · Focos y Tiras LED Inteligentes · Garage · Hubs, Gateways y Pantallas de Control · Persianas y Cortinas Inteligentes · Sensores y Relevadores · Videoporteros y Timbres Inteligentes · Z-Wave · Zigbee
+- **Cables**: (sin sub-subcategoría — se vende directo bajo esta subcategoría)
+- **Centrales de Monitoreo**: Comunicadores y Transmisores de Alarma · Receptoras de Alarmas · Software de Monitoreo y Automatización (PSIM): MCDI y Softguard
+- **Cercas Eléctricas**: Accesorios · Aisladores · Energizadores · Postes
+- **Contactos Magnéticos**: Contacto Magnético Cableado · Contacto Magnético Inalámbrico
+- **Detectores / Sensores**: Agua / inundación · Contactos Magnéticos · Fotoeléctricos y Microondas · Humo · Movimiento para Exterior · Movimiento para Interior · Rotura de Vidrios y Cristales · Temperatura · Vibración / Impacto / Sísmico
+- **Energía**: Baterías · Fuentes de Poder · Protección Contra Sobretensiones · Transformadores
+- **Gabinetes y Carcasas**: Carcasas · Gabinetes para Paneles · Gabinetes para Sirena
+- **Generadores de Niebla**: (sin sub-subcategoría)
+- **Lutron**: Lutron Caseta Wireless · Lutron Maestro · Lutron RA2 Select · Lutron RadioRa3 · Lutron Vive
+- **Módulos de Expansión**: Módulos de Expansión Cableado · Receptores Inalámbricos
+- **Paneles de Alarma**: (sin sub-subcategoría propia — ver nota de ambigüedad abajo)
+- **Paneles de Alarma y Accesorios Hikvision**: AX HOME Series · AX HUB Series · AX Hybrid Pro KITs · AX Hybrid PRO Series · AX PRO KITs · AX PRO Series
+- **Protección Perimetral**: Cámaras Térmicas · Cable Sensor Perimetral · Sensores de Movimiento para Exterior · Sensores de Rayo Láser y PIRs Inteligentes · Sensores Fotoeléctricos y Microondas · Transmisor RF Largo Alcance
+- **Señalamientos**: (sin sub-subcategoría)
+- **Sistemas de Emergencia**: Accesorios para Puertas de Emergencia · Atención Sociosanitaria · Barras para Puertas de Emergencia · Estaciones Manuales de Emergencia · Puertas de Emergencia · Señalización
+- **Teclados**: (sin sub-subcategoría)
+- **Total Connect Honeywell**: Accesorios y Servicios · Comunicadores · Paneles de Alarma
+
+**Nota de ambigüedad a confirmar (no bloquea el arranque):** en la captura,
+"Paneles de Alarma" y "Paneles de Alarma y Accesorios Hikvision" aparecen como
+dos bloques distintos y consecutivos — se transcribieron como dos
+subcategorías al mismo nivel, pero podría ser que la segunda en realidad
+fuera una sub-subcategoría de la primera (un cuarto nivel). El esquema ya
+soporta cualquier profundidad (D7 en `modelo-datos.md`), así que esto es una
+decisión de captura de datos, no un problema técnico: se resuelve al cargar
+el catálogo real, confirmando con la dueña o con el cliente final.
