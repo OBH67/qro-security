@@ -27,7 +27,7 @@
 
 Los 6 grupos principales (confirmados, sin cambio):
 - Videovigilancia — subcategorías pendientes de recapturar
-- Control de Acceso — subcategorías pendientes de recapturar
+- **Control de Acceso (14): Acceso vehicular · Accesorios · Administración de Hoteles · Biométricos · Cerraduras · Fuentes de Alimentación · Inspección por Rayos X y Explosivos · Lectoras y Tarjetas · Paneles de Control de Acceso · Protección Contra Descargas · Sistemas de Emergencia · Software de Asistencia · Torniquetes y Puertas de Cortesía · Videoporteros e Interfonos** (2026-09-20; sin sub-subcategoría todavía). Filtrado por punto de marcado en la app de referencia — de las 21 subcategorías que muestra la navegación, solo estas 14 aplican; las otras 7 (Control de Rondas Para Vigilantes, Detectores de Metal, Equipo Blindado, Identificación y Credencialización, Protección de Mercancía (EAS), Refacciones, Teclados Autónomos) se descartan.
 - **Automatización e Intrusión (10): Accesorios · Automatización - Casa Inteligente · Cables · Cercas Eléctricas · Energía · Gabinetes y Carcasas · Generadores de Niebla · Protección Perimetral · Señalamientos · Sistemas de Emergencia** (2026-09-20; sin sub-subcategoría todavía). Filtrado por punto morado de marcado en la app de referencia — de las 19 subcategorías que muestra la navegación, solo estas 10 aplican al catálogo de SG Querétaro; las otras 9 (Centrales de Monitoreo, Contactos Magnéticos, Detectores / Sensores, Lutron, Módulos de Expansión, Paneles de Alarma, Paneles de Alarma y Accesorios Hikvision, Teclados, Total Connect Honeywell) se descartan.
 - Energía y Climatización — subcategorías pendientes de recapturar
 - Cableado Estructurado — subcategorías pendientes de recapturar
