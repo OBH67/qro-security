@@ -26,14 +26,12 @@
 > documentarán aquí conforme la dueña las vaya confirmando.
 
 Los 6 grupos principales (confirmados, sin cambio):
-- Videovigilancia
-- Control de Acceso
-- Automatización e Intrusión
-- Energía y Climatización
-- Cableado Estructurado
-- GPS, Telemática y Equipamiento Vehicular
-
-**Subcategorías: pendientes de recapturar para los 6 grupos.**
+- Videovigilancia — subcategorías pendientes de recapturar
+- Control de Acceso — subcategorías pendientes de recapturar
+- **Automatización e Intrusión: Accesorios · Automatización - Casa Inteligente · Cables · Centrales de Monitoreo · Cercas Eléctricas · Contactos Magnéticos · Detectores / Sensores · Energía · Gabinetes y Carcasas · Generadores de Niebla · Lutron · Módulos de Expansión · Paneles de Alarma · Paneles de Alarma y Accesorios Hikvision · Protección Perimetral · Señalamientos · Sistemas de Emergencia · Teclados · Total Connect Honeywell** (2026-09-20; sin sub-subcategoría todavía)
+- Energía y Climatización — subcategorías pendientes de recapturar
+- Cableado Estructurado — subcategorías pendientes de recapturar
+- GPS, Telemática y Equipamiento Vehicular — subcategorías pendientes de recapturar
 
 Un producto pertenece a un grupo y una subcategoría, y necesita al menos: SKU, nombre, marca, precio (con IVA incluido), stock disponible, fotos, especificaciones técnicas y estado (activo/agotado).
 
