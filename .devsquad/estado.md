@@ -5,9 +5,9 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 Última actualización: 2026-09-21
 
 ## Fase actual
-**Implementación en curso — séptimo incremento (C3: despachador real de
-notificaciones — correo vía Resend) completado.** Ver detalle al final de
-este documento.
+**Implementación en curso — octavo incremento (E1.4: límite por IP en el
+formulario de servicios) completado. Lado del cliente ya sin pendientes
+conocidos.** Ver detalle al final de este documento.
 
 ## Progreso por fases
 
@@ -1059,3 +1059,55 @@ una interfaz** — todo pedido con comprobante sigue esperando en
 `comprobante_recibido` hasta que alguien lo mueva a mano en la base de
 datos. El panel admin es ahora, sin ambigüedad, lo único que falta para
 un ciclo de negocio completo.
+
+### Octavo incremento (2026-09-21): E1.4 — límite de envíos por IP en el
+formulario de servicios
+
+Cerraba la única mitad pendiente de E1.4 ("protegido contra spam —
+captcha o equivalente— **y con límite de envíos por IP**"): el captcha
+(Turnstile) ya estaba del sexto incremento, el límite por IP no.
+
+**Qué se construyó**, siguiendo la decisión ya tomada en
+`arquitectura.md` §9.8 (tabla `rate_limits` en Postgres, no Redis — "evita
+un servicio, una cuenta y una llave más que cuidar" a este volumen):
+
+1. **Migración `0014_rate_limits.sql`** — tabla genérica `(scope, key,
+   created_at)`, pensada para reutilizarse en H2 (5 intentos de login por
+   15 min por correo, panel admin, todavía no construido) sin otra
+   migración: solo un `scope` distinto. RLS con lectura de admin para
+   depurar, igual que `notification_outbox`.
+2. **`src/server/auth/limites.ts`** (ruta que ya anticipaba
+   `arquitectura.md` §4) — `intentarConsumirLimite(scope, key, {
+   maxIntentos, ventanaMinutos })`: cuenta intentos en la ventana: si hay
+   margen, registra y permite; si no, bloquea sin registrar. Ante un
+   error de Postgres deja pasar (un fallo del limitador nunca debe
+   bloquear a un cliente real, mismo criterio que C3.2 aplicado a un
+   candado que no protege dinero ni inventario). Sin IP/correo (`key`
+   vacío), nunca bloquea.
+3. **`server/actions/servicios.ts`** — 5 solicitudes por hora por IP
+   (§9.8), verificado ANTES de Turnstile (evita gastar una llamada
+   externa en quien ya está limitado) y ANTES del honeypot (un bot no
+   puede usar el honeypot como escapatoria del límite).
+
+**Validado contra Postgres real** (mismo método de las últimas veces:
+`server-only` neutralizado temporalmente en `node_modules`, nunca en el
+código fuente, restaurado al terminar): 3 intentos permitidos con
+`maxIntentos=3`, 4º y 5º bloqueados: una IP distinta no se ve afectada
+por el límite de otra, y sin IP nunca bloquea. `npm run build`/`lint`
+limpios (mismos 8 warnings preexistentes de las plantillas de correo, sin
+relación con este cambio).
+
+### Estado del lado del cliente: sin pendientes conocidos
+
+Con este incremento se cerraron los tres puntos que quedaban abiertos
+(ver séptimo incremento): C3 (correo real), y ahora E1.4 completo. Las
+únicas dos cosas que faltan del lado del cliente son decisiones de
+negocio de la dueña, no código:
+- **Sugerencias de búsqueda en vivo** — decorativo, quedó fuera por
+  presupuesto de tiempo en un incremento anterior, no bloquea nada.
+- **PA-4 (mensaje de política de envío en la ficha de producto)** —
+  sigue con el texto genérico del demo hasta que la dueña confirme el
+  plazo/costo real.
+
+**El panel admin (Épica F, G, H) es ahora, sin ambigüedad, todo lo que
+falta para operar el negocio de punta a punta.**
