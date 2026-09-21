@@ -1,5 +1,6 @@
 import "server-only";
 import { crearClienteAdmin } from "@/server/supabase/admin";
+import { despacharPendientes } from "@/server/notifications/despachador";
 import type { DatosFiscalesCongelados, DireccionCongelada, OrderRow } from "@/types/database";
 
 /**
@@ -40,6 +41,14 @@ export async function crearPedido(params: {
   });
 
   if (error) throw new Error(traducirErrorPedido(error.message));
+
+  // D3.3: si el saldo cubrió el 100%, crear_pedido() ya llamó a
+  // apartar_pedido() internamente y encoló las mismas notificaciones que
+  // C2 — mismo criterio que confirmarComprobante(): el envío ocurre
+  // después del commit, nunca dentro de él (C3.2). Si no encoló nada
+  // (pedido normal, pendiente de comprobante), esto no hace nada.
+  await despacharPendientes();
+
   return data as unknown as OrderRow;
 }
 

@@ -1,5 +1,6 @@
 import "server-only";
 import { crearClienteAdmin } from "@/server/supabase/admin";
+import { despacharPendientes } from "@/server/notifications/despachador";
 import type { DatosSolicitudServicio } from "@/lib/esquemas/servicio";
 import type { ServiceRequestRow } from "@/types/database";
 
@@ -42,10 +43,35 @@ export async function crearSolicitudServicio(datos: DatosSolicitudServicio): Pro
       .select("*")
       .single();
 
-    if (!error) return data as ServiceRequestRow;
+    if (!error) {
+      await encolarNotificacionesSolicitud(admin, data as ServiceRequestRow);
+      await despacharPendientes();
+      return data as ServiceRequestRow;
+    }
     if (error.code !== "23505") throw new Error(`No se pudo enviar tu solicitud: ${error.message}`);
     // 23505 = unique_violation en folio: reintenta con uno nuevo.
   }
 
   throw new Error("No se pudo generar un folio único, intenta de nuevo.");
+}
+
+/** E1.5/E2: aviso al admin (nuevo lead) y confirmación al cliente — esta
+ * mutation es TypeScript puro (no una función SQL), así que el outbox se
+ * encola aquí directo en vez de en una migración, mismo patrón que
+ * `apartar_pedido()` pero sin transacción SQL que lo envuelva (no hay
+ * inventario ni dinero que proteger, ver comentario de cabecera). */
+async function encolarNotificacionesSolicitud(admin: ReturnType<typeof crearClienteAdmin>, solicitud: ServiceRequestRow): Promise<void> {
+  const { data: setting } = await admin.from("settings").select("value").eq("key", "admin_email").maybeSingle();
+  const payload = {
+    folio: solicitud.folio,
+    service_type: solicitud.service_type,
+    full_name: solicitud.full_name,
+    phone: solicitud.phone,
+    email: solicitud.email,
+  };
+
+  await admin.from("notification_outbox").insert([
+    { event_type: "servicio.solicitado", channel: "correo", destino: setting?.value ?? "", payload },
+    { event_type: "servicio.solicitado.cliente", channel: "correo", destino: solicitud.email, payload },
+  ]);
 }

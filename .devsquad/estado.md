@@ -5,9 +5,9 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 Última actualización: 2026-09-21
 
 ## Fase actual
-**Implementación en curso — sexto incremento (cierre completo del lado del
-cliente: Épica D vía cliente, Épica E, contenido/legal) completado.** Ver
-detalle al final de este documento.
+**Implementación en curso — séptimo incremento (C3: despachador real de
+notificaciones — correo vía Resend) completado.** Ver detalle al final de
+este documento.
 
 ## Progreso por fases
 
@@ -954,3 +954,108 @@ de un comprobante nuevo) tampoco tiene despachador todavía
 el canal de correo (Resend, no bloqueado por PA-5) sigue siendo la pieza
 más barata para cerrar ese hueco, independiente de si se hace antes o
 después del panel.
+
+### Séptimo incremento (2026-09-21): C3 — despachador real de notificaciones
+(canal de correo vía Resend, WhatsApp queda listo pero no conectado — PA-5)
+
+**El problema que cerró:** hasta este incremento, `notification_outbox`
+encolaba eventos (patrón outbox, §7.3) pero nada los procesaba — un
+comprobante subido quedaba esperando revisión sin que nadie se enterara,
+salvo quien mirara la tabla a mano.
+
+**Qué se construyó**, siguiendo al pie de la letra la estructura ya
+documentada en `arquitectura.md` §7.3/§4 (`src/server/notifications/`):
+
+1. **`tipos.ts`** — interfaz `CanalNotificacion` (`disponible()`/`enviar()`)
+   y los 5 tipos de evento que hoy tienen un emisor real:
+   `comprobante.recibido` (admin), `comprobante.recibido.cliente` (nuevo,
+   ver punto 4), `pedido.enviado`, `pedido.cancelado`,
+   `pedido.pago_rechazado`, `servicio.solicitado` (admin) y
+   `servicio.solicitado.cliente`. Documentados también, sin emisor
+   todavía, los que sí lista H3 pero dependen de piezas que no existen:
+   `pedido.generado` (falta encolarlo en `crear_pedido()`),
+   `pedido.pago_validado`/`devolucion.resuelta` (acciones del panel admin,
+   Épica H, no construida), y verificación de cuenta/recuperación de
+   contraseña (los manda Supabase Auth de forma nativa, nunca pasan por
+   este outbox).
+2. **`canales/correo.ts`** — activo desde el día 1 (Resend, ya instalado
+   `npm install resend`), con un mapa `event_type → plantilla` en
+   `plantillas/` (un archivo por correo, como pide la arquitectura) y
+   `plantillas/layout.ts` (HTML con estilos en línea, el único método
+   confiable entre clientes de correo; fondo claro a propósito — el modo
+   oscuro del sitio no es buena práctica en correo). Un evento sin
+   plantilla registrada se marca `fallido` con un mensaje claro en vez de
+   fallar en silencio.
+3. **`canales/whatsapp.ts`** — implementa la interfaz pero `disponible()`
+   regresa `false` mientras `WHATSAPP_PROVIDER=none` (PA-5 sigue sin
+   resolverse): conectar el proveedor real después no toca nada más que
+   este archivo, tal como prometía la arquitectura. **`canales/nulo.ts`**
+   — el "no hay proveedor" genérico que usa el despachador para cualquier
+   canal no disponible, en vez de reventar o reintentar para siempre.
+4. **Nueva migración `0013_notificaciones_despacho.sql`** (no se tocó
+   0008/0010, mismo criterio que 0011 con `crear_pedido()`):
+   - `notification_outbox.next_attempt_at`: el cron de reintentos
+     necesita saber CUÁNDO reintentar sin inferirlo de `created_at`.
+   - `apartar_pedido()` reemplazada (`create or replace function`, mismo
+     cuerpo) para encolar también el correo al **cliente** cuando sube su
+     comprobante (C2.4 lo pedía; antes solo se avisaba al administrador).
+5. **`despachador.ts`** — `despacharPendientes()` (despacho inmediato,
+   llamado desde `mutations/comprobantes.ts` y `mutations/pedidos.ts`
+   justo después de que la función SQL ya hizo commit — nunca dentro de
+   la transacción, criterio C3.2: una falla de Resend no puede revertir
+   un cambio de estado ya confirmado) y `reintentarNotificacionesVencidas()`
+   (para el cron: toma lo `fallido`/`pendiente` vencido, reintenta con
+   espera creciente 2^intentos minutos, hasta 5 veces, luego `agotado`).
+6. **`src/app/api/cron/reintentar-notificaciones/route.ts`** — protegido
+   con `CRON_SECRET` (`Authorization: Bearer`, ya declarado en `env.ts`
+   desde la arquitectura, sin usar hasta ahora).
+7. **`mutations/servicios.ts`** — ahora encola `servicio.solicitado`
+   (admin) y `servicio.solicitado.cliente` (confirmación, E1.5) tras
+   crear la solicitud; es TypeScript puro (no una función SQL), así que
+   el outbox se encola ahí mismo en vez de en una migración.
+
+**Validado en este incremento (de verdad, no solo que compilara):**
+
+- `npm run build`/`lint` limpios (solo 8 warnings de parámetros `_admin`/
+  `_fila` no usados en plantillas que no los necesitan — misma firma que
+  las que sí, a propósito, no bloquean nada).
+- **El despachador real (código de producción, no una reimplementación)
+  se corrió contra Postgres/PostgREST reales**, neutralizando
+  temporalmente `server-only` en `node_modules` (nunca en el código
+  fuente, restaurado al terminar) para poder importarlo fuera de Next.js:
+  - `apartar_pedido()` (con el cambio de 0013) encola de verdad las 3
+    filas esperadas, incluida la nueva al cliente con su correo real.
+  - Las **7 plantillas de correo** (comprobante recibido ×2, pedido
+    enviado/cancelado/pago rechazado, solicitud de servicio ×2)
+    renderizaron sin errores y la llamada llegó hasta la API real de
+    Resend — se confirmó con una API key de prueba inválida a propósito:
+    el error 403 vino de Resend (mensaje de su lado), no de una excepción
+    de JavaScript al construir el HTML.
+  - El manejo de fallas se probó de verdad: con Resend rechazando por key
+    inválida y WhatsApp sin proveedor, las filas quedaron `fallido` con
+    `attempts=1`, `last_error` descriptivo y `next_attempt_at` en el
+    futuro — exactamente el comportamiento esperado, no solo revisado en
+    el código.
+  - A diferencia de Cloudflare Turnstile (bloqueado por la política de
+    salida de este entorno), **`api.resend.com` sí es alcanzable** — la
+    limitación real para probar un envío exitoso de punta a punta es no
+    tener una cuenta de Resend real todavía (dependencia externa de la
+    dueña, ya documentada como tarea pendiente).
+
+**Lo que NO se pudo validar:** un envío exitoso de verdad (necesita una
+cuenta de Resend real con dominio verificado — sin eso, cualquier prueba
+con una key inventada solo puede probar el camino de error, ya hecho).
+Recomendado: en cuanto la dueña cree la cuenta de Resend y verifique un
+dominio, correr `reintentarNotificacionesVencidas()` una vez contra el
+proyecto real para confirmar el camino feliz también.
+
+### Próximo incremento: sigue siendo el panel admin (Épica F, G, H)
+
+Con C3 cerrado, el lado del cliente completo (catálogo, cuenta, pedido,
+devoluciones, servicios) y el despacho de correo real, el negocio ya
+puede operar de principio a fin salvo por un solo hueco: **nadie puede
+validar un pago, resolver una devolución, ni gestionar el catálogo desde
+una interfaz** — todo pedido con comprobante sigue esperando en
+`comprobante_recibido` hasta que alguien lo mueva a mano en la base de
+datos. El panel admin es ahora, sin ambigüedad, lo único que falta para
+un ciclo de negocio completo.

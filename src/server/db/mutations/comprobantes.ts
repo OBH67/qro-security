@@ -6,6 +6,7 @@ import { rutaComprobante } from "@/server/storage/rutas";
 import { firmarSubidaPrivada } from "@/server/storage/firmar";
 import { verificarObjetoSubido, leerPrimerosBytes } from "@/server/storage/r2";
 import { validarComprobante, contentTypePermitido } from "@/server/domain/comprobantes";
+import { despacharPendientes } from "@/server/notifications/despachador";
 import type { DatosComprobante } from "@/lib/esquemas/checkout";
 import type { OrderRow } from "@/types/database";
 
@@ -51,6 +52,13 @@ export async function confirmarComprobante(params: {
   });
 
   if (error) throw new Error(error.message.replace(/^ERROR:\s*/i, "").trim());
+
+  // arquitectura.md §7.3, paso 2: la transacción SQL ya encoló las filas
+  // del outbox (dentro de apartar_pedido()) y ya hizo commit — el envío
+  // real ocurre aquí, fuera de esa transacción, para que una falla de
+  // Resend nunca pueda revertir un cambio de estado ya confirmado (C3.2).
+  await despacharPendientes();
+
   return data as unknown as OrderRow;
 }
 
