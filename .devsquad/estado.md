@@ -5,9 +5,9 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 Última actualización: 2026-09-21
 
 ## Fase actual
-**Implementación en curso — decimosegundo incremento (panel admin, cuarta
-tanda: F3 Categorías) terminado. Ver plan de incrementos restante al
-final de este documento.**
+**Implementación en curso — decimotercer incremento (panel admin, quinta
+tanda: F2 Importador CSV, pasos 1-2) terminado. Ver plan de incrementos
+restante al final de este documento.**
 
 ## Progreso por fases
 
@@ -1395,21 +1395,76 @@ Categorías (F3)
 **Lo que NO se pudo validar:** la UI con sesión de staff real (mismo
 límite de siempre).
 
+### Decimotercer incremento (2026-09-21): panel admin, quinta tanda —
+Importador CSV, pasos 1 y 2 (F2)
+
+**Decisión de seguridad tomada en este incremento:** F2.1 pide soportar
+CSV y Excel. Se intentó instalar `xlsx` (SheetJS), la librería estándar
+de npm para esto — `npm audit` reportó una vulnerabilidad de severidad
+alta (prototype pollution + ReDoS) **sin parche disponible en el
+registro de npm** (SheetJS mueve sus versiones parchadas a su propio CDN,
+fuera de npm). Se desinstaló de inmediato y **este incremento solo
+soporta CSV** — Excel queda documentado como límite real, no una omisión
+silenciosa. El propio parser de CSV se escribió a mano (RFC 4180 básico:
+comillas, comas y saltos de línea dentro de un campo) para no depender de
+ninguna librería externa para esto tampoco.
+
+**Qué se construyó** — solo pasos 1 y 2; el paso 3 ("Aplicar", por
+lotes con avance en segundo plano, `diseño.md` §11.8) es trabajo real de
+infraestructura (colas/jobs) que no es parte de este incremento, tal
+como ya documentaba el plan:
+
+1. **`server/domain/csvImportador.ts`** (código puro, sin
+   `server-only` — mismo criterio que `domain/comprobantes.ts`: debe
+   poder probarse sin infraestructura) — el parser de CSV y
+   `filasCrudasDesdeTexto()` (valida que existan las columnas `sku` y
+   `nombre`, si no, el mismo mensaje de `diseño.md`: "No encontramos las
+   columnas «sku» y «nombre»...").
+2. **`server/domain/validacionImportacion.ts`** (también puro) —
+   `validarFilaImportacion()`, las reglas reales de F2.2: SKU vacío,
+   precio/stock no numéricos, producto nuevo sin grupo/subcategoría,
+   subcategoría que no existe (con el nombre exacto que falló, nunca un
+   código), SKU existente → "Se actualiza" vs. nuevo → "Se crea".
+3. **`analizarCsvAction()`** — recibe el archivo por `FormData`, lo
+   parsea y valida contra el catálogo real (`obtenerCatalogoParaValidar
+   Importacion()`), sin escribir nada en la base.
+4. **UI** (`admin/catalogo/importar`) — traducción literal de
+   `panel-admin-maqueta.html:1019-1094`, ambos pasos en un solo
+   componente cliente (el archivo subido no se persiste entre pasos, no
+   hay necesidad de dos rutas): tarjetas de conteo, filtro por
+   correctas/con error/todas, descarga de plantilla y de las filas con
+   error. El botón "Aplicar N productos" queda visible pero
+   deshabilitado, con una nota explicando que la aplicación por lotes es
+   la siguiente pieza — nunca se fingió una función que no existe.
+
+**Validado (código de dominio puro, sin infraestructura — exactamente lo
+que este diseño permite):**
+
+- El parser: campos con comas dentro de comillas y comillas escapadas
+  (`""`) parseados correctamente.
+- Las 5 reglas de validación probadas con un CSV real: SKU existente →
+  "Se actualiza"; SKU vacío → error; precio no numérico → error con el
+  valor exacto citado; subcategoría inexistente → error; producto nuevo
+  válido → "Se crea". Los 5 casos dieron el resultado esperado.
+- `npm run build`/`lint` limpios, 0 vulnerabilidades de npm tras
+  desinstalar `xlsx` (mismos 10 warnings preexistentes).
+
 ### Plan de incrementos restante del panel admin
 
-El panel tiene 13 pantallas en la maqueta. Van cuatro tandas: base
-(acceso, roles, tablero), Pedidos, Catálogo (alta/edición), y Categorías.
-Quedan, en el orden recomendado:
+El panel tiene 13 pantallas en la maqueta. Van cinco tandas: base
+(acceso, roles, tablero), Pedidos, Catálogo (alta/edición), Categorías, e
+Importador CSV. Quedan, en el orden recomendado:
 
-1. **Importador CSV (F2)** — pasos 1 y 2 (paso 3, "Aplicar", es la
-   pieza que de verdad escribe en la base; la maqueta y `diseño.md` lo
-   dejan para después).
-2. **Devoluciones (D2)** — bandeja + cajón de resolución, conecta con
+1. **Devoluciones (D2)** — bandeja + cajón de resolución, conecta con
    `aplicar_saldo()` ya existente.
-3. **Solicitudes de servicio (E2)** — bandeja + cajón.
-4. **Analítica (G1) y Configuración (H4)** — Analítica reutiliza las
+2. **Solicitudes de servicio (E2)** — bandeja + cajón.
+3. **Analítica (G1) y Configuración (H4)** — Analítica reutiliza las
    queries de "más/menos vendidos" del tablero; Configuración escribe en
    `settings` (ya leído desde el lado del cliente en varios lugares —
    C1.6, D1.1, D3 — así que un cambio ahí ya se refleja del lado público
    sin tocar ese código), usando la misma `admin_change_log` del
    decimoprimer incremento (H4.3).
+4. **Importador CSV, paso 3 ("Aplicar")** — pendiente real, no
+   planeado para una tanda específica todavía: requiere una tabla de
+   trabajos por lotes y un procesamiento en segundo plano
+   (`arquitectura.md` §9.5), infraestructura que no existe hoy.
