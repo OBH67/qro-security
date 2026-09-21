@@ -11,6 +11,8 @@ import { construirPedidoEntregado } from "../plantillas/pedidoEntregado";
 import { construirPedidoCancelado } from "../plantillas/pedidoCancelado";
 import { construirPedidoPagoRechazado } from "../plantillas/pedidoPagoRechazado";
 import { construirServicioSolicitadoAdmin, construirServicioSolicitadoCliente } from "../plantillas/servicioSolicitado";
+import { construirDevolucionAprobada } from "../plantillas/devolucionAprobada";
+import { construirDevolucionRechazada } from "../plantillas/devolucionRechazada";
 
 type ConstructorPlantilla = (
   payload: Record<string, unknown>,
@@ -27,6 +29,8 @@ const PLANTILLAS: Partial<Record<TipoEventoNotificable, ConstructorPlantilla>> =
   "pedido.pago_rechazado": construirPedidoPagoRechazado,
   "servicio.solicitado": construirServicioSolicitadoAdmin,
   "servicio.solicitado.cliente": construirServicioSolicitadoCliente,
+  "devolucion.aprobada": construirDevolucionAprobada,
+  "devolucion.rechazada": construirDevolucionRechazada,
 };
 
 /**

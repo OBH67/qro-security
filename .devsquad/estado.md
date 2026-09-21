@@ -5,9 +5,9 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 Última actualización: 2026-09-21
 
 ## Fase actual
-**Implementación en curso — decimotercer incremento (panel admin, quinta
-tanda: F2 Importador CSV, pasos 1-2) terminado. Ver plan de incrementos
-restante al final de este documento.**
+**Implementación en curso — decimocuarto incremento (panel admin, sexta
+tanda: D2 Devoluciones) terminado. Ver plan de incrementos restante al
+final de este documento.**
 
 ## Progreso por fases
 
@@ -19,7 +19,7 @@ restante al final de este documento.**
 - [x] **Diseño de UI del panel administrativo** — `.devsquad/diseño.md` (1885 líneas): tokens heredados del demo del sitio público con 3 correcciones de contraste WCAG AA, navegación por rol, Atomic Design, y las 13 pantallas con sus estados. Incluye el tablero completo (G2, adelantado a V1 el 2026-09-20) con 6 gráficas justificadas y paleta de datos separada de los colores semánticos de estado. **Aprobado por la dueña (2026-09-20).**
 - [x] **Maqueta visual interactiva (Artifact)** — construida sobre `diseño.md`: Login, Tablero completo, Pedidos, Detalle de pedido (normal y variante RN-11), Catálogo, Alta de producto (con el selector de categoría de 3 niveles usando la taxonomía real de 54 subcategorías), Categorías (árbol D7), Devoluciones (con cajón de resolución), Solicitudes de servicio, Analítica, Configuración, e Importador CSV (pasos 1-2). Quedan sin maquetar, documentados en `diseño.md` con su sección exacta: las pestañas de Precio/Fotos/Especificaciones/Documentos del editor de producto (§11.7) y el paso 3 (aplicar) del importador CSV (§11.8) — ninguno bloquea la implementación, están completamente especificados.
 - [x] **Preparación del entorno** — verificado (2026-09-20): Node.js v22.22.2, npm 10.9.7, Git 2.43.0, Supabase CLI funcional vía `npx`. Todo cumple lo requerido en `arquitectura.md` §11.1, nada que instalar en este entorno.
-- [~] **Implementación** — en curso. Primer incremento (2026-09-20): andamiaje de Next.js + 8 migraciones de base de datos. Segundo incremento (2026-09-20): catálogo público (Épica A completa: A1-A4). Tercer incremento (2026-09-21): carrito y cuenta de cliente + pedido/comprobante (Épica B completa + Épica C sin C3). Ver detalle debajo.
+- [~] **Implementación** — en curso. Primer incremento (2026-09-20): andamiaje de Next.js + 8 migraciones de base de datos. Segundo incremento (2026-09-20): catálogo público (Épica A completa: A1-A4). Tercer incremento (2026-09-21): carrito y cuenta de cliente + pedido/comprobante (Épica B completa + Épica C sin C3). Panel admin en curso desde el noveno incremento (base/tablero); decimocuarto incremento (2026-09-21) es la sexta tanda, Devoluciones (D2). Ver detalle debajo.
 
 ## Decisiones ya tomadas (no volver a preguntar)
 
@@ -1449,22 +1449,75 @@ que este diseño permite):**
 - `npm run build`/`lint` limpios, 0 vulnerabilidades de npm tras
   desinstalar `xlsx` (mismos 10 warnings preexistentes).
 
+### Decimocuarto incremento (2026-09-21): panel admin, sexta tanda —
+Devoluciones (D2)
+
+**Qué se construyó** — traducción literal de
+`panel-admin-maqueta.html:776-849` (`isDevoluciones`): bandeja con chips
+de estado + cajón de resolución deslizante. Solo `admin` (H5.1, no es
+parte del alcance de `inventario`):
+
+1. **`supabase/migrations/0018_devoluciones_admin.sql`** —
+   `resolver_devolucion()` (`service_role`-only): aprobar recalcula el
+   `credit_amount` de cada partida según el porcentaje que el admin
+   confirme (100/70/otro), abona el saldo con `aplicar_saldo()` (kind
+   `devolucion`), y si el admin marca "regresa como nueva" sube el stock
+   del producto; rechazar exige `resolution_note` (el cliente lo ve) y no
+   toca inventario ni saldo. Ambos casos encolan su correo
+   (`devolucion.aprobada` / `devolucion.rechazada`) y bloquean con un
+   error claro si la devolución ya fue resuelta.
+2. **Notificaciones** — dos plantillas nuevas
+   (`plantillas/devolucionAprobada.ts`, `devolucionRechazada.ts`)
+   registradas en `canales/correo.ts`; `notifications/tipos.ts`
+   actualizado.
+3. **`queries/admin/devoluciones.ts`** — bandeja (folio, fecha, cliente,
+   pedido, producto, condición/% sugerido, monto, estado) con conteos
+   por estado para los chips, y detalle para el cajón (motivo, condición,
+   fotos firmadas, saldo actual del cliente, `unit_price` de cada partida
+   para que el cajón calcule 100%/70%/otro en vivo).
+4. **`mutations/admin/devoluciones.ts` + `actions/admin/devoluciones.ts`**
+   — mismo patrón que Pedidos: la Action revalida solo tras un RPC
+   exitoso y despacha el outbox justo después (C3.2).
+5. **UI** (`TablaDevolucionesAdmin.tsx` + `admin/devoluciones/page.tsx`)
+   — un componente cliente para la tabla y el cajón (el detalle se trae
+   con una Server Action al abrir una fila, porque las queries de lectura
+   exigen sesión de servidor); el cajón calcula el monto en vivo según el
+   radio elegido, expone las 3 opciones de destino de la pieza física
+   (regresa como nueva / publicar como usado / no revender — PA-10, se
+   resolvió a favor del criterio detallado D2.6 sobre el resumen
+   abreviado) y exige motivo antes de dejar rechazar.
+
+**Validado contra Postgres 16 + PostgREST real** (mismo criterio de
+`server-only` neutralizado temporalmente en `node_modules` para correr un
+script standalone con `npx tsx`, nunca en el código fuente): se sembró un
+usuario, pedido, dos partidas y sus devoluciones reales vía
+`solicitar_devolucion()`, y se probó `aprobarDevolucion()`/
+`rechazarDevolucion()` de principio a fin — aprobar al 100% con
+reingreso subió el stock en 1 pieza exacta y generó el movimiento de
+saldo correcto (`$500.00`, kind `devolucion`); una segunda resolución
+sobre la misma devolución quedó bloqueada con el mensaje esperado;
+rechazar sin motivo falló como debía y rechazar con motivo guardó el
+`resolution_note`. Las queries de lectura (`crearClienteServidor()`, que
+exige contexto de request de Next.js) se verificaron por revisión de
+código contra el patrón ya probado de `queries/admin/pedidos.ts`, no por
+script standalone — mismo límite documentado en tandas anteriores.
+`npx tsc --noEmit`, `npm run build` y `npm run lint` limpios (mismos 12
+warnings preexistentes, 0 errores).
+
 ### Plan de incrementos restante del panel admin
 
-El panel tiene 13 pantallas en la maqueta. Van cinco tandas: base
-(acceso, roles, tablero), Pedidos, Catálogo (alta/edición), Categorías, e
-Importador CSV. Quedan, en el orden recomendado:
+El panel tiene 13 pantallas en la maqueta. Van seis tandas: base
+(acceso, roles, tablero), Pedidos, Catálogo (alta/edición), Categorías,
+Importador CSV, y Devoluciones. Quedan, en el orden recomendado:
 
-1. **Devoluciones (D2)** — bandeja + cajón de resolución, conecta con
-   `aplicar_saldo()` ya existente.
-2. **Solicitudes de servicio (E2)** — bandeja + cajón.
-3. **Analítica (G1) y Configuración (H4)** — Analítica reutiliza las
+1. **Solicitudes de servicio (E2)** — bandeja + cajón.
+2. **Analítica (G1) y Configuración (H4)** — Analítica reutiliza las
    queries de "más/menos vendidos" del tablero; Configuración escribe en
    `settings` (ya leído desde el lado del cliente en varios lugares —
    C1.6, D1.1, D3 — así que un cambio ahí ya se refleja del lado público
    sin tocar ese código), usando la misma `admin_change_log` del
    decimoprimer incremento (H4.3).
-4. **Importador CSV, paso 3 ("Aplicar")** — pendiente real, no
+3. **Importador CSV, paso 3 ("Aplicar")** — pendiente real, no
    planeado para una tanda específica todavía: requiere una tabla de
    trabajos por lotes y un procesamiento en segundo plano
    (`arquitectura.md` §9.5), infraestructura que no existe hoy.

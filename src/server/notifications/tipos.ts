@@ -20,12 +20,13 @@ export type TipoEventoNotificable =
   | "pedido.cancelado"
   | "pedido.pago_rechazado"
   | "servicio.solicitado" // al admin
-  | "servicio.solicitado.cliente"; // confirmación al cliente (E1.5)
+  | "servicio.solicitado.cliente" // confirmación al cliente (E1.5)
+  | "devolucion.aprobada" // D2.3 — resolver_devolucion() (0018)
+  | "devolucion.rechazada"; // D2.4
 // Pendientes de conectar cuando exista quien los dispare (H3 lista 11
-// correos; los de aquí son los 9 que hoy tienen un emisor real — ver
+// correos; los de aquí son los 11 que hoy tienen un emisor real — ver
 // `.devsquad/estado.md`): "pedido.generado" (falta encolarlo en
-// `crear_pedido()`) y "devolucion.resuelta" (acción del panel admin,
-// próximo incremento — D2), "verificacion_cuenta"/"recuperacion_password"
+// `crear_pedido()`), "verificacion_cuenta"/"recuperacion_password"
 // (los envía Supabase Auth de forma nativa, no pasan por este outbox).
 
 export interface FilaOutbox {
