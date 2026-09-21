@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import type { GrupoConNavegacion } from "@/server/db/queries/catalogo";
+import type { GrupoConNavegacion, NodoNavegacionSubcategoria } from "@/server/db/queries/catalogo";
 import { useCarrito } from "@/components/providers/CarritoProvider";
 
 /**
@@ -41,6 +41,60 @@ const SERVICIOS = [
 
 const LOGO_SRC = "/uploads/ChatGPT Image Sep 18, 2026, 10_42_49 PM.png";
 
+/**
+ * Columna de subcategorías del mega-menú (index.html:190-224 solo cubre un
+ * nivel — el demo nunca modeló los 3 niveles reales de D7,
+ * modelo-datos.md §3, que se capturaron después). Recursivo: cada
+ * subcategoría se enlaza a la ruta completa desde la raíz (`.../[...subcategoria]`)
+ * y sus hijos se listan debajo, indentados y en tamaño menor.
+ */
+function ColumnaSubcategoriaMega({
+  nodo,
+  grupoSlug,
+  rutaPadre,
+  nivel,
+  onNavegar,
+}: {
+  nodo: NodoNavegacionSubcategoria;
+  grupoSlug: string;
+  rutaPadre: string[];
+  nivel: number;
+  onNavegar: () => void;
+}) {
+  const ruta = [...rutaPadre, nodo.slug];
+  return (
+    <div style={{ breakInside: "avoid", marginBottom: nivel === 0 ? 4 : 0 }}>
+      <Link
+        href={`/catalogo/${grupoSlug}/${ruta.join("/")}`}
+        onClick={onNavegar}
+        style={{
+          display: "block",
+          width: "100%",
+          textAlign: "left",
+          padding: "6px 0",
+          paddingLeft: nivel * 14,
+          fontSize: nivel === 0 ? 14 : 13,
+          fontWeight: nivel === 0 ? 500 : 400,
+          color: nivel === 0 ? "#EAF2F8" : "#9FB2C3",
+          lineHeight: 1.45,
+        }}
+      >
+        {nodo.name}
+      </Link>
+      {nodo.hijos.map((hijo) => (
+        <ColumnaSubcategoriaMega
+          key={hijo.slug}
+          nodo={hijo}
+          grupoSlug={grupoSlug}
+          rutaPadre={ruta}
+          nivel={nivel + 1}
+          onNavegar={onNavegar}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function EncabezadoSitio({
   grupos,
   sesion,
@@ -50,6 +104,7 @@ export function EncabezadoSitio({
 }) {
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
   const [grupoMovil, setGrupoMovil] = useState<GrupoConNavegacion | null>(null);
+  const [pilaSubMovil, setPilaSubMovil] = useState<NodoNavegacionSubcategoria[]>([]);
   const [megaAbierto, setMegaAbierto] = useState(false);
   const [servAbierto, setServAbierto] = useState(false);
   const [grupoMegaId, setGrupoMegaId] = useState(grupos[0]?.id ?? "");
@@ -131,6 +186,7 @@ export function EncabezadoSitio({
               onClick={() => {
                 setMenuMovilAbierto(true);
                 setGrupoMovil(null);
+                setPilaSubMovil([]);
               }}
               style={{ width: 40, height: 40, display: "grid", placeItems: "center", border: "1px solid #1F3244", flex: "0 0 auto" }}
             >
@@ -192,6 +248,7 @@ export function EncabezadoSitio({
               onClick={() => {
                 setMenuMovilAbierto(true);
                 setGrupoMovil(null);
+                setPilaSubMovil([]);
               }}
               style={{ width: 44, height: 44, display: "grid", placeItems: "center", border: "1px solid #1F3244", flex: "0 0 auto" }}
             >
@@ -448,14 +505,14 @@ export function EncabezadoSitio({
                 </div>
                 <div style={{ columns: 3, columnGap: 24 }}>
                   {grupoActivoMega.subcategoriasRaiz.map((s) => (
-                    <Link
+                    <ColumnaSubcategoriaMega
                       key={s.slug}
-                      href={`/catalogo/${grupoActivoMega.slug}/${s.slug}`}
-                      onClick={() => setMegaAbierto(false)}
-                      style={{ display: "block", width: "100%", textAlign: "left", padding: "6px 0", fontSize: 14, color: "#9FB2C3", lineHeight: 1.45, breakInside: "avoid" }}
-                    >
-                      {s.name}
-                    </Link>
+                      nodo={s}
+                      grupoSlug={grupoActivoMega.slug}
+                      rutaPadre={[]}
+                      nivel={0}
+                      onNavegar={() => setMegaAbierto(false)}
+                    />
                   ))}
                 </div>
               </div>
@@ -497,7 +554,15 @@ export function EncabezadoSitio({
         <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#07111C", display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", gap: 14, alignItems: "center", padding: "16px 18px", borderBottom: "1px solid #1F3244" }}>
             {grupoMovil && (
-              <button type="button" onClick={() => setGrupoMovil(null)} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 15, color: "#3CE7FF", minHeight: 44 }}>
+              <button
+                type="button"
+                onClick={() =>
+                  pilaSubMovil.length > 0
+                    ? setPilaSubMovil((p) => p.slice(0, -1))
+                    : setGrupoMovil(null)
+                }
+                style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 15, color: "#3CE7FF", minHeight: 44 }}
+              >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 18, height: 18 }}>
                   <path d="m15 6-6 6 6 6" />
                 </svg>
@@ -529,7 +594,10 @@ export function EncabezadoSitio({
                 <button
                   key={g.id}
                   type="button"
-                  onClick={() => setGrupoMovil(g)}
+                  onClick={() => {
+                    setGrupoMovil(g);
+                    setPilaSubMovil([]);
+                  }}
                   style={{ display: "flex", gap: 14, alignItems: "center", width: "100%", textAlign: "left", padding: 18, borderBottom: "1px solid #1F3244", minHeight: 60 }}
                 >
                   <span style={{ flex: 1, minWidth: 0 }}>
@@ -544,26 +612,52 @@ export function EncabezadoSitio({
                 </button>
               ))}
             </div>
-          ) : (
-            <div style={{ flex: 1, overflow: "auto" }}>
-              <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "space-between", padding: 18, borderBottom: "1px solid #1F3244", flexWrap: "wrap" }}>
-                <span style={{ fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 20, color: "#EAF2F8" }}>{grupoMovil.name}</span>
-                <Link href={`/catalogo/${grupoMovil.slug}`} onClick={() => setMenuMovilAbierto(false)} style={{ fontSize: 14, color: "#3CE7FF", minHeight: 44 }}>
-                  Ver todas
-                </Link>
+          ) : (() => {
+            // Drill-down por niveles (D7, modelo-datos.md §3 — hasta 3
+            // niveles): cada toque a una subcategoría con hijos entra un
+            // nivel más (empuja la pila), y "Volver" la saca. Una hoja sin
+            // hijos navega directo al catálogo, igual que antes.
+            const nodoActual = pilaSubMovil[pilaSubMovil.length - 1] ?? null;
+            const listaActual = nodoActual ? nodoActual.hijos : grupoMovil.subcategoriasRaiz;
+            const rutaAcumulada = pilaSubMovil.map((n) => n.slug);
+            const hrefVerTodas = [grupoMovil.slug, ...rutaAcumulada].join("/");
+            return (
+              <div style={{ flex: 1, overflow: "auto" }}>
+                <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "space-between", padding: 18, borderBottom: "1px solid #1F3244", flexWrap: "wrap" }}>
+                  <span style={{ fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 20, color: "#EAF2F8" }}>
+                    {nodoActual ? nodoActual.name : grupoMovil.name}
+                  </span>
+                  <Link href={`/catalogo/${hrefVerTodas}`} onClick={() => setMenuMovilAbierto(false)} style={{ fontSize: 14, color: "#3CE7FF", minHeight: 44 }}>
+                    Ver todas
+                  </Link>
+                </div>
+                {listaActual.map((s) =>
+                  s.hijos.length > 0 ? (
+                    <button
+                      key={s.slug}
+                      type="button"
+                      onClick={() => setPilaSubMovil((p) => [...p, s])}
+                      style={{ display: "flex", gap: 14, alignItems: "center", width: "100%", textAlign: "left", padding: "17px 18px", borderBottom: "1px solid #1F3244", fontSize: 15.5, color: "#EAF2F8", minHeight: 56 }}
+                    >
+                      <span style={{ flex: 1 }}>{s.name}</span>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#9FB2C3" strokeWidth={1.5} style={{ width: 18, height: 18, flex: "0 0 auto" }}>
+                        <path d="m9 6 6 6-6 6" />
+                      </svg>
+                    </button>
+                  ) : (
+                    <Link
+                      key={s.slug}
+                      href={`/catalogo/${grupoMovil.slug}/${[...rutaAcumulada, s.slug].join("/")}`}
+                      onClick={() => setMenuMovilAbierto(false)}
+                      style={{ display: "block", width: "100%", textAlign: "left", padding: "17px 18px", borderBottom: "1px solid #1F3244", fontSize: 15.5, color: "#EAF2F8", minHeight: 56 }}
+                    >
+                      {s.name}
+                    </Link>
+                  ),
+                )}
               </div>
-              {grupoMovil.subcategoriasRaiz.map((s) => (
-                <Link
-                  key={s.slug}
-                  href={`/catalogo/${grupoMovil.slug}/${s.slug}`}
-                  onClick={() => setMenuMovilAbierto(false)}
-                  style={{ display: "block", width: "100%", textAlign: "left", padding: "17px 18px", borderBottom: "1px solid #1F3244", fontSize: 15.5, color: "#EAF2F8", minHeight: 56 }}
-                >
-                  {s.name}
-                </Link>
-              ))}
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
     </>

@@ -87,23 +87,37 @@ export async function obtenerArbolSubcategorias(
   return construirArbolSubcategorias(filas);
 }
 
+/** Nodo de navegación del mega-menú/menú móvil: mismo árbol de
+ * `NodoSubcategoria` pero solo con los campos que la UI necesita, para no
+ * acoplar el componente al tipo de fila cruda de la base de datos. */
+export interface NodoNavegacionSubcategoria {
+  slug: string;
+  name: string;
+  hijos: NodoNavegacionSubcategoria[];
+}
+
+function aNodoNavegacion(nodo: NodoSubcategoria): NodoNavegacionSubcategoria {
+  return { slug: nodo.slug, name: nodo.name, hijos: nodo.hijos.map(aNodoNavegacion) };
+}
+
 export interface GrupoConNavegacion {
   id: string;
   slug: string;
   name: string;
   code: string;
-  subcategoriasRaiz: { slug: string; name: string }[];
+  /** Árbol completo (hasta 3 niveles, D7 modelo-datos.md §3), no solo la
+   * raíz — el mega-menú y el menú móvil deben poder mostrar los 3 niveles. */
+  subcategoriasRaiz: NodoNavegacionSubcategoria[];
   /** index.html:212-221 — panel "DESTACADO" del mega-menú: un producto por
    * grupo (el más vendido). `null` si el grupo todavía no tiene productos
    * activos, en vez de inventar uno. */
   destacado: { slug: string; name: string; priceFmt: string; imagenUrl: string | null } | null;
 }
 
-/** Los 6 grupos + sus subcategorías de primer nivel, para el menú principal
+/** Los 6 grupos + su árbol completo de subcategorías, para el menú principal
  * (mega-menú de escritorio y menú de pantalla completa en móvil — A1.1).
- * Es un dataset chico (grupos × subcategorías de primer nivel, no los 3
- * niveles): se resuelve con una consulta por grupo, aceptable a esta
- * escala (6 grupos). */
+ * Es un dataset chico (grupos × hasta ~3 niveles de subcategorías): se
+ * resuelve con una consulta por grupo, aceptable a esta escala (6 grupos). */
 export async function obtenerNavegacionGrupos(): Promise<GrupoConNavegacion[]> {
   const grupos = await obtenerGrupos();
   return Promise.all(
@@ -131,9 +145,7 @@ export async function obtenerNavegacionGrupos(): Promise<GrupoConNavegacion[]> {
         slug: grupo.slug,
         name: grupo.name,
         code: grupo.code,
-        subcategoriasRaiz: subs
-          .filter((s) => s.parent_id === null)
-          .map((s) => ({ slug: s.slug, name: s.name })),
+        subcategoriasRaiz: construirArbolSubcategorias(subs).map(aNodoNavegacion),
         destacado,
       };
     }),
