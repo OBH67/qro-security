@@ -57,10 +57,10 @@ export function TablaCatalogoAdmin({ productos }: { productos: FilaProductoAdmin
                 </td>
                 <td className="mono">
                   {p.sku}
-                  {p.condition === "usado" && (
+                  {p.condition !== "nuevo" && (
                     <div>
                       <span className="badge" style={{ background: "transparent", border: "1px solid var(--warning)", color: "var(--warning)", marginTop: 4 }}>
-                        Usado
+                        {p.condition === "usado" ? "Usado" : "Caja abierta"}
                       </span>
                       <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{p.conditionDetail}</div>
                     </div>
@@ -100,7 +100,7 @@ export function TablaCatalogoAdmin({ productos }: { productos: FilaProductoAdmin
                     </span>
                   )}
                 </td>
-                <td className="mono">{p.condition === "usado" ? "1 (única)" : p.stock}</td>
+                <td className="mono">{p.condition !== "nuevo" ? "1 (única)" : p.stock}</td>
                 <td>
                   <span className="badge" style={est.estilo}>
                     {est.label}

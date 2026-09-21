@@ -1,5 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import {
+  alternarAtributo,
+  alternarCondicion,
   alternarDisponible,
   alternarMarca,
   quitarFiltro,
@@ -7,66 +12,96 @@ import {
   sinFiltros,
   type FiltrosListado,
 } from "@/lib/filtros";
-import type { OpcionMarca } from "@/server/db/queries/catalogo";
+import type { OpcionMarca, FacetaAtributo } from "@/server/db/queries/catalogo";
+import type { CondicionProducto } from "@/types/database";
 import { ChipFiltro } from "@/components/molecules/ChipFiltro";
 
+const PROMOCIONES: { valor: CondicionProducto; label: string }[] = [
+  { valor: "nuevo", label: "Producto nuevo" },
+  { valor: "caja_abierta", label: "Caja abierta" },
+];
+
 /**
- * index.html:599-649 — panel de filtros de la página de listado (A4).
- * Solo implementa los filtros que sí describe el criterio de aceptación
- * (marca, rango de precio, disponibilidad): las facetas por atributo del
- * demo (resolución/tipo/uso) dependen de PA-17 (`modelo-datos.md` §7),
- * que sigue abierta — no se inventan aquí.
+ * index.html:599-649 — panel de filtros de la página de listado (A4), y
+ * la maqueta de referencia entregada por la dueña (panel con
+ * Promociones/Marca/Precio/facetas por atributo). Los filtros por
+ * atributo (`facetasAtributo`) vienen de `category_attributes.filterable`
+ * (D1) — cierran PA-17 para las categorías que ya tienen atributos
+ * declarados; las que no, simplemente no muestran esa sección.
  */
 export function PanelFiltros({
   basePath,
   filtros,
   opcionesMarca,
+  facetasAtributo,
 }: {
   basePath: string;
   filtros: FiltrosListado;
   opcionesMarca: OpcionMarca[];
+  facetasAtributo: FacetaAtributo[];
 }) {
+  const [busquedaMarca, setBusquedaMarca] = useState("");
+  const marcasFiltradas = busquedaMarca.trim()
+    ? opcionesMarca.filter((m) => m.name.toLowerCase().includes(busquedaMarca.trim().toLowerCase()))
+    : opcionesMarca;
+
   const hayFiltrosActivos =
-    filtros.marca.length > 0 || filtros.disponible || filtros.precioMin != null || filtros.precioMax != null;
+    filtros.marca.length > 0 ||
+    filtros.disponible ||
+    filtros.condicion.length > 0 ||
+    Object.keys(filtros.atributos).length > 0 ||
+    filtros.precioMin != null ||
+    filtros.precioMax != null;
 
   return (
     <aside style={{ display: "flex", flexDirection: "column", gap: 26 }}>
       <div>
-        <h3
-          style={{
-            margin: "0 0 12px",
-            fontFamily: "var(--font-display)",
-            fontWeight: 500,
-            fontSize: 16,
-            color: "var(--text-primary)",
-          }}
-        >
-          Disponibilidad
-        </h3>
-        <Link
-          href={`${basePath}${serializarFiltros(alternarDisponible(filtros))}`}
-          style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 14, color: "var(--text-muted)" }}
-        >
-          <CasillaFiltro activa={filtros.disponible} />
-          Solo con existencia
-        </Link>
+        <TituloSeccion>Promociones</TituloSeccion>
+        <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+          {PROMOCIONES.map((p) => (
+            <Link
+              key={p.valor}
+              href={`${basePath}${serializarFiltros(alternarCondicion(filtros, p.valor))}`}
+              style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 14, color: "var(--text-muted)" }}
+            >
+              <CasillaFiltro activa={filtros.condicion.includes(p.valor)} />
+              {p.label}
+            </Link>
+          ))}
+          <Link
+            href={`${basePath}${serializarFiltros(alternarDisponible(filtros))}`}
+            style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 14, color: "var(--text-muted)" }}
+          >
+            <CasillaFiltro activa={filtros.disponible} />
+            En existencia
+          </Link>
+        </div>
       </div>
 
       {opcionesMarca.length > 0 && (
         <div>
-          <h3
-            style={{
-              margin: "0 0 12px",
-              fontFamily: "var(--font-display)",
-              fontWeight: 500,
-              fontSize: 16,
-              color: "var(--text-primary)",
-            }}
-          >
-            Marca
-          </h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-            {opcionesMarca.map((opcion) => (
+          <TituloSeccion>Marca</TituloSeccion>
+          {opcionesMarca.length > 6 && (
+            <input
+              type="text"
+              value={busquedaMarca}
+              onChange={(e) => setBusquedaMarca(e.target.value)}
+              placeholder="Buscar marca…"
+              aria-label="Buscar marca"
+              style={{
+                width: "100%",
+                marginBottom: 10,
+                padding: "8px 10px",
+                background: "var(--bg-surface)",
+                border: "1px solid var(--border-input)",
+                borderRadius: "var(--radius-input)",
+                color: "var(--text-primary)",
+                fontSize: 13,
+              }}
+            />
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 9, maxHeight: 260, overflowY: "auto" }}>
+            {marcasFiltradas.map((opcion) => (
               <Link
                 key={opcion.slug}
                 href={`${basePath}${serializarFiltros(alternarMarca(filtros, opcion.slug))}`}
@@ -79,25 +114,22 @@ export function PanelFiltros({
                 </span>
               </Link>
             ))}
+            {marcasFiltradas.length === 0 && (
+              <span style={{ fontSize: 13, color: "var(--text-dim)" }}>Sin resultados para &ldquo;{busquedaMarca}&rdquo;.</span>
+            )}
           </div>
         </div>
       )}
 
       <div>
-        <h3
-          style={{
-            margin: "0 0 12px",
-            fontFamily: "var(--font-display)",
-            fontWeight: 500,
-            fontSize: 16,
-            color: "var(--text-primary)",
-          }}
-        >
-          Precio
-        </h3>
+        <TituloSeccion>Precio</TituloSeccion>
         <form method="GET" action={basePath} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {filtros.marca.length > 0 && <input type="hidden" name="marca" value={filtros.marca.join(",")} />}
           {filtros.disponible && <input type="hidden" name="disponible" value="1" />}
+          {filtros.condicion.length > 0 && <input type="hidden" name="condicion" value={filtros.condicion.join(",")} />}
+          {Object.entries(filtros.atributos).map(([clave, valores]) => (
+            <input key={clave} type="hidden" name={`attr_${clave}`} value={valores.join(",")} />
+          ))}
           {filtros.orden !== "vendidos" && <input type="hidden" name="orden" value={filtros.orden} />}
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <input
@@ -107,16 +139,7 @@ export function PanelFiltros({
               placeholder="Mín."
               defaultValue={filtros.precioMin ?? ""}
               aria-label="Precio mínimo"
-              style={{
-                width: "100%",
-                padding: "9px 10px",
-                background: "var(--bg-surface)",
-                border: "1px solid var(--border-input)",
-                borderRadius: "var(--radius-input)",
-                color: "var(--text-primary)",
-                fontFamily: "var(--font-mono)",
-                fontSize: 13,
-              }}
+              style={estiloCampoPrecio}
             />
             <span style={{ color: "var(--text-muted)" }}>–</span>
             <input
@@ -126,16 +149,7 @@ export function PanelFiltros({
               placeholder="Máx."
               defaultValue={filtros.precioMax ?? ""}
               aria-label="Precio máximo"
-              style={{
-                width: "100%",
-                padding: "9px 10px",
-                background: "var(--bg-surface)",
-                border: "1px solid var(--border-input)",
-                borderRadius: "var(--radius-input)",
-                color: "var(--text-primary)",
-                fontFamily: "var(--font-mono)",
-                fontSize: 13,
-              }}
+              style={estiloCampoPrecio}
             />
           </div>
           <button
@@ -154,12 +168,58 @@ export function PanelFiltros({
         </form>
       </div>
 
+      {facetasAtributo.map((faceta) => (
+        <div key={faceta.key}>
+          <TituloSeccion>{faceta.label}</TituloSeccion>
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            {faceta.opciones.map((opcion) => (
+              <Link
+                key={opcion.valor}
+                href={`${basePath}${serializarFiltros(alternarAtributo(filtros, faceta.key, opcion.valor))}`}
+                style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 14, color: "var(--text-muted)" }}
+              >
+                <CasillaFiltro activa={(filtros.atributos[faceta.key] ?? []).includes(opcion.valor)} />
+                {opcion.valor}
+                <span style={{ marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: 12 }}>{opcion.cantidad}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ))}
+
       {hayFiltrosActivos && (
         <Link href={`${basePath}${serializarFiltros(sinFiltros(filtros))}`} style={{ fontSize: 13.5, color: "var(--accent)" }}>
           Quitar todos los filtros
         </Link>
       )}
     </aside>
+  );
+}
+
+const estiloCampoPrecio: React.CSSProperties = {
+  width: "100%",
+  padding: "9px 10px",
+  background: "var(--bg-surface)",
+  border: "1px solid var(--border-input)",
+  borderRadius: "var(--radius-input)",
+  color: "var(--text-primary)",
+  fontFamily: "var(--font-mono)",
+  fontSize: 13,
+};
+
+function TituloSeccion({ children }: { children: React.ReactNode }) {
+  return (
+    <h3
+      style={{
+        margin: "0 0 12px",
+        fontFamily: "var(--font-display)",
+        fontWeight: 500,
+        fontSize: 16,
+        color: "var(--text-primary)",
+      }}
+    >
+      {children}
+    </h3>
   );
 }
 
@@ -183,10 +243,12 @@ export function ChipsFiltrosActivos({
   basePath,
   filtros,
   nombresMarca,
+  etiquetasAtributo,
 }: {
   basePath: string;
   filtros: FiltrosListado;
   nombresMarca: Map<string, string>;
+  etiquetasAtributo: Map<string, string>;
 }) {
   const chips: { etiqueta: string; href: string }[] = [];
 
@@ -198,8 +260,14 @@ export function ChipsFiltrosActivos({
   }
   if (filtros.disponible) {
     chips.push({
-      etiqueta: "Solo con existencia",
+      etiqueta: "En existencia",
       href: `${basePath}${serializarFiltros(quitarFiltro(filtros, "disponible"))}`,
+    });
+  }
+  for (const condicion of filtros.condicion) {
+    chips.push({
+      etiqueta: PROMOCIONES.find((p) => p.valor === condicion)?.label ?? condicion,
+      href: `${basePath}${serializarFiltros(quitarFiltro(filtros, "condicion", condicion))}`,
     });
   }
   if (filtros.precioMin != null || filtros.precioMax != null) {
@@ -207,6 +275,15 @@ export function ChipsFiltrosActivos({
       etiqueta: `Precio ${filtros.precioMin ?? 0} – ${filtros.precioMax ?? "∞"}`,
       href: `${basePath}${serializarFiltros(quitarFiltro(filtros, "precio"))}`,
     });
+  }
+  for (const [clave, valores] of Object.entries(filtros.atributos)) {
+    const etiquetaClave = etiquetasAtributo.get(clave) ?? clave;
+    for (const valor of valores) {
+      chips.push({
+        etiqueta: `${etiquetaClave}: ${valor}`,
+        href: `${basePath}${serializarFiltros(quitarFiltro(filtros, "atributo", `${clave}:${valor}`))}`,
+      });
+    }
   }
 
   if (chips.length === 0) return null;

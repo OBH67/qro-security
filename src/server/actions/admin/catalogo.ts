@@ -30,10 +30,11 @@ export async function crearProductoAction(datosCrudos: unknown): Promise<Resulta
       price: datos.price,
       status: datos.status,
       condition: datos.condition,
-      conditionDetail: datos.condition === "usado" ? datos.conditionDetail || null : null,
-      // D6/diseño.md §11.7: una pieza usada es única, su existencia
-      // siempre es 1 — de solo lectura en la pantalla, forzado aquí.
-      stock: datos.condition === "usado" ? 1 : datos.stock,
+      conditionDetail: datos.condition !== "nuevo" ? datos.conditionDetail || null : null,
+      // D6/diseño.md §11.7: una pieza usada o de caja abierta es única, su
+      // existencia siempre es 1 — de solo lectura en la pantalla, forzado
+      // aquí.
+      stock: datos.condition !== "nuevo" ? 1 : datos.stock,
     });
     revalidarCatalogo(producto.id);
     return producto;
@@ -52,8 +53,8 @@ export async function actualizarProductoAction(productId: string, datosCrudos: u
       price: datos.price,
       status: datos.status,
       condition: datos.condition,
-      conditionDetail: datos.condition === "usado" ? datos.conditionDetail || null : null,
-      stock: datos.condition === "usado" ? 1 : datos.stock,
+      conditionDetail: datos.condition !== "nuevo" ? datos.conditionDetail || null : null,
+      stock: datos.condition !== "nuevo" ? 1 : datos.stock,
     });
     revalidarCatalogo(productId);
     return producto;

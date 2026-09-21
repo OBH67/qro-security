@@ -1,6 +1,8 @@
 import type { GroupRow } from "@/types/database";
 import {
   listarProductos,
+  obtenerAtributosFiltrables,
+  obtenerBannerDeGrupo,
   obtenerImagenesPrincipales,
   obtenerMarcasActivas,
   obtenerOpcionesMarca,
@@ -9,6 +11,7 @@ import { leerFiltros, type SearchParamsCrudos } from "@/lib/filtros";
 import { mapearTarjetaProducto } from "@/lib/producto";
 import { Migas, type MigaItem } from "@/components/molecules/Migas";
 import { PanelFiltros, ChipsFiltrosActivos } from "@/components/organisms/PanelFiltros";
+import { BannerCatalogo } from "@/components/organisms/BannerCatalogo";
 import { CuadriculaProductos } from "@/components/organisms/CuadriculaProductos";
 import { Paginacion } from "@/components/molecules/Paginacion";
 import { SelectOrden } from "@/components/molecules/SelectOrden";
@@ -40,7 +43,7 @@ export async function ListadoCatalogo({
   const idsMarcaSeleccionada = marcas.filter((m) => filtros.marca.includes(m.slug)).map((m) => m.id);
   const nombresMarcaPorSlug = new Map(marcas.map((m) => [m.slug, m.name]));
 
-  const [{ productos: filas, total, totalPaginas, pagina }, opcionesMarca] = await Promise.all([
+  const [{ productos: filas, total, totalPaginas, pagina }, opcionesMarca, facetasAtributo, banner] = await Promise.all([
     listarProductos({
       groupId: grupo.id,
       subcategoryIds,
@@ -48,11 +51,16 @@ export async function ListadoCatalogo({
       precioMin: filtros.precioMin,
       precioMax: filtros.precioMax,
       soloDisponibles: filtros.disponible,
+      condiciones: filtros.condicion,
+      atributos: filtros.atributos,
       orden: filtros.orden,
       pagina: filtros.pagina,
     }),
     obtenerOpcionesMarca({ groupId: grupo.id, subcategoryIds }),
+    obtenerAtributosFiltrables({ groupId: grupo.id, subcategoryIds }),
+    obtenerBannerDeGrupo(grupo.id),
   ]);
+  const etiquetasAtributoPorClave = new Map(facetasAtributo.map((f) => [f.key, f.label]));
 
   const imagenes = await obtenerImagenesPrincipales(filas.map((f) => f.id));
   const productos = filas.map((f) =>
@@ -70,12 +78,16 @@ export async function ListadoCatalogo({
         {total} {total === 1 ? "resultado" : "resultados"}
       </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,260px) minmax(0,1fr)", gap: 32, alignItems: "start", marginTop: 28 }} className="listado-grid">
-        <PanelFiltros basePath={basePath} filtros={filtros} opcionesMarca={opcionesMarca} />
+      <div style={{ marginTop: 20 }}>
+        <BannerCatalogo banner={banner} />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,260px) minmax(0,1fr)", gap: 32, alignItems: "start" }} className="listado-grid">
+        <PanelFiltros basePath={basePath} filtros={filtros} opcionesMarca={opcionesMarca} facetasAtributo={facetasAtributo} />
 
         <div>
           <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", paddingBottom: 16, borderBottom: "1px solid var(--border)" }}>
-            <ChipsFiltrosActivos basePath={basePath} filtros={filtros} nombresMarca={nombresMarcaPorSlug} />
+            <ChipsFiltrosActivos basePath={basePath} filtros={filtros} nombresMarca={nombresMarcaPorSlug} etiquetasAtributo={etiquetasAtributoPorClave} />
             <SelectOrden ordenActual={filtros.orden} />
           </div>
 

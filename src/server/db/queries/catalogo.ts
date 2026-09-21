@@ -18,6 +18,7 @@ import type {
   BrandRow,
   BuscarProductosRow,
   CategoryAttributeRow,
+  CondicionProducto,
   FaqRow,
   GroupRow,
   ProductDocumentRow,
@@ -269,6 +270,8 @@ export async function obtenerOpcionesMarca(params: {
 // Listado de productos (A1, A4)
 // ─────────────────────────────────────────────────────────────────────────
 
+const CLAVE_ATRIBUTO_VALIDA = /^[a-z0-9_]+$/;
+
 export interface ParametrosListado {
   groupId?: string;
   subcategoryIds?: string[];
@@ -276,6 +279,14 @@ export interface ParametrosListado {
   precioMin?: number;
   precioMax?: number;
   soloDisponibles?: boolean;
+  /** "Promociones" del panel de filtros (nuevo/caja abierta). */
+  condiciones?: CondicionProducto[];
+  /** Atributos dinámicos filtrables (D1/PA-17) — clave → valores elegidos,
+   * combinados en AND entre distintas claves y OR dentro de la misma. Solo
+   * se aceptan claves que ya vinieron de `obtenerAtributosFiltrables()`
+   * (`CLAVE_ATRIBUTO_VALIDA` es un candado extra, nunca la única defensa,
+   * porque la clave se interpola en la ruta de la columna JSON). */
+  atributos?: Record<string, string[]>;
   orden: OrdenCatalogo;
   pagina: number;
 }
@@ -290,7 +301,7 @@ export interface ResultadoListado {
     stock: number;
     reserved: number;
     brand_id: string | null;
-    condition: "nuevo" | "usado";
+    condition: CondicionProducto;
     condition_detail: string | null;
   }>;
   total: number;
@@ -340,6 +351,13 @@ export async function listarProductos(
   if (params.precioMin != null) consulta = consulta.gte("price", params.precioMin);
   if (params.precioMax != null) consulta = consulta.lte("price", params.precioMax);
   if (params.soloDisponibles) consulta = consulta.gt("disponible", 0);
+  if (params.condiciones && params.condiciones.length > 0) consulta = consulta.in("condition", params.condiciones);
+  if (params.atributos) {
+    for (const [clave, valores] of Object.entries(params.atributos)) {
+      if (!CLAVE_ATRIBUTO_VALIDA.test(clave) || valores.length === 0) continue;
+      consulta = consulta.in(`attributes->>${clave}`, valores);
+    }
+  }
 
   consulta = ordenA(consulta, params.orden);
 
@@ -406,7 +424,7 @@ export interface PestanaParaTi {
     stock: number;
     reserved: number;
     brand_id: string | null;
-    condition: "nuevo" | "usado";
+    condition: CondicionProducto;
     condition_detail: string | null;
   }[];
 }
@@ -539,7 +557,7 @@ export interface ProductoDetalle {
   weight_kg: string | null;
   includes: string[] | null;
   attributes: Record<string, unknown>;
-  condition: "nuevo" | "usado";
+  condition: CondicionProducto;
   condition_detail: string | null;
   brand: { id: string; name: string; slug: string } | null;
   grupo: GroupRow;
@@ -633,6 +651,61 @@ export async function obtenerAtributosDeCategoria(params: {
   return data ?? [];
 }
 
+export interface OpcionAtributo {
+  valor: string;
+  cantidad: number;
+}
+
+export interface FacetaAtributo {
+  key: string;
+  label: string;
+  opciones: OpcionAtributo[];
+}
+
+/** D1/PA-17: facetas dinámicas del panel de filtros — un grupo de
+ * checkboxes por cada atributo marcado `filterable` en el alcance
+ * (grupo o cualquiera de sus subcategorías visibles), con el conteo de
+ * productos real en ese alcance. Mismo criterio que `obtenerOpcionesMarca`:
+ * a la escala de este catálogo, contar en memoria es más simple que
+ * mantener una vista agregada. */
+export async function obtenerAtributosFiltrables(params: {
+  groupId: string;
+  subcategoryIds?: string[];
+}): Promise<FacetaAtributo[]> {
+  const supabase = await crearClienteServidor();
+
+  let consultaDefiniciones = supabase.from("category_attributes").select("*").eq("filterable", true).eq("data_type", "text");
+  consultaDefiniciones = params.subcategoryIds && params.subcategoryIds.length > 0
+    ? consultaDefiniciones.or(`group_id.eq.${params.groupId},subcategory_id.in.(${params.subcategoryIds.join(",")})`)
+    : consultaDefiniciones.eq("group_id", params.groupId);
+
+  const { data: definiciones, error: errorDefiniciones } = await consultaDefiniciones.order("position", { ascending: true });
+  if (errorDefiniciones) throw new Error(`No se pudieron cargar los atributos filtrables: ${errorDefiniciones.message}`);
+  if (!definiciones || definiciones.length === 0) return [];
+
+  let consultaProductos = supabase.from("catalogo_productos").select("attributes").eq("group_id", params.groupId);
+  if (params.subcategoryIds) consultaProductos = consultaProductos.in("subcategory_id", params.subcategoryIds);
+  const { data: productos, error: errorProductos } = await consultaProductos;
+  if (errorProductos) throw new Error(`No se pudieron cargar los valores de atributos: ${errorProductos.message}`);
+
+  return (definiciones as CategoryAttributeRow[])
+    .map((def): FacetaAtributo => {
+      const conteoPorValor = new Map<string, number>();
+      for (const p of productos ?? []) {
+        const valor = (p.attributes as Record<string, unknown> | null)?.[def.key];
+        if (typeof valor !== "string" || !valor) continue;
+        conteoPorValor.set(valor, (conteoPorValor.get(valor) ?? 0) + 1);
+      }
+      const universo: string[] = def.options && def.options.length > 0 ? def.options : [...conteoPorValor.keys()];
+      const opciones: OpcionAtributo[] = universo
+        .map((valor) => ({ valor, cantidad: conteoPorValor.get(valor) ?? 0 }))
+        .filter((o) => o.cantidad > 0)
+        .sort((a, b) => b.cantidad - a.cantidad);
+      return { key: def.key, label: def.label, opciones };
+    })
+    .filter((f) => f.opciones.length > 0);
+}
+
 export async function obtenerRelacionados(params: {
   productId: string;
   subcategoryId: string;
@@ -665,7 +738,7 @@ export interface ResultadoBusqueda {
     stock: number;
     reserved: number;
     brand_id: string | null;
-    condition: "nuevo" | "usado";
+    condition: CondicionProducto;
     condition_detail: string | null;
   }>;
   total: number;
@@ -746,6 +819,16 @@ export async function obtenerBannersActivos(): Promise<BannerRow[]> {
 
   if (error) throw new Error(`No se pudieron cargar los banners: ${error.message}`);
   return data ?? [];
+}
+
+/** Banner promocional para una página de catálogo (grupo o listado):
+ * primero uno propio del grupo, si no hay uno genérico (`group_id`
+ * nulo) — nunca ambos a la vez, esto no es el carrusel de portada
+ * (`BannerHero`), es una sola franja. `null` si no hay ninguno activo,
+ * en vez de inventar contenido. */
+export async function obtenerBannerDeGrupo(groupId: string): Promise<BannerRow | null> {
+  const banners = await obtenerBannersActivos();
+  return banners.find((b) => b.group_id === groupId) ?? banners.find((b) => b.group_id === null) ?? null;
 }
 
 export async function obtenerFaqsPorAmbito(

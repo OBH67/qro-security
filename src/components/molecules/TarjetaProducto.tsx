@@ -97,7 +97,12 @@ export function TarjetaProducto({ producto }: { producto: ProductoTarjeta }) {
             {producto.sku}
           </span>
           {producto.esUsado && <Etiqueta tono="advertencia">Usado</Etiqueta>}
+          {producto.esCajaAbierta && <Etiqueta tono="advertencia">Caja abierta</Etiqueta>}
         </div>
+
+        {producto.marca && (
+          <span style={{ fontSize: 11.5, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.4 }}>{producto.marca}</span>
+        )}
 
         <Link
           href={href}

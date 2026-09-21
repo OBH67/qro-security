@@ -7,6 +7,7 @@ import {
   type NivelStock,
 } from "@/lib/formato";
 import { urlImagenPublica } from "@/lib/imagenes";
+import type { CondicionProducto } from "@/types/database";
 
 /** Forma mínima de una fila de producto que alcanza para armar una tarjeta
  * (viene de `catalogo_productos`, de `buscar_productos()`, o de un `select`
@@ -20,7 +21,7 @@ export interface FilaProductoParaTarjeta {
   stock: number;
   reserved: number;
   brand_id: string | null;
-  condition: "nuevo" | "usado";
+  condition: CondicionProducto;
   condition_detail: string | null;
   /** Solo presente cuando la consulta la trae (p. ej. "Más vendidos" de la
    * portada) — de aquí salen las chips de especificaciones cortas,
@@ -41,7 +42,9 @@ export interface ProductoTarjeta {
   etiquetaStock: string;
   barras: boolean[];
   imagenUrl: string | null;
+  condicion: CondicionProducto;
   esUsado: boolean;
+  esCajaAbierta: boolean;
   condicionDetalle: string | null;
   /** Hasta 3 valores cortos de la ficha técnica, para la chip-row que
    * `index.html:389-393` pinta en "Más vendidos". Vacío si la tarjeta no
@@ -73,7 +76,9 @@ export function mapearTarjetaProducto(
     etiquetaStock: etiquetaStock(disponible),
     barras: barrasStock(disponible),
     imagenUrl: opciones.imagenUrl ? urlImagenPublica(opciones.imagenUrl) : null,
+    condicion: fila.condition,
     esUsado: fila.condition === "usado",
+    esCajaAbierta: fila.condition === "caja_abierta",
     condicionDetalle: fila.condition_detail,
     specs: extraerSpecsCortas(fila.attributes),
   };

@@ -5,10 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { crearProductoAction, actualizarProductoAction } from "@/server/actions/admin/catalogo";
 import type { DatosFormularioProducto } from "@/server/db/queries/admin/catalogo";
-import type { ProductRow } from "@/types/database";
+import type { CondicionProducto, ProductRow } from "@/types/database";
 
 const PESTAÑAS = ["General", "Precio y stock", "Fotos", "Especificaciones", "Documentos"] as const;
-const MOTIVOS_USADO = ["Usado para prueba", "Incompleto — faltan piezas", "Unidad de exhibición", "Otro"];
+const MOTIVOS_POR_CONDICION: Record<Exclude<CondicionProducto, "nuevo">, string[]> = {
+  caja_abierta: ["Empaque abierto, producto sin usar", "Caja dañada en tránsito", "Devolución sin abrir el sello del producto", "Otro"],
+  usado: ["Usado para prueba", "Incompleto — faltan piezas", "Unidad de exhibición", "Otro"],
+};
 
 /** panel-admin-maqueta.html:560-709 (`isNuevoProducto`) — traducción
  * literal de la pestaña "General" (la única que la maqueta construyó
@@ -29,17 +32,18 @@ export function FormularioProducto({ producto, datosFormulario }: { producto?: P
   const [subcategoryId, setSubcategoryId] = useState(producto?.subcategory_id ?? "");
   const [status, setStatus] = useState<"activo" | "agotado" | "descontinuado">(producto?.status ?? "activo");
   const [price, setPrice] = useState(producto?.price ?? "");
-  const [condition, setCondition] = useState<"nuevo" | "usado">(producto?.condition ?? "nuevo");
-  const [conditionDetail, setConditionDetail] = useState(producto?.condition_detail ?? MOTIVOS_USADO[0]);
+  const [condition, setCondition] = useState<CondicionProducto>(producto?.condition ?? "nuevo");
+  const [conditionDetail, setConditionDetail] = useState(producto?.condition_detail ?? MOTIVOS_POR_CONDICION.usado[0]);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const subcategorias = useMemo(() => datosFormulario.subcategoriasPorGrupo.get(groupId) ?? [], [groupId, datosFormulario]);
 
-  function elegirCondicion(nueva: "nuevo" | "usado") {
+  function elegirCondicion(nueva: CondicionProducto) {
     setCondition(nueva);
-    if (nueva === "usado" && esEdicion === false && sku && !sku.endsWith("-U1")) {
-      setSku(`${sku}-U1`);
+    if (nueva !== "nuevo") {
+      setConditionDetail(MOTIVOS_POR_CONDICION[nueva][0]);
+      if (esEdicion === false && sku && !sku.endsWith("-U1")) setSku(`${sku}-U1`);
     }
   }
 
@@ -55,7 +59,7 @@ export function FormularioProducto({ producto, datosFormulario }: { producto?: P
       price,
       status,
       condition,
-      conditionDetail: condition === "usado" ? conditionDetail : "",
+      conditionDetail: condition !== "nuevo" ? conditionDetail : "",
     };
     startTransition(async () => {
       const resultado = esEdicion ? await actualizarProductoAction(producto!.id, datos) : await crearProductoAction(datos);
@@ -190,10 +194,13 @@ export function FormularioProducto({ producto, datosFormulario }: { producto?: P
                   <input type="radio" name="condicion" checked={condition === "nuevo"} onChange={() => elegirCondicion("nuevo")} /> Nuevo
                 </label>
                 <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer" }}>
+                  <input type="radio" name="condicion" checked={condition === "caja_abierta"} onChange={() => elegirCondicion("caja_abierta")} /> Caja abierta
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer" }}>
                   <input type="radio" name="condicion" checked={condition === "usado"} onChange={() => elegirCondicion("usado")} /> Usado
                 </label>
               </div>
-              {condition === "usado" && (
+              {condition !== "nuevo" && (
                 <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: 12 }}>
                   <div>
                     <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>Stock</label>
@@ -204,7 +211,7 @@ export function FormularioProducto({ producto, datosFormulario }: { producto?: P
                   <div>
                     <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>Motivo visible al cliente *</label>
                     <select className="campo" value={conditionDetail ?? ""} onChange={(e) => setConditionDetail(e.target.value)}>
-                      {MOTIVOS_USADO.map((m) => (
+                      {MOTIVOS_POR_CONDICION[condition].map((m) => (
                         <option key={m} value={m}>
                           {m}
                         </option>

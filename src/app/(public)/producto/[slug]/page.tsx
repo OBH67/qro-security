@@ -107,9 +107,12 @@ export default async function PaginaProducto({
 
           <h1 style={{ margin: "12px 0 0", fontSize: "clamp(26px,2.6vw,36px)", lineHeight: 1.2 }}>{producto.name}</h1>
 
-          {producto.condition === "usado" && (
+          {(producto.condition === "usado" || producto.condition === "caja_abierta") && (
             <div style={{ marginTop: 12 }}>
-              <Etiqueta tono="advertencia">Usado{producto.condition_detail ? ` — ${producto.condition_detail}` : ""}</Etiqueta>
+              <Etiqueta tono="advertencia">
+                {producto.condition === "usado" ? "Usado" : "Caja abierta"}
+                {producto.condition_detail ? ` — ${producto.condition_detail}` : ""}
+              </Etiqueta>
             </div>
           )}
 

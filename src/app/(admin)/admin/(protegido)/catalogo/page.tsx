@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { obtenerProductosAdmin, obtenerDatosFormularioProducto } from "@/server/db/queries/admin/catalogo";
 import { TablaCatalogoAdmin } from "@/components/organisms/admin/TablaCatalogoAdmin";
-import type { EstadoProducto } from "@/types/database";
+import type { CondicionProducto, EstadoProducto } from "@/types/database";
 
 export const metadata: Metadata = { title: "Catálogo — Panel SG Querétaro" };
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export default async function PaginaCatalogoAdmin({
 }) {
   const sp = await searchParams;
   const estado = sp.estado as EstadoProducto | undefined;
-  const condicion = sp.condicion as "nuevo" | "usado" | undefined;
+  const condicion = sp.condicion as CondicionProducto | undefined;
 
   const [{ productos, total }, datosFormulario] = await Promise.all([
     obtenerProductosAdmin({ busqueda: sp.q, grupoId: sp.grupo, estado, condicion }),
@@ -60,6 +60,7 @@ export default async function PaginaCatalogoAdmin({
         <select className="campo" style={{ maxWidth: 170 }} name="condicion" defaultValue={sp.condicion ?? ""}>
           <option value="">Condición: Todas</option>
           <option value="nuevo">Nuevo</option>
+          <option value="caja_abierta">Caja abierta</option>
           <option value="usado">Usado</option>
         </select>
         <button type="submit" className="btn btn-fantasma cut cut-10">

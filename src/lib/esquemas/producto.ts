@@ -13,12 +13,12 @@ export const esquemaProducto = z
     subcategoryId: z.uuid("Elige una subcategoría."),
     price: z.coerce.number().positive("Escribe un precio válido."),
     status: z.enum(["activo", "agotado", "descontinuado"]),
-    condition: z.enum(["nuevo", "usado"]),
+    condition: z.enum(["nuevo", "caja_abierta", "usado"]),
     conditionDetail: z.string().trim().optional().or(z.literal("")),
     stock: z.coerce.number().int().min(0).optional(),
   })
-  .refine((d) => d.condition !== "usado" || d.conditionDetail, {
-    message: "Escribe el motivo visible al cliente para un producto usado.",
+  .refine((d) => d.condition === "nuevo" || d.conditionDetail, {
+    message: "Escribe el motivo visible al cliente para esta condición.",
     path: ["conditionDetail"],
   });
 

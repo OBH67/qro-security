@@ -9,7 +9,7 @@
  */
 
 export type EstadoProducto = "activo" | "agotado" | "descontinuado";
-export type CondicionProducto = "nuevo" | "usado";
+export type CondicionProducto = "nuevo" | "caja_abierta" | "usado";
 
 export interface GroupRow {
   id: string;

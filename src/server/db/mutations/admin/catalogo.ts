@@ -1,6 +1,6 @@
 import "server-only";
 import { crearClienteAdmin } from "@/server/supabase/admin";
-import type { ProductRow } from "@/types/database";
+import type { CondicionProducto, ProductRow } from "@/types/database";
 
 function traducirError(mensaje: string): string {
   return mensaje.replace(/^ERROR:\s*/i, "").trim();
@@ -16,7 +16,7 @@ export interface DatosProducto {
   price: number;
   stock?: number;
   status?: "activo" | "agotado" | "descontinuado";
-  condition: "nuevo" | "usado";
+  condition: CondicionProducto;
   conditionDetail?: string | null;
 }
 

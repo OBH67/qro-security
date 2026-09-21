@@ -1,12 +1,12 @@
 import "server-only";
 import { crearClienteServidor } from "@/server/supabase/server";
-import type { BrandRow, EstadoProducto, GroupRow, ProductRow, SubcategoryRow } from "@/types/database";
+import type { BrandRow, CondicionProducto, EstadoProducto, GroupRow, ProductRow, SubcategoryRow } from "@/types/database";
 
 export interface FiltrosProductosAdmin {
   busqueda?: string;
   grupoId?: string;
   estado?: EstadoProducto;
-  condicion?: "nuevo" | "usado";
+  condicion?: CondicionProducto;
 }
 
 export interface FilaProductoAdmin {
@@ -17,7 +17,7 @@ export interface FilaProductoAdmin {
   price: string;
   stock: number;
   status: EstadoProducto;
-  condition: "nuevo" | "usado";
+  condition: CondicionProducto;
   conditionDetail: string | null;
 }
 

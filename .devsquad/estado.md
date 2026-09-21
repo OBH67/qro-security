@@ -5,10 +5,10 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 Última actualización: 2026-09-21
 
 ## Fase actual
-**Implementación en curso — decimosexto incremento (panel admin, octava
-tanda: G1 Analítica + H4 Configuración) terminado. Con esto el panel
-admin solo tiene pendiente el paso 3 del Importador CSV. Ver plan de
-incrementos restante al final de este documento.**
+**Implementación en curso — decimoséptimo incremento (2026-09-21):
+catálogo público, filtros enriquecidos (rediseño pedido por la dueña
+sobre una referencia visual de otro sitio). El panel admin sigue con
+el paso 3 del Importador CSV como único pendiente. Ver detalle debajo.**
 
 ## Progreso por fases
 
@@ -1620,3 +1620,90 @@ Queda un solo pendiente, real y ya documentado en cada tanda anterior:
    (`arquitectura.md` §9.5), infraestructura que no existe hoy. No es
    una tanda del panel en sí, es la pieza de infraestructura que falta
    para cerrar F2 por completo.
+
+### Decimoséptimo incremento (2026-09-21): catálogo público — filtros
+enriquecidos
+
+La dueña compartió capturas de otro sitio (un distribuidor de cableado,
+con panel de filtros mucho más rico que el nuestro) y pidió acercar el
+listado del catálogo a ese patrón. Antes de tocar código se hizo un
+gap-analysis contra el modelo de datos real y se le hicieron 4 preguntas
+de negocio (no de diseño) porque la referencia mezclaba conceptos que no
+aplican a SG Querétaro:
+
+- **Sucursales** (la referencia tenía un filtro por ubicación): **no
+  aplica** — un solo inventario, como ya estaba modelado. Se ignoró.
+- **Badges** ("Envío gratis", "Instalación aérea", "Anti-roedores",
+  "Cable blindado"): **se ignoraron por completo** — inspiración visual
+  de otro catálogo, sin equivalente real en SG Querétaro.
+- **"Caja abierta"** como toggle de Promociones: **sí se agregó**, como
+  tercera condición real de producto (antes solo nuevo/usado).
+- **Precio detrás de login** (patrón B2B de la referencia): **se
+  mantienen precios públicos**, como ya definían los requerimientos
+  (B2C, catálogo abierto) — no era una pregunta de diseño, hubiera
+  significado revertir varias historias ya construidas.
+
+**Qué se construyó** — todo dentro de `/catalogo/[grupo]/**`
+(`ListadoCatalogo.tsx`, compartido por `/todos` y las rutas de
+subcategoría):
+
+1. **`supabase/migrations/0020_condicion_caja_abierta.sql`** — agrega
+   `'caja_abierta'` al enum de `products.condition` (antes solo
+   nuevo/usado). Redefine los dos `check` del CHECK original (Postgres no
+   tiene `alter check`, hay que borrar y volver a crear). Se propagó el
+   tipo `CondicionProducto` (ya existía en `types/database.ts`, ahora
+   con el tercer valor) a los ~10 archivos que antes tenían la unión
+   `"nuevo" | "usado"` copiada a mano: queries/mutations/actions de
+   catálogo admin, `FormularioProducto.tsx` (tercer radio + su propia
+   lista de motivos), `TablaCatalogoAdmin.tsx`, el badge de la ficha
+   pública, `TarjetaProducto.tsx`, y el schema de Zod. "Caja abierta" se
+   trató igual que "usado" en toda la mecánica ya existente (D6: pieza
+   única, stock forzado a 1, motivo visible obligatorio) — el propio
+   comentario original de la columna (`0003_catalogo.sql`) ya hablaba de
+   "usado/abierto" como la misma idea.
+2. **Atributos dinámicos por categoría, ahora sí filtrables (D1/PA-17)**
+   — `category_attributes.filterable` existía desde el primer incremento
+   del catálogo pero nunca se conectó a nada. `obtenerAtributosFiltrables()`
+   (nueva, `queries/catalogo.ts`) arma una faceta de checkboxes con
+   conteo real por cada atributo `filterable`/`data_type='text'` del
+   grupo o de las subcategorías visibles; `listarProductos()` ahora
+   acepta `atributos: Record<string, string[]>` y filtra con
+   `.in(\`attributes->>${clave}\`, valores)` (la clave se valida contra
+   `/^[a-z0-9_]+$/` antes de interpolarse en la ruta de la columna,
+   nunca se confía en el nombre crudo). Verificado con el único atributo
+   sembrado hoy (`resolucion` en Videovigilancia — `seed_dev.sql`): el
+   filtro por "4 MP" bajó el listado de 5 a 2 resultados con el chip
+   activo correcto, probado tanto contra Postgres real como en el
+   navegador con el servidor de desarrollo corriendo.
+3. **`PanelFiltros.tsx` reescrito** — sección "Promociones" (nuevo/caja
+   abierta/en existencia, antes solo un checkbox de disponibilidad
+   suelto), buscador sobre la lista de marcas cuando hay más de 6,
+   secciones dinámicas por cada faceta de atributo filtrable, y sus
+   chips activos correspondientes en `ChipsFiltrosActivos`. `lib/filtros.ts`
+   extendido con `condicion: CondicionProducto[]` y
+   `atributos: Record<string,string[]>` en el estado de `FiltrosListado`
+   (todo sigue reflejado en la URL — `attr_<clave>=v1,v2`, criterio A4
+   original).
+4. **`BannerCatalogo.tsx`** (nuevo, más simple que `BannerHero` de
+   portada: una sola imagen ancha, sin carrusel ni reseñas) +
+   `obtenerBannerDeGrupo()` — la tabla `banners` (0006) ya existía y ya
+   la administraba la dueña, pero solo se usaba en el home; ahora
+   `/catalogo/*` también la muestra (banner propio del grupo si existe,
+   si no uno genérico con `group_id` nulo).
+5. **`TarjetaProducto.tsx`** — ahora muestra el nombre de marca (el dato
+   ya existía en `ProductoTarjeta.marca`, nunca se pintaba) y el badge
+   "Caja abierta" junto al de "Usado".
+
+**Validado**: `npx tsc --noEmit`/`npm run build`/`npm run lint` limpios
+(mismos 14 warnings preexistentes). Contra Postgres 16 + PostgREST real
+(`server-only` neutralizado temporalmente): el CHECK nuevo acepta
+`caja_abierta` y sigue rechazando cualquier otro valor; el filtro
+`.in('attributes->>resolucion', [...])` y el `.or()` con `in.()` embebido
+que arma el alcance grupo/subcategoría de `obtenerAtributosFiltrables()`
+funcionan tal como los usa el código (ninguno de los dos tenía
+precedente en el codebase, se verificaron aparte antes de confiar en
+ellos). Además, con el servidor de desarrollo corriendo de verdad: se
+tomó una captura del listado de Videovigilancia mostrando las 4
+secciones del panel (Promociones/Marca/Precio/Resolución) y la marca en
+las tarjetas, y otra tras aplicar el filtro de atributo confirmando que
+el conteo bajó de 5 a 2 resultados con el chip correcto.
