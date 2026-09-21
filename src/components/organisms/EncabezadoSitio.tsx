@@ -432,11 +432,24 @@ export function EncabezadoSitio({
           </div>
         )}
 
-        {/* Mega-menú — index.html:190-224 */}
+        {/* Mega-menú — index.html:190-224. Con el árbol de 3 niveles el
+            contenido puede ser más alto que la pantalla: el panel tiene su
+            propio scroll interno (acotado a lo que queda de viewport bajo
+            el encabezado) en vez de desbordarse y forzar el scroll de toda
+            la página — el demo nunca tuvo este caso (solo mostraba 1
+            nivel), así que no hay comportamiento del HTML que traducir
+            aquí. */}
         {megaAbierto && grupoActivoMega && (
           <div
             onMouseLeave={() => setMegaAbierto(false)}
-            style={{ borderTop: "1px solid #1F3244", background: "#0B1622", boxShadow: "0 26px 50px rgba(0,0,0,.55)" }}
+            style={{
+              borderTop: "1px solid #1F3244",
+              background: "#0B1622",
+              boxShadow: "0 26px 50px rgba(0,0,0,.55)",
+              maxHeight: "calc(100vh - var(--header-height, 104px))",
+              overflowY: "auto",
+              overscrollBehavior: "contain",
+            }}
           >
             <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 32px", display: "grid", gridTemplateColumns: "minmax(230px,280px) 1fr minmax(0,260px)", gap: 0 }}>
               <div style={{ borderRight: "1px solid #1F3244", padding: "16px 0" }}>
