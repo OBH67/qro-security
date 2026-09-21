@@ -344,7 +344,6 @@ export function EncabezadoSitio({
               <button
                 type="button"
                 onClick={() => setMegaAbierto((v) => !v)}
-                onMouseEnter={() => setMegaAbierto(true)}
                 style={{
                   display: "flex",
                   gap: 8,
@@ -436,13 +435,15 @@ export function EncabezadoSitio({
 
       {/* Mega-menú — index.html:190-224 solo cubre el contenido (título +
           columnas); la estructura de overlay es deliberadamente distinta
-          del demo, a pedido explícito de la dueña: no es un panel que "sale
-          de la pestaña" acotado a su contenido, sino una columna de grupos
-          que ocupa TODO el alto disponible de la pantalla (de
-          `--header-height` hasta el fondo del viewport) y se sobrepone al
-          resto de la interfaz — cada panel (la barra de grupos y el
-          contenido de subcategorías) tiene su propio scroll interno e
-          independiente del otro y de la página de fondo.
+          del demo, a pedido explícito de la dueña: es una toma de pantalla
+          completa (como la referencia que compartió, no el demo) que se
+          sobrepone a TODA la interfaz — incluido el propio encabezado, no
+          solo el contenido debajo de él — por eso empieza en `top:0` con
+          zIndex mayor que el header, y trae su propio botón de cerrar (la
+          barra de navegación queda tapada mientras está abierto). Cada
+          panel (la barra de grupos y el contenido de subcategorías) tiene
+          su propio scroll interno e independiente del otro y de la página
+          de fondo.
           Deliberadamente FUERA de `<header>`: el header tiene
           `backdropFilter`, que crea un nuevo *containing block* para
           descendientes `position:fixed` (igual que `transform`/`filter`) —
@@ -451,20 +452,32 @@ export function EncabezadoSitio({
           viewport, colapsándolo a un par de píxeles de alto. */}
       {megaAbierto && grupoActivoMega && (
         <div
-          onMouseLeave={() => setMegaAbierto(false)}
           style={{
             position: "fixed",
-            top: "var(--header-height, 104px)",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 79,
+            inset: 0,
+            zIndex: 90,
             display: "flex",
+            flexDirection: "column",
             background: "#0B1622",
-            borderTop: "1px solid #1F3244",
-            boxShadow: "0 26px 50px rgba(0,0,0,.55)",
           }}
         >
+          {/* Barra superior con cierre — reemplaza visualmente al encabezado
+              normal mientras el menú está abierto, index.html no tiene
+              equivalente (ahí el header nunca se tapa a sí mismo). */}
+          <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "14px 20px", borderBottom: "1px solid #1F3244" }}>
+            <button
+              type="button"
+              aria-label="Cerrar menú"
+              onClick={() => setMegaAbierto(false)}
+              style={{ width: 44, height: 44, display: "grid", placeItems: "center", border: "1px solid #1F3244" }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="#EAF2F8" strokeWidth={1.5} style={{ width: 18, height: 18 }}>
+                <path d="M6 6l12 12M18 6 6 18" />
+              </svg>
+            </button>
+          </div>
+
+          <div style={{ flex: 1, minHeight: 0, display: "flex" }}>
           {/* Barra de grupos — alto completo del overlay, no del contenido */}
           <div style={{ width: 280, flex: "0 0 auto", borderRight: "1px solid #1F3244", overflowY: "auto", padding: "16px 0" }}>
             {grupos.map((g) => (
@@ -543,6 +556,7 @@ export function EncabezadoSitio({
                 )}
               </div>
             </div>
+          </div>
           </div>
         </div>
       )}
