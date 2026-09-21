@@ -18,7 +18,14 @@ export function LayoutTienda({
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <EncabezadoSitio grupos={grupos} sesion={sesion} />
-      <main style={{ flex: 1 }}>{children}</main>
+      {/* El encabezado es `position:fixed` (EncabezadoSitio.tsx, punto 2 de
+          su comentario de cabecera) y se sobrepone al contenido — este
+          padding-top compensa su altura real, medida por el propio
+          encabezado con ResizeObserver y expuesta como variable CSS. El
+          valor de respaldo (104px) es la altura del demo en escritorio
+          (index.html:1880, `hdrH: 104`) para el primer render antes de
+          medir. */}
+      <main style={{ flex: 1, paddingTop: "var(--header-height, 104px)" }}>{children}</main>
       <PiePagina grupos={grupos} />
       <BotonAsesorFlotante />
     </div>

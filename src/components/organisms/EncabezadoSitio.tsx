@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import type { GrupoConNavegacion, NodoNavegacionSubcategoria } from "@/server/db/queries/catalogo";
 import { useCarrito } from "@/components/providers/CarritoProvider";
 
@@ -14,17 +15,27 @@ import { useCarrito } from "@/components/providers/CarritoProvider";
  * "Regla de traducción a código"): un token que vale lo mismo no sustituye
  * al valor literal en este archivo.
  *
- * Lo único que no es 1:1 con la SPA del demo: el degradado del encabezado
- * (`headerStyle`, index.html:2136) ahí lee `this.state.heroSlide`, que es
- * estado global de un solo componente. Aquí, con páginas reales por URL,
- * el encabezado hace su propio ciclo sobre el mismo arreglo fijo de 3
- * colores del demo (`heroSlidesData`, index.html:1955-1959 — ese arreglo
- * nunca fue dato editable ni en el demo, es contenido fijo del componente,
- * no de una tabla), con el mismo intervalo de 5 s. El carrusel real de
- * banners de la portada (`BannerHero`) sí lee `banners` de la base de
- * datos de forma independiente — con los banners de muestra de
- * `supabase/seed_dev.sql` ambos ciclan con los mismos 3 colores porque se
- * sembraron a propósito iguales al demo.
+ * Dos desviaciones deliberadas frente al demo, pedidas explícitamente por
+ * la dueña porque el propio `index.html` tiene el bug (no es traducción
+ * literal en estos dos puntos, a propósito):
+ * 1. **Degradado solo en la portada.** En el demo `headerStyle`
+ *    (index.html:2136) usa el degradado del hero (`hs.a`/`hs.b`) en TODAS
+ *    las pantallas — al entrar al catálogo, producto, etc. el encabezado
+ *    se queda con el color cambiante del hero de la portada, que ya no
+ *    está en pantalla. Aquí el degradado cíclico (mismo arreglo fijo de 3
+ *    colores y mismo intervalo de 5 s que el demo, `heroSlidesData`,
+ *    index.html:1955-1959) solo se usa en `/`; el resto de las páginas usa
+ *    un fondo sólido oscuro fijo. El carrusel real de banners de la
+ *    portada (`BannerHero`) sigue siendo independiente (lee `banners` de
+ *    la base de datos).
+ * 2. **Encabezado fijo, sin empujar el contenido.** En el demo el
+ *    encabezado principal es `position:relative` (empuja el contenido) y
+ *    solo la barra compacta (`floatNavStyle`, index.html:2139) es
+ *    `position:fixed`, apareciendo/desapareciendo según la dirección del
+ *    scroll. Aquí el encabezado principal es siempre `position:fixed` y
+ *    se sobrepone al contenido (que hace scroll por debajo, compensado con
+ *    `--header-height` — ver `LayoutTienda.tsx`); no existe una segunda
+ *    barra flotante porque ya no hace falta.
  */
 
 const HERO_SLIDES = [
@@ -109,20 +120,25 @@ export function EncabezadoSitio({
   const [servAbierto, setServAbierto] = useState(false);
   const [grupoMegaId, setGrupoMegaId] = useState(grupos[0]?.id ?? "");
   const [esMovil, setEsMovil] = useState(false);
-  const [flotanteVisible, setFlotanteVisible] = useState(false);
   const [heroSlideIdx, setHeroSlideIdx] = useState(0);
   const [flash, setFlash] = useState(false);
   const carrito = useCarrito();
   const cantidadPrevia = useRef(carrito.cantidadTotal);
+  const coreRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const esHome = pathname === "/";
 
   const grupoActivoMega = grupos.find((g) => g.id === grupoMegaId) ?? grupos[0];
   const hs = HERO_SLIDES[heroSlideIdx];
 
   // Ciclo del degradado del encabezado — index.html:1987 (`this.cycle`, 5 s).
+  // Solo corre fuera de la portada, el fondo es sólido (ver comentario de
+  // cabecera, punto 1).
   useEffect(() => {
+    if (!esHome) return;
     const id = setInterval(() => setHeroSlideIdx((i) => (i + 1) % HERO_SLIDES.length), 5000);
     return () => clearInterval(id);
-  }, []);
+  }, [esHome]);
 
   // Ancho de pantalla (index.html:1988, `mobile: window.innerWidth < 760`).
   useEffect(() => {
@@ -132,22 +148,20 @@ export function EncabezadoSitio({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Barra flotante que reaparece al subir y se oculta al bajar — index.html:1991-2004.
+  // Mide solo la parte siempre visible del encabezado (fila principal +
+  // chips/nav) — NO el mega-menú ni el panel de servicios, que deben
+  // flotar sobre el contenido sin cambiar el espacio que le reservamos
+  // (comentario de cabecera, punto 2). Se expone como variable CSS para
+  // que `LayoutTienda` compense con `padding-top` sin necesitar contexto.
   useEffect(() => {
-    let ultimaY = window.scrollY;
-    const onScroll = () => {
-      const y = window.scrollY;
-      const subiendo = y < ultimaY;
-      const bajando = y > ultimaY;
-      ultimaY = y;
-      if (y < 80) setFlotanteVisible(false);
-      else if (bajando) setFlotanteVisible(false);
-      else if (subiendo) setFlotanteVisible(true);
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    const el = coreRef.current;
+    if (!el) return;
+    const aplicar = () => document.documentElement.style.setProperty("--header-height", `${el.offsetHeight}px`);
+    aplicar();
+    const observer = new ResizeObserver(aplicar);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [esMovil]);
 
   // Destello del botón de carrito al agregar algo — index.html:2189 (`s.flash`).
   useEffect(() => {
@@ -162,74 +176,24 @@ export function EncabezadoSitio({
 
   return (
     <>
-      {/* Barra flotante — index.html:39-60 */}
-      <div
+      {/* Encabezado principal — index.html:62-225. Fijo, se sobrepone al
+          contenido en vez de empujarlo (punto 2 del comentario de
+          cabecera); ya no existe una barra flotante separada. */}
+      <header
         style={{
           position: "fixed",
           top: 0,
           left: 0,
           right: 0,
           zIndex: 80,
-          transition: "transform 260ms ease,opacity 260ms ease",
-          transform: `translateY(${flotanteVisible ? "0" : "-100%"})`,
-          opacity: flotanteVisible ? 1 : 0,
-          background: "#07111CF2",
-          backdropFilter: "blur(8px)",
-          borderBottom: "1px solid #1F3244",
-        }}
-      >
-        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "10px 16px", display: "flex", gap: 12, alignItems: "center" }}>
-          {esMovil && (
-            <button
-              type="button"
-              aria-label="Abrir menú"
-              onClick={() => {
-                setMenuMovilAbierto(true);
-                setGrupoMovil(null);
-                setPilaSubMovil([]);
-              }}
-              style={{ width: 40, height: 40, display: "grid", placeItems: "center", border: "1px solid #1F3244", flex: "0 0 auto" }}
-            >
-              <IconoMenu tamano={18} />
-            </button>
-          )}
-          <Link href="/" aria-label="Inicio" style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flex: "0 0 auto" }}>
-            <Image src={LOGO_SRC} alt="SGQ" width={36} height={36} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          </Link>
-          <form action="/buscar" method="GET" style={{ flex: 1, minWidth: 0 }}>
-            <input
-              type="search"
-              name="q"
-              placeholder="Busca por producto, marca o SKU"
-              aria-label="Buscar"
-              style={{ width: "100%", padding: "9px 12px", background: "#0F1D2B", border: "1px solid #1F3244", borderRadius: 4, color: "#EAF2F8", fontSize: 14 }}
-            />
-          </form>
-          <Link href={sesion ? "/mi-cuenta/pedidos" : "/ingresar"} aria-label="Mi cuenta" style={{ width: 40, height: 40, display: "grid", placeItems: "center", color: "#EAF2F8", flex: "0 0 auto" }}>
-            <IconoCuenta tamano={20} />
-          </Link>
-          <Link
-            href="/carrito"
-            aria-label="Mi pedido"
-            style={{ display: "flex", gap: 6, alignItems: "center", padding: "9px 12px", background: "#3CE7FF", color: "#07111C", flex: "0 0 auto" }}
-            className="clip-corner-sm"
-          >
-            <IconoCarrito tamano={19} />
-            <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 13, fontWeight: 500 }}>{carrito.cantidadTotal}</span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Encabezado principal — index.html:62-225 */}
-      <header
-        style={{
-          position: "relative",
-          zIndex: 5,
           backdropFilter: "blur(8px)",
           borderBottom: "1px solid #FFFFFF1A",
-          background: `linear-gradient(100deg,${hs.a}E6 0%,${hs.b}E6 65%,#07111CE6 100%)`,
+          background: esHome
+            ? `linear-gradient(100deg,${hs.a}E6 0%,${hs.b}E6 65%,#07111CE6 100%)`
+            : "#07111CF2",
         }}
       >
+        <div ref={coreRef}>
         <div
           style={{
             maxWidth: 1400,
@@ -445,6 +409,9 @@ export function EncabezadoSitio({
             </div>
           </div>
         )}
+        </div>
+        {/* fin del bloque medido por coreRef — lo de abajo flota sobre el
+            contenido sin cambiar `--header-height` */}
 
         {/* Panel de servicios — index.html:177-188 */}
         {servAbierto && (
