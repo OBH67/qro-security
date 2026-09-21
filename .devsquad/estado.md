@@ -5,10 +5,9 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 Última actualización: 2026-09-21
 
 ## Fase actual
-**Implementación en curso — noveno incremento (panel admin, primera
-tanda: H2/H5 acceso y roles, H6/G2 tablero) completado. Lado del cliente
-sin pendientes de código conocidos; el panel admin recién empieza — ver
-plan de incrementos restante al final de este documento.**
+**Implementación en curso — décimo incremento (panel admin, segunda
+tanda: C5 Pedidos completo) terminado. Ver plan de incrementos restante
+al final de este documento.**
 
 ## Progreso por fases
 
@@ -1217,31 +1216,94 @@ sus piezas de mayor riesgo (login visual, candado, matemática de KPIs).
 Recomendado: una pasada manual contra el proyecto de Supabase real en
 cuanto exista un usuario `admin` de verdad.
 
+### Décimo incremento (2026-09-21): panel admin, segunda tanda — Pedidos
+completo (C5)
+
+**Qué se construyó:**
+
+1. **Nueva migración `0015_acciones_pedidos_admin.sql`** — las dos
+   transiciones que faltaban, mismo patrón que 0008:
+   - `validar_pago()`: `comprobante_recibido` → `listo_envio` (C5.3),
+     fija `paid_at`. Cubre igual los pedidos normales y los RN-11
+     (pagados 100% con saldo) — ambos llegan a `comprobante_recibido` por
+     el mismo camino y requieren la misma confirmación humana explícita
+     (decisión de la dueña, 2026-09-20).
+   - `marcar_entregado()`: `enviado` → `entregado` (C5.3). **Fija
+     `delivered_at`, que hasta este incremento ninguna función escribía**
+     — sin esto, D1 (solicitar devolución, ya construida del lado del
+     cliente desde el sexto incremento) nunca habría encontrado un
+     pedido elegible de verdad: su `solicitar_devolucion()` exige
+     `status = 'entregado'` y calcula el plazo desde `delivered_at`. Este
+     incremento es, en los hechos, el que termina de cerrar D1.
+2. **`mutations/admin/pedidos.ts`** — `validarPago`, `rechazarComprobante`
+   y `marcarEnviado` llaman directo a sus RPC ya existentes;
+   `marcarEntregado` a la nueva. `cancelarPedido` es la única con lógica
+   propia en TypeScript: si el pedido tenía saldo aplicado (D3.4: "el
+   saldo... se devuelve íntegro si el pedido se cancela"), lo devuelve
+   vía `aplicar_saldo()` (kind `ajuste`) ANTES de liberar el apartado —
+   documentado y probado con datos reales.
+3. **2 plantillas de correo nuevas** (`pedido.pago_validado`,
+   `pedido.entregado`) registradas en `canales/correo.ts` — el sistema de
+   notificaciones del séptimo incremento ya tenía todo el mecanismo
+   listo, solo faltaba agregar el evento y su plantilla.
+4. **UI** (`admin/pedidos`, `admin/pedidos/[folio]`) — traducción literal
+   de `panel-admin-maqueta.html:333-508`: bandeja con chips de estado +
+   búsqueda + conteos reales; detalle unificado por una sola condición
+   (`payment_method === 'saldo_completo'` decide la variante RN-11 vs.
+   normal, en vez de duplicar la pantalla); comprobante mostrado con URL
+   firmada de lectura (`firmarLecturaPrivada()`, ya existente); historial
+   con los 5 pasos posibles del flujo, marcados según ocurrieron de
+   verdad; acciones con modal de confirmación (`AccionesPedido.tsx`,
+   client component, un solo componente para las 5 acciones porque
+   comparten el mismo patrón "modal → Server Action → refrescar").
+5. **Exportar CSV** de la bandeja (`/api/admin/pedidos/exportar`, Route
+   Handler protegido con el mismo candado H2/H5 que el resto del panel)
+   — la maqueta tiene el botón; C5 no lo exige explícitamente como
+   criterio escrito, pero está en la maqueta y H1-bis pide traducirla
+   literal, así que se implementó de verdad, no como botón decorativo.
+
+**Validado contra Postgres real, con las funciones SQL y el código de
+producción (no reimplementaciones):**
+
+- `validar_pago()`: transición correcta + `paid_at` fijado + rechazo
+  correcto de un segundo intento sobre un pedido que ya avanzó.
+- Flujo completo `validar_pago → marcar_enviado → marcar_entregado`
+  sobre el mismo pedido: bitácora de 3 pasos correcta, `delivered_at`
+  fijado, y las 3 notificaciones (`pago_validado`, `enviado`,
+  `entregado`) encoladas correctamente.
+- `cancelarPedido()` (mutation TypeScript, bypaseando temporalmente
+  `server-only` en `node_modules` como en incrementos anteriores, nunca
+  en el código fuente): con un pedido de $300 de saldo aplicado, tras
+  cancelar se verificó el movimiento de saldo real en
+  `credit_movements` — `ajuste` de `+$300.00`, descripción correcta.
+- Candado de capa 1 probado real: `/admin/pedidos` sin sesión responde
+  307 a `/admin/ingresar`.
+- `npm run build`/`lint` limpios (mismos warnings preexistentes de
+  parámetros `_admin` sin usar en plantillas, +2 por las plantillas
+  nuevas, mismo patrón, no bloquean nada).
+
+**Lo que NO se pudo validar:** igual que en la primera tanda, la UI con
+una sesión de staff real (el proxy de este entorno no cubre
+`/auth/v1/token`) — mitigado probando por separado cada pieza de mayor
+riesgo (las funciones SQL, la mutation de cancelación, el candado).
+
 ### Plan de incrementos restante del panel admin
 
-El panel es grande — 13 pantallas de la maqueta en total. Esta tanda
-cerró la base (acceso, roles, tablero). Quedan, en el orden recomendado
-por dependencia y valor (mismo criterio que guió los incrementos del
-cliente):
+El panel tiene 13 pantallas en la maqueta. Van dos tandas: base (acceso,
+roles, tablero) y Pedidos. Quedan, en el orden recomendado:
 
-1. **Pedidos (C5)** — bandeja + detalle (2 variantes: normal y RN-11
-   pagado con saldo) + acciones (validar pago, rechazar comprobante,
-   cancelar pedido) vía funciones SQL nuevas que reutilizan
-   `apartar_pedido()`/`liberar_apartado()`/`aplicar_saldo()` ya
-   existentes desde 0008. Es lo más urgente: sin esto ningún pedido con
-   comprobante avanza nunca.
-2. **Catálogo (F1)** — lista + nuevo/editar producto (pestaña General
+1. **Catálogo (F1)** — lista + nuevo/editar producto (pestaña General
    completa por la maqueta; las demás pestañas y el paso 3 del
    importador quedan documentadas en `diseño.md` §11.7/§11.8 como
    pendientes explícitos de una pasada posterior, igual que ya aclara
    H1-bis.2) + categorías (F3, árbol D7).
-3. **Importador CSV (F2)** — pasos 1 y 2 (paso 3, "Aplicar", es la
+2. **Importador CSV (F2)** — pasos 1 y 2 (paso 3, "Aplicar", es la
    pieza que de verdad escribe en la base; la maqueta y `diseño.md` lo
    dejan para después).
-4. **Devoluciones (D2)** — bandeja + cajón de resolución, conecta con
+3. **Devoluciones (D2)** — bandeja + cajón de resolución, conecta con
    `aplicar_saldo()` ya existente.
-5. **Solicitudes de servicio (E2)** — bandeja + cajón.
-6. **Analítica (G1) y Configuración (H4)** — Analítica reutiliza las
+4. **Solicitudes de servicio (E2)** — bandeja + cajón.
+5. **Analítica (G1) y Configuración (H4)** — Analítica reutiliza las
    queries de "más/menos vendidos" del tablero; Configuración escribe en
    `settings` (ya leído desde el lado del cliente en varios lugares —
    C1.6, D1.1, D3 — así que un cambio ahí ya se refleja del lado público

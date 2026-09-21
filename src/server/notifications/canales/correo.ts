@@ -5,7 +5,9 @@ import { env } from "@/server/config/env";
 import type { CanalNotificacion, FilaOutbox, ResultadoEnvio, TipoEventoNotificable } from "../tipos";
 import { construirComprobanteRecibidoAdmin } from "../plantillas/comprobanteRecibidoAdmin";
 import { construirComprobanteRecibidoCliente } from "../plantillas/comprobanteRecibidoCliente";
+import { construirPedidoPagoValidado } from "../plantillas/pedidoPagoValidado";
 import { construirPedidoEnviado } from "../plantillas/pedidoEnviado";
+import { construirPedidoEntregado } from "../plantillas/pedidoEntregado";
 import { construirPedidoCancelado } from "../plantillas/pedidoCancelado";
 import { construirPedidoPagoRechazado } from "../plantillas/pedidoPagoRechazado";
 import { construirServicioSolicitadoAdmin, construirServicioSolicitadoCliente } from "../plantillas/servicioSolicitado";
@@ -18,7 +20,9 @@ type ConstructorPlantilla = (
 const PLANTILLAS: Partial<Record<TipoEventoNotificable, ConstructorPlantilla>> = {
   "comprobante.recibido": construirComprobanteRecibidoAdmin,
   "comprobante.recibido.cliente": construirComprobanteRecibidoCliente,
+  "pedido.pago_validado": construirPedidoPagoValidado,
   "pedido.enviado": construirPedidoEnviado,
+  "pedido.entregado": construirPedidoEntregado,
   "pedido.cancelado": construirPedidoCancelado,
   "pedido.pago_rechazado": construirPedidoPagoRechazado,
   "servicio.solicitado": construirServicioSolicitadoAdmin,
