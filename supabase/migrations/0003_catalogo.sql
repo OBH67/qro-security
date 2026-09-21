@@ -98,7 +98,7 @@ immutable
 parallel safe
 strict
 as $$
-  select unaccent('unaccent', $1);
+  select public.unaccent('unaccent'::regdictionary, $1);
 $$;
 
 -- Búsqueda tolerante a acentos/mayúsculas y a errores de dedo sobre
