@@ -97,8 +97,9 @@ language sql
 immutable
 parallel safe
 strict
+set search_path = public, pg_catalog
 as $$
-  select public.unaccent('unaccent'::regdictionary, $1);
+  select public.unaccent('public.unaccent'::regdictionary, $1);
 $$;
 
 -- Búsqueda tolerante a acentos/mayúsculas y a errores de dedo sobre
