@@ -5,9 +5,10 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 Última actualización: 2026-09-21
 
 ## Fase actual
-**Implementación en curso — octavo incremento (E1.4: límite por IP en el
-formulario de servicios) completado. Lado del cliente ya sin pendientes
-conocidos.** Ver detalle al final de este documento.
+**Implementación en curso — noveno incremento (panel admin, primera
+tanda: H2/H5 acceso y roles, H6/G2 tablero) completado. Lado del cliente
+sin pendientes de código conocidos; el panel admin recién empieza — ver
+plan de incrementos restante al final de este documento.**
 
 ## Progreso por fases
 
@@ -1111,3 +1112,137 @@ negocio de la dueña, no código:
 
 **El panel admin (Épica F, G, H) es ahora, sin ambigüedad, todo lo que
 falta para operar el negocio de punta a punta.**
+
+### Noveno incremento (2026-09-21): panel admin, primera tanda — acceso,
+roles y tablero (H1-bis, H2, H5, H6, G2)
+
+**Encargo explícito de la dueña:** "ya tenemos un artefacto con el diseño
+del Admin, por favor replicar el diseño, literal como hicimos con el
+cliente" — mismo criterio de H1 (traducción literal, no interpretación)
+aplicado al panel vía H1-bis.
+
+**La referencia visual.** El Artifact "Panel Admin SG Querétaro"
+(`https://claude.ai/artifact/XEVXi92NzVSRYDmzVo6gNA`, un canvas de diseño
+con un solo artboard interactivo) resultó ser **exactamente**
+`panel-admin-maqueta.html` (archivo protegido, ya en la raíz del repo
+desde antes de este incremento — confirmado con md5sum idéntico). Toda la
+maqueta (13 pantallas: login, tablero, pedidos + 2 variantes de detalle,
+catálogo, nuevo/editar producto, categorías, devoluciones + cajón de
+resolución, solicitudes + cajón, analítica, configuración, importador CSV
+en 2 pasos) se leyó completa del archivo del repo, no del Artifact.
+
+**Qué se construyó en esta primera tanda:**
+
+1. **CSS del panel** (`src/app/(admin)/admin.css`) — traducción literal
+   del bloque `<style>` de la maqueta (mismas clases: `.tarjeta`,
+   `.btn-primario/secundario/fantasma/peligro`, `.chip`, `.navitem`,
+   `.badge`, `.cut-*`, etc.), con un único ajuste real: las variables de
+   tipografía (`--font-title` etc.) apuntan a las mismas fuentes que ya
+   carga `next/font` en el layout raíz (`--font-chakra-petch`...) en vez
+   de volver a pedirlas a Google Fonts con el nombre literal — evita una
+   petición duplicada, mismo patrón que `globals.css` del sitio público.
+   Scopeado bajo `.admin-root` para no colisionar con el CSS del cliente.
+2. **H2 — acceso seguro, en dos capas** (arquitectura §6.4): `proxy.ts`
+   (capa 1) redirige sin sesión a `/admin/ingresar`; el layout
+   `admin/(protegido)/layout.tsx` (capa 2) vuelve a resolver la sesión y
+   además exige rol de staff (`server/auth/roles.ts`, nuevo —
+   `obtenerSesionStaff()`, reutiliza `is_admin()`/`is_inventario()` que
+   ya existían desde la arquitectura). Login propio
+   (`iniciarSesionStaffAction`) que autentica con el mismo Supabase Auth
+   del cliente pero cierra la sesión de inmediato si la cuenta no es
+   staff — un cliente normal nunca queda ni un segundo con sesión activa
+   dentro de `/admin`. Límite de 5 intentos/15 min por correo y por IP,
+   reutilizando `rate_limits`/`intentarConsumirLimite()` del octavo
+   incremento (mismo mecanismo, `scope` distinto — exactamente para lo
+   que se dejó preparado).
+   **Ruta protegida bajo un route group interno** (`admin/(protegido)/`)
+   para que `/admin/ingresar` no quede atrapada detrás de su propio
+   candado — el group no cambia ninguna URL.
+3. **H5 — alcance del rol `inventario`**: `rutaPermitidaParaRol()`
+   filtra tanto el menú del sidebar (H5.1, solo ve "Catálogo") como el
+   acceso directo por URL (H5.2: `PantallaAccesoDenegado.tsx`, traducción
+   literal de la maqueta, en vez de un error técnico o un redirect).
+4. **Sidebar** (`SidebarAdmin.tsx`) — traducción literal salvo el bloque
+   "VISTA DE DEMOSTRACIÓN" de la maqueta (los chips Admin/Inventario que
+   ahí simulan cambiar de rol sin dos cuentas reales): omitido a
+   propósito y documentado, no en silencio — aquí el rol viene de la
+   sesión real, no hay nada que "cambiar" con un botón. Contadores reales
+   (`obtenerContadoresPanel()`): comprobantes por validar, devoluciones
+   pendientes, solicitudes nuevas.
+5. **H6/G2 — el tablero, pantalla de entrada del rol `admin`**
+   (`admin/(protegido)/page.tsx`) — la pantalla más grande de la maqueta,
+   traducida completa con datos reales:
+   - Tarjetas de atención (6, fotos del momento: comprobantes por
+     validar, pedidos por enviar, devoluciones pendientes, solicitudes
+     sin contactar, pedidos por vencer — a un día o menos del plazo de
+     cancelación automática configurable, PA-7 — y productos agotados).
+   - 4 KPIs con delta contra el periodo anterior de igual longitud
+     (ventas, pedidos, ticket promedio, "se pagan" = tasa de conversión
+     pedido→pago validado), 3 periodos (7 días/30 días/Este mes — el
+     cuarto de la maqueta, "Personalizado", queda para una iteración
+     posterior con selector de rango, no bloquea V1 por PA-8).
+   - Gráfica de ventas por día (SVG, línea actual vs. periodo anterior),
+     embudo de pedidos abiertos, más vendidos, importe por grupo (barra
+     apilada), saldo a favor comprometido + tasa de devoluciones, stock
+     crítico.
+   - **G2.5 (estado sin datos) resuelto de verdad, no decorativo**: cada
+     bloque con gráfica tiene su `EstadoVacioGrafica` cuando no hay datos
+     en el periodo — necesario porque la base de datos real arranca
+     vacía.
+   - "Pago validado" (RN ya usada en G1) = pedido en `listo_envio`,
+     `enviado` o `entregado`.
+
+**Validado en este incremento:**
+
+- `npm run build`/`lint` limpios (mismos 8 warnings preexistentes de las
+  plantillas de correo).
+- **El login del panel se probó visualmente con Playwright contra el
+  servidor real** (Next.js + PostgREST + Postgres del mismo arnés de
+  incrementos anteriores) — coincide pixel por pixel con la maqueta.
+- El candado de capa 1 se probó real: `/admin` sin sesión responde 307 a
+  `/admin/ingresar`.
+- **La lógica matemática de los KPIs del tablero se probó contra
+  Postgres real** (mismo truco de incrementos anteriores: neutralizar
+  `server-only` en `node_modules`, nunca en el código fuente) con pedidos
+  de prueba en distintos estados y fechas: delta de ventas 100% y delta
+  de pedidos 0% verificados a mano contra los datos insertados — la
+  fórmula es correcta.
+
+**Lo que NO se pudo validar:** el login funcional de punta a punta con
+sesión de staff real (el proxy que emula Supabase en este entorno solo
+cubre `/rest/v1`, no `/auth/v1/token` — mismo límite ya documentado desde
+el quinto incremento). Por lo tanto tampoco se pudo ver el Tablero
+renderizado con sesión real en este entorno; sí se probaron por separado
+sus piezas de mayor riesgo (login visual, candado, matemática de KPIs).
+Recomendado: una pasada manual contra el proyecto de Supabase real en
+cuanto exista un usuario `admin` de verdad.
+
+### Plan de incrementos restante del panel admin
+
+El panel es grande — 13 pantallas de la maqueta en total. Esta tanda
+cerró la base (acceso, roles, tablero). Quedan, en el orden recomendado
+por dependencia y valor (mismo criterio que guió los incrementos del
+cliente):
+
+1. **Pedidos (C5)** — bandeja + detalle (2 variantes: normal y RN-11
+   pagado con saldo) + acciones (validar pago, rechazar comprobante,
+   cancelar pedido) vía funciones SQL nuevas que reutilizan
+   `apartar_pedido()`/`liberar_apartado()`/`aplicar_saldo()` ya
+   existentes desde 0008. Es lo más urgente: sin esto ningún pedido con
+   comprobante avanza nunca.
+2. **Catálogo (F1)** — lista + nuevo/editar producto (pestaña General
+   completa por la maqueta; las demás pestañas y el paso 3 del
+   importador quedan documentadas en `diseño.md` §11.7/§11.8 como
+   pendientes explícitos de una pasada posterior, igual que ya aclara
+   H1-bis.2) + categorías (F3, árbol D7).
+3. **Importador CSV (F2)** — pasos 1 y 2 (paso 3, "Aplicar", es la
+   pieza que de verdad escribe en la base; la maqueta y `diseño.md` lo
+   dejan para después).
+4. **Devoluciones (D2)** — bandeja + cajón de resolución, conecta con
+   `aplicar_saldo()` ya existente.
+5. **Solicitudes de servicio (E2)** — bandeja + cajón.
+6. **Analítica (G1) y Configuración (H4)** — Analítica reutiliza las
+   queries de "más/menos vendidos" del tablero; Configuración escribe en
+   `settings` (ya leído desde el lado del cliente en varios lugares —
+   C1.6, D1.1, D3 — así que un cambio ahí ya se refleja del lado público
+   sin tocar ese código).
