@@ -16,7 +16,7 @@ import { GaleriaProducto } from "@/components/organisms/GaleriaProducto";
 import { PestanasProducto } from "@/components/organisms/PestanasProducto";
 import { CuadriculaProductos } from "@/components/organisms/CuadriculaProductos";
 import { IndicadorStock } from "@/components/molecules/IndicadorStock";
-import { SelectorCantidad } from "@/components/molecules/SelectorCantidad";
+import { AgregarAlPedido } from "@/components/organisms/AgregarAlPedido";
 import { Boton } from "@/components/atoms/Boton";
 import { Etiqueta } from "@/components/atoms/Etiqueta";
 
@@ -124,23 +124,25 @@ export default async function PaginaProducto({
             <IndicadorStock barras={barrasStock(disponible)} etiqueta={etiquetaStock(disponible)} nivel={nivelStock(disponible)} />
           </div>
 
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginTop: 26 }}>
-            {disponible > 0 ? (
-              <>
-                <SelectorCantidad maximo={disponible} />
-                <Boton variante="primaria" tamano="lg">
-                  Agregar al pedido
-                </Boton>
-                <Boton variante="secundaria" tamano="lg">
-                  Comprar ahora
-                </Boton>
-              </>
-            ) : (
+          {disponible > 0 ? (
+            <AgregarAlPedido
+              producto={{
+                productId: producto.id,
+                sku: producto.sku,
+                slug: producto.slug,
+                name: producto.name,
+                price: Number(producto.price),
+                disponible,
+                imagenUrl: imagenes[0]?.url ?? null,
+              }}
+            />
+          ) : (
+            <div style={{ marginTop: 26 }}>
               <Boton variante="deshabilitada" tamano="lg" disabled>
                 Agotado
               </Boton>
-            )}
-          </div>
+            </div>
+          )}
 
           <div style={{ marginTop: 26, padding: 18, border: "1px solid var(--border)", background: "var(--bg-card)", display: "flex", gap: 14, alignItems: "flex-start" }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={1.5} style={{ width: 20, height: 20, flex: "0 0 auto", marginTop: 2 }}>

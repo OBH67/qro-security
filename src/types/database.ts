@@ -142,6 +142,177 @@ export interface SettingRow {
   updated_by: string | null;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// Épica B — cuenta e identidad (0002_identidad_y_roles.sql)
+// ─────────────────────────────────────────────────────────────────────────
+
+export type RolUsuario = "cliente" | "admin" | "inventario";
+
+export interface ProfileRow {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  role: RolUsuario;
+  email_verified: boolean;
+  created_at: string;
+}
+
+export interface AddressRow {
+  id: string;
+  user_id: string;
+  label: string;
+  street: string;
+  ext_number: string;
+  int_number: string | null;
+  postal_code: string;
+  neighborhood: string;
+  municipality: string;
+  state: string;
+  recipient_name: string;
+  directions: string | null;
+  is_default: boolean;
+  created_at: string;
+}
+
+export interface BillingProfileRow {
+  id: string;
+  user_id: string;
+  rfc: string;
+  legal_name: string;
+  tax_regime: string;
+  cfdi_use: string;
+  postal_code: string;
+  is_default: boolean;
+  created_at: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Épica B — carrito (0004_pedidos.sql, adición de arquitectura §9.6)
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface CartRow {
+  id: string;
+  user_id: string;
+  updated_at: string;
+}
+
+export interface CartItemRow {
+  id: string;
+  cart_id: string;
+  product_id: string;
+  qty: number;
+  added_at: string;
+}
+
+/** Ítem de carrito ya resuelto contra el producto vivo (precio/stock
+ * actuales, nunca congelados — B1.3/B1.4: el carrito guarda intención, el
+ * precio se recalcula siempre en el servidor). */
+export interface ItemCarritoResuelto {
+  productId: string;
+  sku: string;
+  slug: string;
+  name: string;
+  price: number;
+  qty: number;
+  disponible: number;
+  imagenUrl: string | null;
+  stockCambio: boolean; // true si `qty` pedido excede el disponible actual
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Épica C — pedidos, comprobantes (0004_pedidos.sql, 0010)
+// ─────────────────────────────────────────────────────────────────────────
+
+export type EstadoPedido =
+  | "pendiente_pago"
+  | "comprobante_recibido"
+  | "listo_envio"
+  | "enviado"
+  | "entregado"
+  | "cancelado";
+
+export type MetodoPago = "transferencia" | "saldo_completo";
+
+export interface DireccionCongelada {
+  label: string;
+  street: string;
+  ext_number: string;
+  int_number: string | null;
+  postal_code: string;
+  neighborhood: string;
+  municipality: string;
+  state: string;
+  recipient_name: string;
+  directions: string | null;
+}
+
+export interface DatosFiscalesCongelados {
+  rfc: string;
+  legal_name: string;
+  tax_regime: string;
+  cfdi_use: string;
+  postal_code: string;
+}
+
+export interface OrderRow {
+  id: string;
+  folio: string;
+  user_id: string;
+  status: EstadoPedido;
+  payment_method: MetodoPago;
+  subtotal: string;
+  credit_applied: string;
+  shipping_cost: string | null;
+  total: string;
+  wants_invoice: boolean;
+  shipping_address: DireccionCongelada;
+  billing_data: DatosFiscalesCongelados | null;
+  notes: string | null;
+  created_at: string;
+  paid_at: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
+}
+
+export interface OrderItemRow {
+  id: string;
+  order_id: string;
+  product_id: string;
+  sku: string;
+  name: string;
+  unit_price: string;
+  qty: number;
+  subtotal: string;
+}
+
+export interface OrderStatusHistoryRow {
+  id: string;
+  order_id: string;
+  from_status: EstadoPedido | null;
+  to_status: EstadoPedido;
+  changed_by: string | null;
+  source: "panel" | "correo" | "sistema" | "cliente";
+  note: string | null;
+  changed_at: string;
+}
+
+export interface PaymentProofRow {
+  id: string;
+  order_id: string;
+  file_url: string;
+  transfer_date: string;
+  amount: string;
+  origin_bank: string | null;
+  spei_tracking_key: string | null;
+  status: "pendiente" | "validado" | "rechazado";
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  rejection_reason: string | null;
+  uploaded_at: string;
+}
+
 /** Fila de la vista `catalogo_productos` (0009_catalogo_lectura_publica.sql):
  * el producto activo + `disponible` calculado (stock - reserved). */
 export interface CatalogoProductoRow extends ProductRow {
@@ -190,6 +361,15 @@ export interface Database {
       reviews: Tabla<ReviewRow>;
       faqs: Tabla<FaqRow>;
       settings: Tabla<SettingRow>;
+      profiles: Tabla<ProfileRow>;
+      addresses: Tabla<AddressRow>;
+      billing_profiles: Tabla<BillingProfileRow>;
+      carts: Tabla<CartRow>;
+      cart_items: Tabla<CartItemRow>;
+      orders: Tabla<OrderRow>;
+      order_items: Tabla<OrderItemRow>;
+      order_status_history: Tabla<OrderStatusHistoryRow>;
+      payment_proofs: Tabla<PaymentProofRow>;
     };
     Views: {
       catalogo_productos: { Row: CatalogoProductoRow };
@@ -198,6 +378,30 @@ export interface Database {
       buscar_productos: {
         Args: { p_query: string; p_limit?: number; p_offset?: number };
         Returns: BuscarProductosRow[];
+      };
+      crear_pedido: {
+        Args: {
+          p_user_id: string;
+          p_items: { product_id: string; qty: number }[];
+          p_shipping_address: DireccionCongelada;
+          p_billing_data?: DatosFiscalesCongelados | null;
+          p_wants_invoice?: boolean;
+          p_credit_to_apply?: number;
+          p_notes?: string | null;
+        };
+        Returns: OrderRow;
+      };
+      confirmar_comprobante: {
+        Args: {
+          p_order_id: string;
+          p_user_id: string;
+          p_file_url: string;
+          p_transfer_date: string;
+          p_amount: number;
+          p_origin_bank?: string | null;
+          p_spei_tracking_key?: string | null;
+        };
+        Returns: OrderRow;
       };
     };
   };

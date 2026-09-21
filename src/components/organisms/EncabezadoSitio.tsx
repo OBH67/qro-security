@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { GrupoConNavegacion } from "@/server/db/queries/catalogo";
+import { useCarrito } from "@/components/providers/CarritoProvider";
 
 /**
  * index.html:39-271 — encabezado del sitio (logo, buscador, cuenta,
@@ -17,9 +18,10 @@ import type { GrupoConNavegacion } from "@/server/db/queries/catalogo";
  *   grupo en hover (requeriría datos adicionales por grupo sin ganancia
  *   funcional para A1-A4).
  *
- * El icono de "Mi pedido" y "Mi cuenta" navegan a rutas que **todavía no
- * existen** (Épica B, carrito y cuenta — siguiente incremento). Es
- * intencional: no se inventa un carrito para este incremento.
+ * Épica B: "Mi pedido" ahora refleja la cantidad real del carrito
+ * (`CarritoProvider`, sesión en base de datos o `localStorage` según
+ * corresponda, §9.6) y "Mi cuenta"/"Iniciar sesión" cambia según haya
+ * sesión iniciada (resuelta en el Server Component `layout.tsx`).
  */
 
 const SERVICIOS = [
@@ -28,12 +30,19 @@ const SERVICIOS = [
   { tipo: "financiamiento", nombre: "Financiamiento y créditos", linea: "Compra tu equipo a plazos de 3, 6 o 12 meses." },
 ] as const;
 
-export function EncabezadoSitio({ grupos }: { grupos: GrupoConNavegacion[] }) {
+export function EncabezadoSitio({
+  grupos,
+  sesion,
+}: {
+  grupos: GrupoConNavegacion[];
+  sesion: { nombre: string } | null;
+}) {
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
   const [grupoMovil, setGrupoMovil] = useState<GrupoConNavegacion | null>(null);
   const [megaAbierto, setMegaAbierto] = useState(false);
   const [servAbierto, setServAbierto] = useState(false);
   const [grupoMega, setGrupoMega] = useState(grupos[0]?.id ?? "");
+  const carrito = useCarrito();
 
   const grupoActivoMega = grupos.find((g) => g.id === grupoMega) ?? grupos[0];
 
@@ -126,15 +135,15 @@ export function EncabezadoSitio({ grupos }: { grupos: GrupoConNavegacion[] }) {
 
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginLeft: "auto", flex: "0 0 auto" }}>
           <Link
-            href="/ingresar"
+            href={sesion ? "/mi-cuenta/pedidos" : "/ingresar"}
             style={{ display: "flex", gap: 8, alignItems: "center", minHeight: 44, fontFamily: "var(--font-display)", fontWeight: 500, fontSize: 15, color: "var(--text-primary)" }}
           >
             <IconoCuenta />
-            <span className="header-texto-desktop">Iniciar sesión</span>
+            <span className="header-texto-desktop">{sesion ? `Hola, ${sesion.nombre}` : "Iniciar sesión"}</span>
           </Link>
           <Link
             href="/carrito"
-            aria-label="Mi pedido, 0 productos"
+            aria-label={`Mi pedido, ${carrito.cantidadTotal} productos`}
             style={{
               display: "flex",
               gap: 9,
@@ -147,7 +156,7 @@ export function EncabezadoSitio({ grupos }: { grupos: GrupoConNavegacion[] }) {
           >
             <IconoCarrito />
             <span className="font-data" style={{ fontSize: 13 }}>
-              0
+              {carrito.cantidadTotal}
             </span>
           </Link>
         </div>
