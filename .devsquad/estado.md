@@ -5,9 +5,10 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 Última actualización: 2026-09-21
 
 ## Fase actual
-**Implementación en curso — decimoquinto incremento (panel admin, séptima
-tanda: E2 Solicitudes de servicio) terminado. Ver plan de incrementos
-restante al final de este documento.**
+**Implementación en curso — decimosexto incremento (panel admin, octava
+tanda: G1 Analítica + H4 Configuración) terminado. Con esto el panel
+admin solo tiene pendiente el paso 3 del Importador CSV. Ver plan de
+incrementos restante al final de este documento.**
 
 ## Progreso por fases
 
@@ -19,7 +20,7 @@ restante al final de este documento.**
 - [x] **Diseño de UI del panel administrativo** — `.devsquad/diseño.md` (1885 líneas): tokens heredados del demo del sitio público con 3 correcciones de contraste WCAG AA, navegación por rol, Atomic Design, y las 13 pantallas con sus estados. Incluye el tablero completo (G2, adelantado a V1 el 2026-09-20) con 6 gráficas justificadas y paleta de datos separada de los colores semánticos de estado. **Aprobado por la dueña (2026-09-20).**
 - [x] **Maqueta visual interactiva (Artifact)** — construida sobre `diseño.md`: Login, Tablero completo, Pedidos, Detalle de pedido (normal y variante RN-11), Catálogo, Alta de producto (con el selector de categoría de 3 niveles usando la taxonomía real de 54 subcategorías), Categorías (árbol D7), Devoluciones (con cajón de resolución), Solicitudes de servicio, Analítica, Configuración, e Importador CSV (pasos 1-2). Quedan sin maquetar, documentados en `diseño.md` con su sección exacta: las pestañas de Precio/Fotos/Especificaciones/Documentos del editor de producto (§11.7) y el paso 3 (aplicar) del importador CSV (§11.8) — ninguno bloquea la implementación, están completamente especificados.
 - [x] **Preparación del entorno** — verificado (2026-09-20): Node.js v22.22.2, npm 10.9.7, Git 2.43.0, Supabase CLI funcional vía `npx`. Todo cumple lo requerido en `arquitectura.md` §11.1, nada que instalar en este entorno.
-- [~] **Implementación** — en curso. Primer incremento (2026-09-20): andamiaje de Next.js + 8 migraciones de base de datos. Segundo incremento (2026-09-20): catálogo público (Épica A completa: A1-A4). Tercer incremento (2026-09-21): carrito y cuenta de cliente + pedido/comprobante (Épica B completa + Épica C sin C3). Panel admin en curso desde el noveno incremento (base/tablero); decimoquinto incremento (2026-09-21) es la séptima tanda, Solicitudes de servicio (E2). Ver detalle debajo.
+- [~] **Implementación** — en curso. Primer incremento (2026-09-20): andamiaje de Next.js + 8 migraciones de base de datos. Segundo incremento (2026-09-20): catálogo público (Épica A completa: A1-A4). Tercer incremento (2026-09-21): carrito y cuenta de cliente + pedido/comprobante (Épica B completa + Épica C sin C3). Panel admin en curso desde el noveno incremento (base/tablero); decimosexto incremento (2026-09-21) es la octava y última tanda planeada, Analítica (G1) + Configuración (H4). Ver detalle debajo.
 
 ## Decisiones ya tomadas (no volver a preguntar)
 
@@ -1543,20 +1544,79 @@ misma corrida para volver a probar `resolver_devolucion()` end-to-end
 sesiones y se reinició) — sin regresiones. `npx tsc --noEmit`, `npm run
 build` y `npm run lint` limpios (mismos 12 warnings preexistentes).
 
+### Decimosexto incremento (2026-09-21): panel admin, octava tanda —
+Analítica (G1) + Configuración (H4)
+
+**Qué se construyó** — última tanda planeada del panel admin (queda
+solo el paso 3 del Importador CSV, documentado como pendiente real de
+infraestructura, no como tanda):
+
+**Analítica (G1)** — traducción literal de `panel-admin-maqueta.html:
+913-956` / `diseño.md` §11.12: KPIs (piezas, importe, pedidos, ticket
+promedio), más/menos vendidos con barras horizontales y "Ver los datos",
+filtro por rango de fechas (7/30/mes/personalizado con validación de
+rango), grupo, subcategoría (cascada cliente) y orden (unidades/importe),
+más los 4 estados vacíos del diseño (sin ventas en el periodo, sin
+ventas nunca, rango inválido, pocos datos). `queries/admin/analitica.ts`
+reutiliza el mismo criterio de "pago validado" que `tablero.ts` (G1.2)
+pero agrega lo que el tablero no necesitaba: rango arbitrario y filtro
+por grupo/subcategoría (G1.3) — "menos vendidos" son productos que sí
+vendieron al menos 1 pieza, nunca los que no vendieron nada. Exportación
+CSV de ambos rankings completos.
+
+**Configuración (H4)** — traducción literal de
+`panel-admin-maqueta.html:960-1013`: 3 secciones que se guardan por
+separado (bancarios / contacto / plazos), cada una con su propia Server
+Action, para que un error en una no bloquee las otras (diseño.md
+§11.13). Solo `admin` (H4.1, H5.1):
+
+1. **`src/lib/clabe.ts`** (código puro, sin `server-only`) —
+   `validarClabe()` con el algoritmo real de dígito verificador
+   (módulo 10, pesos 3-7-1) y `agruparClabe()` para la vista previa
+   agrupada como en `index.html` (`clabeGroups`).
+2. **`supabase/migrations/0019_configuracion_admin.sql`** —
+   `actualizar_configuracion()` (`service_role`-only): una llave a la
+   vez, bitácora en `admin_change_log` (H4.3, misma tabla de F1.5) solo
+   si el valor en verdad cambió. **Corrigió de paso una laguna real de
+   la migración 0016**: `admin_change_log` se había creado sin el grant
+   de tabla a `service_role` que sí tienen `products`/`returns` — no
+   rompía nada porque hasta ahora solo se insertaba desde dentro de
+   funciones `SECURITY DEFINER`, pero la lectura de "última
+   modificación" de esta pantalla sí lo necesitaba. Se encontró
+   corriendo la prueba end-to-end contra Postgres real, no por revisión
+   de código.
+3. **UI** (`ConfiguracionForm.tsx` + `admin/configuracion/page.tsx`) —
+   CLABE validada en vivo con el mismo mensaje de error que el diseño
+   ("Esa CLABE no es válida: tiene N dígitos y deben ser 18"), vista
+   previa exacta de lo que ve el cliente, botón "Enviarme un correo de
+   prueba" (nuevo evento `configuracion.correo_prueba` en el outbox, con
+   su propia plantilla), y "Última modificación: [fecha] por [nombre]"
+   por sección, leído de `admin_change_log`.
+4. H4.4 ("las instrucciones de pago que ve el cliente siempre leen
+   estos valores de aquí") no necesitó tocar código del lado
+   público: `DatosTransferencia.tsx`/`queries/pedidos.ts` ya leían
+   `settings` desde el incremento de Pedidos.
+
+**Validado contra Postgres 16 + PostgREST real** (mismo criterio de
+`server-only` neutralizado temporalmente): el checksum de CLABE se
+probó con una CLABE válida (calculada a mano con el algoritmo real,
+`032180000118359719`), una con dígito verificador incorrecto y una
+corta — los 3 casos dieron el resultado esperado. `guardarConfiguracion()`
+se probó de punta a punta: valor guardado y reflejado en `settings`,
+bitácora con `old_value`/`new_value` correctos, sin fila nueva en la
+bitácora al guardar el mismo valor dos veces, error claro ante una llave
+inexistente, y el correo de prueba encolado y despachado (falla real de
+Resend por API key de prueba, no de la lógica). `npx tsc --noEmit`,
+`npm run build` y `npm run lint` limpios (14 warnings preexistentes del
+mismo tipo, 0 errores).
+
 ### Plan de incrementos restante del panel admin
 
-El panel tiene 13 pantallas en la maqueta. Van siete tandas: base
-(acceso, roles, tablero), Pedidos, Catálogo (alta/edición), Categorías,
-Importador CSV, Devoluciones, y Solicitudes de servicio. Quedan, en el
-orden recomendado:
+El panel tiene 13 pantallas en la maqueta. Las 13 ya están construidas.
+Queda un solo pendiente, real y ya documentado en cada tanda anterior:
 
-1. **Analítica (G1) y Configuración (H4)** — Analítica reutiliza las
-   queries de "más/menos vendidos" del tablero; Configuración escribe en
-   `settings` (ya leído desde el lado del cliente en varios lugares —
-   C1.6, D1.1, D3 — así que un cambio ahí ya se refleja del lado público
-   sin tocar ese código), usando la misma `admin_change_log` del
-   decimoprimer incremento (H4.3).
-2. **Importador CSV, paso 3 ("Aplicar")** — pendiente real, no
-   planeado para una tanda específica todavía: requiere una tabla de
+1. **Importador CSV, paso 3 ("Aplicar")** — requiere una tabla de
    trabajos por lotes y un procesamiento en segundo plano
-   (`arquitectura.md` §9.5), infraestructura que no existe hoy.
+   (`arquitectura.md` §9.5), infraestructura que no existe hoy. No es
+   una tanda del panel en sí, es la pieza de infraestructura que falta
+   para cerrar F2 por completo.

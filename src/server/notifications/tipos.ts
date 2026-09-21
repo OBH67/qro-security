@@ -22,7 +22,8 @@ export type TipoEventoNotificable =
   | "servicio.solicitado" // al admin
   | "servicio.solicitado.cliente" // confirmación al cliente (E1.5)
   | "devolucion.aprobada" // D2.3 — resolver_devolucion() (0018)
-  | "devolucion.rechazada"; // D2.4
+  | "devolucion.rechazada" // D2.4
+  | "configuracion.correo_prueba"; // H4 — botón "Enviarme un correo de prueba"
 // Pendientes de conectar cuando exista quien los dispare (H3 lista 11
 // correos; los de aquí son los 11 que hoy tienen un emisor real — ver
 // `.devsquad/estado.md`): "pedido.generado" (falta encolarlo en
