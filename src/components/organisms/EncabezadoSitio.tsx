@@ -432,51 +432,69 @@ export function EncabezadoSitio({
           </div>
         )}
 
-        {/* Mega-menú — index.html:190-224. Con el árbol de 3 niveles el
-            contenido puede ser más alto que la pantalla: el panel tiene su
-            propio scroll interno (acotado a lo que queda de viewport bajo
-            el encabezado) en vez de desbordarse y forzar el scroll de toda
-            la página — el demo nunca tuvo este caso (solo mostraba 1
-            nivel), así que no hay comportamiento del HTML que traducir
-            aquí. */}
-        {megaAbierto && grupoActivoMega && (
-          <div
-            onMouseLeave={() => setMegaAbierto(false)}
-            style={{
-              borderTop: "1px solid #1F3244",
-              background: "#0B1622",
-              boxShadow: "0 26px 50px rgba(0,0,0,.55)",
-              maxHeight: "calc(100vh - var(--header-height, 104px))",
-              overflowY: "auto",
-              overscrollBehavior: "contain",
-            }}
-          >
-            <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 32px", display: "grid", gridTemplateColumns: "minmax(230px,280px) 1fr minmax(0,260px)", gap: 0 }}>
-              <div style={{ borderRight: "1px solid #1F3244", padding: "16px 0" }}>
-                {grupos.map((g) => (
-                  <Link
-                    key={g.id}
-                    href={`/catalogo/${g.slug}`}
-                    onMouseEnter={() => setGrupoMegaId(g.id)}
-                    onClick={() => setMegaAbierto(false)}
-                    style={{
-                      display: "flex",
-                      gap: 12,
-                      alignItems: "center",
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "13px 20px",
-                      background: grupoMegaId === g.id ? "#122234" : "transparent",
-                    }}
-                  >
-                    <span style={{ flex: 1, fontFamily: "'Chakra Petch',sans-serif", fontWeight: 500, fontSize: 15, color: "#EAF2F8" }}>{g.name}</span>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#EAF2F8" strokeWidth={1.5} style={{ width: 16, height: 16, opacity: 0.6 }}>
-                      <path d="m9 6 6 6-6 6" />
-                    </svg>
-                  </Link>
-                ))}
-              </div>
-              <div style={{ padding: "22px 28px" }}>
+      </header>
+
+      {/* Mega-menú — index.html:190-224 solo cubre el contenido (título +
+          columnas); la estructura de overlay es deliberadamente distinta
+          del demo, a pedido explícito de la dueña: no es un panel que "sale
+          de la pestaña" acotado a su contenido, sino una columna de grupos
+          que ocupa TODO el alto disponible de la pantalla (de
+          `--header-height` hasta el fondo del viewport) y se sobrepone al
+          resto de la interfaz — cada panel (la barra de grupos y el
+          contenido de subcategorías) tiene su propio scroll interno e
+          independiente del otro y de la página de fondo.
+          Deliberadamente FUERA de `<header>`: el header tiene
+          `backdropFilter`, que crea un nuevo *containing block* para
+          descendientes `position:fixed` (igual que `transform`/`filter`) —
+          si este overlay quedara anidado adentro, `top`/`bottom` se
+          calcularían contra la caja del header (~120px) en vez del
+          viewport, colapsándolo a un par de píxeles de alto. */}
+      {megaAbierto && grupoActivoMega && (
+        <div
+          onMouseLeave={() => setMegaAbierto(false)}
+          style={{
+            position: "fixed",
+            top: "var(--header-height, 104px)",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 79,
+            display: "flex",
+            background: "#0B1622",
+            borderTop: "1px solid #1F3244",
+            boxShadow: "0 26px 50px rgba(0,0,0,.55)",
+          }}
+        >
+          {/* Barra de grupos — alto completo del overlay, no del contenido */}
+          <div style={{ width: 280, flex: "0 0 auto", borderRight: "1px solid #1F3244", overflowY: "auto", padding: "16px 0" }}>
+            {grupos.map((g) => (
+              <Link
+                key={g.id}
+                href={`/catalogo/${g.slug}`}
+                onMouseEnter={() => setGrupoMegaId(g.id)}
+                onClick={() => setMegaAbierto(false)}
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "center",
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "13px 20px",
+                  background: grupoMegaId === g.id ? "#122234" : "transparent",
+                }}
+              >
+                <span style={{ flex: 1, fontFamily: "'Chakra Petch',sans-serif", fontWeight: 500, fontSize: 15, color: "#EAF2F8" }}>{g.name}</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#EAF2F8" strokeWidth={1.5} style={{ width: 16, height: 16, opacity: 0.6 }}>
+                  <path d="m9 6 6 6-6 6" />
+                </svg>
+              </Link>
+            ))}
+          </div>
+
+          {/* Contenido del grupo activo — alto completo, scroll propio */}
+          <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain" }}>
+            <div style={{ maxWidth: 1120, padding: "22px 28px", display: "grid", gridTemplateColumns: "1fr minmax(0,260px)", gap: 24 }}>
+              <div>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 20, marginBottom: 16 }}>
                   <h3 style={{ margin: 0, fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 22, color: "#EAF2F8" }}>{grupoActivoMega.name}</h3>
                   <Link href={`/catalogo/${grupoActivoMega.slug}`} onClick={() => setMegaAbierto(false)} style={{ fontSize: 14, color: "#3CE7FF" }}>
@@ -496,7 +514,7 @@ export function EncabezadoSitio({
                   ))}
                 </div>
               </div>
-              <div style={{ padding: "22px 28px 22px 0", borderLeft: "1px solid #1F3244", paddingLeft: 24 }}>
+              <div style={{ borderLeft: "1px solid #1F3244", paddingLeft: 24 }}>
                 <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: "#9FB2C3" }}>DESTACADO</span>
                 {grupoActivoMega.destacado ? (
                   <Link
@@ -526,8 +544,8 @@ export function EncabezadoSitio({
               </div>
             </div>
           </div>
-        )}
-      </header>
+        </div>
+      )}
 
       {/* Menú de pantalla completa en móvil — index.html:227-271 */}
       {menuMovilAbierto && (
