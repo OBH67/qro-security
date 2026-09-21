@@ -68,6 +68,7 @@ export async function generarPedidoAction(datosCrudos: unknown): Promise<Resulta
       wantsInvoice: datos.wantsInvoice,
       notes: datos.notes,
       idempotencyKey: datos.idempotencyKey,
+      creditToApply: datos.creditToApply,
     });
 
     revalidatePath("/carrito");

@@ -8,27 +8,36 @@ import { Boton } from "@/components/atoms/Boton";
 import type { AddressRow, BillingProfileRow } from "@/types/database";
 import type { CarritoResuelto } from "@/server/actions/carrito";
 
-/** index.html:1026-1101 (`isCheckout`) — traducción literal, sin el bloque
- * de saldo a favor del demo (`showSaldo`/`applySaldo`): Épica D
- * (devoluciones, origen del saldo) no es parte de este incremento, así que
- * ningún cliente puede tener saldo todavía — mostrar ese bloque sería
- * simular una función que no existe. Documentado en `.devsquad/estado.md`. */
+/** index.html:1026-1101 (`isCheckout`) — traducción literal, incluido el
+ * bloque de saldo a favor del demo (`showSaldo`/`applySaldo`,
+ * index.html:1069-1074, `saldoLabel`/`saldoBtnLabel`, D3). A diferencia
+ * del demo (saldo fijo de $450 en el estado local), el disponible viene
+ * real de `credit_movements` (`obtenerSaldoDisponible`, D2/D3.1) — el
+ * bloque solo se muestra si el cliente de verdad tiene saldo. */
 export function CheckoutForm({
   direcciones,
   datosFiscales,
   carrito,
+  saldoDisponible,
 }: {
   direcciones: AddressRow[];
   datosFiscales: BillingProfileRow[];
   carrito: CarritoResuelto;
+  saldoDisponible: number;
 }) {
   const router = useRouter();
   const [addressId, setAddressId] = useState(direcciones.find((a) => a.is_default)?.id ?? direcciones[0]?.id ?? "");
   const [wantsInvoice, setWantsInvoice] = useState(false);
   const [billingProfileId, setBillingProfileId] = useState(datosFiscales.find((b) => b.is_default)?.id ?? datosFiscales[0]?.id ?? "");
   const [agree, setAgree] = useState(false);
+  const [usarSaldo, setUsarSaldo] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // D3.2: nunca más que el subtotal ni más de lo disponible — el servidor
+  // lo vuelve a acotar de cualquier forma (crear_pedido()/aplicar_saldo()),
+  // esto solo evita mostrar un total negativo mientras se escribe.
+  const creditToApply = usarSaldo ? Math.min(saldoDisponible, carrito.subtotal) : 0;
+  const totalConSaldo = Math.max(0, carrito.subtotal - creditToApply);
   // Llave de idempotencia (0011): se genera UNA sola vez por montaje del
   // componente, no en cada clic — así un doble clic, un reintento de red o
   // dos pestañas con el MISMO montaje mandan la misma llave, y el servidor
@@ -56,6 +65,7 @@ export function CheckoutForm({
       billingProfileId: wantsInvoice ? billingProfileId : undefined,
       agree: true,
       idempotencyKey,
+      creditToApply,
     });
     setEnviando(false);
     if (!resultado.ok) {
@@ -148,6 +158,21 @@ export function CheckoutForm({
             </span>
           </div>
         </div>
+
+        {saldoDisponible > 0 && (
+          <div style={{ padding: 18, border: "1px solid var(--warning)", background: "var(--warning-tint)", display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ flex: 1, minWidth: 220, fontSize: 15, color: "var(--text-primary)" }}>
+              {usarSaldo ? `Saldo aplicado: −${formatearPrecio(creditToApply)}` : `Tienes ${formatearPrecio(saldoDisponible)} de saldo a favor por devoluciones`}
+            </span>
+            <button
+              type="button"
+              onClick={() => setUsarSaldo((v) => !v)}
+              style={{ padding: "10px 18px", border: "1px solid var(--warning)", color: "var(--warning)", fontFamily: "var(--font-display)", fontWeight: 500, fontSize: 14 }}
+            >
+              {usarSaldo ? "Quitar saldo" : "Aplicar a este pedido"}
+            </button>
+          </div>
+        )}
       </div>
 
       <aside style={{ border: "1px solid var(--border)", background: "var(--bg-card)", padding: 24, position: "sticky", top: 96 }}>
@@ -161,16 +186,28 @@ export function CheckoutForm({
             </div>
           ))}
         </div>
+        {creditToApply > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0 0", fontSize: 14, color: "var(--warning)" }}>
+            <span>Saldo aplicado</span>
+            <span className="font-data">−{formatearPrecio(creditToApply)}</span>
+          </div>
+        )}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "18px 0 4px" }}>
           <span style={{ fontSize: 17 }}>Total</span>
-          <span className="font-data" style={{ fontSize: 28, fontWeight: 600 }}>{formatearPrecio(carrito.subtotal)}</span>
+          <span className="font-data" style={{ fontSize: 28, fontWeight: 600 }}>{formatearPrecio(totalConSaldo)}</span>
         </div>
-        <p style={{ margin: "0 0 20px", fontSize: 12.5, color: "var(--text-muted)" }}>IVA incluido · Envío se confirma con tu asesor</p>
+        <p style={{ margin: "0 0 20px", fontSize: 12.5, color: "var(--text-muted)" }}>
+          {totalConSaldo === 0 ? "Cubierto con saldo · sin transferencia" : "IVA incluido · Envío se confirma con tu asesor"}
+        </p>
         <button type="button" onClick={() => setAgree((v) => !v)} style={{ display: "flex", gap: 12, alignItems: "flex-start", textAlign: "left", fontSize: 13.5, lineHeight: 1.5, color: "var(--text-muted)", marginBottom: 18 }}>
           <span style={{ width: 18, height: 18, borderRadius: 3, flex: "0 0 auto", display: "grid", placeItems: "center", border: `1px solid ${agree ? "var(--accent)" : "var(--border-subtle)"}`, background: agree ? "var(--accent)" : "transparent", color: "var(--bg-base)", fontSize: 12 }}>
             {agree && "✓"}
           </span>
-          <span>Entiendo que mi pedido se confirma al subir mi comprobante de pago.</span>
+          <span>
+            {totalConSaldo === 0
+              ? "Entiendo que mi pedido queda esperando la confirmación de un asesor antes de avanzar." // RN-11/D3.3: sin comprobante, pero tampoco automático
+              : "Entiendo que mi pedido se confirma al subir mi comprobante de pago."}
+          </span>
         </button>
         {error && <p style={{ margin: "0 0 14px", fontSize: 13.5, color: "var(--danger-text)" }}>{error}</p>}
         <Boton anchoCompleto tamano="lg" disabled={!agree || enviando || !addressId} onClick={generar}>

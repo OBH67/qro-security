@@ -316,6 +316,87 @@ export interface PaymentProofRow {
   uploaded_at: string;
 }
 
+export type EstadoDevolucion = "solicitada" | "en_revision" | "aprobada" | "rechazada";
+export type CondicionDevolucion = "sellado" | "abierto" | "otro";
+
+export interface ReturnRow {
+  id: string;
+  folio: string;
+  order_id: string;
+  user_id: string;
+  status: EstadoDevolucion;
+  reason: string;
+  credit_amount: string | null; // se llena al resolver (D2, panel admin)
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  resolution_note: string | null;
+  created_at: string;
+}
+
+export interface ReturnItemRow {
+  id: string;
+  return_id: string;
+  order_item_id: string;
+  qty: number;
+  condition: CondicionDevolucion;
+  percentage: string; // estimado al solicitar (RN-6); el admin lo corrige al resolver
+  credit_amount: string;
+}
+
+export interface ReturnPhotoRow {
+  id: string;
+  return_id: string;
+  url: string; // clave en el bucket privado de R2
+}
+
+export type TipoMovimientoSaldo = "devolucion" | "aplicado" | "ajuste";
+
+export interface CreditMovementRow {
+  id: string;
+  user_id: string;
+  amount: string; // positivo abona, negativo aplica
+  kind: TipoMovimientoSaldo;
+  order_id: string | null;
+  return_id: string | null;
+  description: string;
+  created_by: string | null;
+  created_at: string;
+}
+
+export type TipoServicio = "monitoreo" | "guardias" | "financiamiento";
+export type TipoClienteServicio = "particular" | "negocio" | "empresa";
+export type TipoInmueble = "casa" | "local" | "oficina" | "bodega" | "industria" | "otro";
+export type EstadoSolicitudServicio = "nueva" | "contactada" | "cerrada";
+
+export interface ServiceRequestRow {
+  id: string;
+  folio: string;
+  service_type: TipoServicio;
+  client_type: TipoClienteServicio;
+  full_name: string;
+  phone: string;
+  email: string;
+  state: string;
+  municipality: string;
+  neighborhood: string | null;
+  address_reference: string | null;
+  property_type: TipoInmueble;
+  preferred_time: string | null;
+  amount: string | null;
+  term_months: number | null;
+  message: string | null;
+  status: EstadoSolicitudServicio;
+  assigned_to: string | null;
+  created_at: string;
+}
+
+export interface LegalPageRow {
+  slug: "privacidad" | "terminos";
+  title: string;
+  body: string;
+  updated_at: string;
+}
+
 /** Fila de la vista `catalogo_productos` (0009_catalogo_lectura_publica.sql):
  * el producto activo + `disponible` calculado (stock - reserved). */
 export interface CatalogoProductoRow extends ProductRow {

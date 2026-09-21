@@ -375,5 +375,64 @@ insert into public.subcategories (group_id, parent_id, slug, name, position, act
 insert into public.subcategories (group_id, parent_id, slug, name, position, active) select g.id, s.id, 'dash-cams', 'Dash Cams', 3, true from public.groups g join public.subcategories s on s.group_id = g.id and s.slug = 'video-movil-y-camaras-vehiculares' and s.parent_id is null where g.slug = 'gps-telematica-y-equipamiento-vehicular';
 insert into public.subcategories (group_id, parent_id, slug, name, position, active) select g.id, s.id, 'mdvr-mnvr', 'MDVR / MNVR', 4, true from public.groups g join public.subcategories s on s.group_id = g.id and s.slug = 'video-movil-y-camaras-vehiculares' and s.parent_id is null where g.slug = 'gps-telematica-y-equipamiento-vehicular';
 
+-- ── Páginas legales (index.html:1747-1765, `legalSections`) ──────────────
+-- Mismas secciones y el mismo texto de relleno que ya traía el demo (con
+-- su propio aviso "texto de relleno para el demo") — la redacción legal
+-- real la escribe la dueña desde el panel admin (H4, fuera de este
+-- incremento). Sin esto la ruta /legal/[slug] no tendría nada que
+-- mostrar y daría 404.
+insert into public.legal_pages (slug, title, body) values
+  ('privacidad', 'Aviso de privacidad', $$## Responsable de los datos personales
+Texto de relleno para el demo. Este apartado describe responsable de los datos personales y se sustituye por la redacción legal definitiva que proporcione Seguridad General Querétaro. Lorem ipsum de demostración sin valor legal.
+
+## Datos que recabamos
+Texto de relleno para el demo. Este apartado describe datos que recabamos y se sustituye por la redacción legal definitiva que proporcione Seguridad General Querétaro. Lorem ipsum de demostración sin valor legal.
+
+## Finalidades del tratamiento
+Texto de relleno para el demo. Este apartado describe finalidades del tratamiento y se sustituye por la redacción legal definitiva que proporcione Seguridad General Querétaro. Lorem ipsum de demostración sin valor legal.
+
+## Transferencias de datos
+Texto de relleno para el demo. Este apartado describe transferencias de datos y se sustituye por la redacción legal definitiva que proporcione Seguridad General Querétaro. Lorem ipsum de demostración sin valor legal.
+
+## Derechos ARCO
+Texto de relleno para el demo. Este apartado describe derechos arco y se sustituye por la redacción legal definitiva que proporcione Seguridad General Querétaro. Lorem ipsum de demostración sin valor legal.
+
+## Cambios al aviso
+Texto de relleno para el demo. Este apartado describe cambios al aviso y se sustituye por la redacción legal definitiva que proporcione Seguridad General Querétaro. Lorem ipsum de demostración sin valor legal.$$),
+  ('terminos', 'Términos y condiciones', $$## Objeto
+Texto de relleno para el demo. Este apartado describe objeto y se sustituye por la redacción legal definitiva que proporcione Seguridad General Querétaro. Lorem ipsum de demostración sin valor legal.
+
+## Cuenta de usuario
+Texto de relleno para el demo. Este apartado describe cuenta de usuario y se sustituye por la redacción legal definitiva que proporcione Seguridad General Querétaro. Lorem ipsum de demostración sin valor legal.
+
+## Precios y disponibilidad
+Texto de relleno para el demo. Este apartado describe precios y disponibilidad y se sustituye por la redacción legal definitiva que proporcione Seguridad General Querétaro. Lorem ipsum de demostración sin valor legal.
+
+## Forma de pago por transferencia
+Texto de relleno para el demo. Este apartado describe forma de pago por transferencia y se sustituye por la redacción legal definitiva que proporcione Seguridad General Querétaro. Lorem ipsum de demostración sin valor legal.
+
+## Envíos y entregas
+Texto de relleno para el demo. Este apartado describe envíos y entregas y se sustituye por la redacción legal definitiva que proporcione Seguridad General Querétaro. Lorem ipsum de demostración sin valor legal.
+
+## Devoluciones y saldo a favor
+Texto de relleno para el demo. Este apartado describe devoluciones y saldo a favor y se sustituye por la redacción legal definitiva que proporcione Seguridad General Querétaro. Lorem ipsum de demostración sin valor legal.
+
+## Facturación
+Texto de relleno para el demo. Este apartado describe facturación y se sustituye por la redacción legal definitiva que proporcione Seguridad General Querétaro. Lorem ipsum de demostración sin valor legal.
+
+## Ley aplicable
+Texto de relleno para el demo. Este apartado describe ley aplicable y se sustituye por la redacción legal definitiva que proporcione Seguridad General Querétaro. Lorem ipsum de demostración sin valor legal.$$);
+
+-- ── FAQs de Servicios y Devoluciones (index.html:2460-2519) ───────────────
+-- Mismo texto exacto que ya traía el demo (`srvFaqs`, `devFaqs`) — no es
+-- contenido dummy, es lo que el propio HTML de referencia ya mostraba.
+insert into public.faqs (scope, question, answer, position, active) values
+  ('servicios', '¿Tiene contrato mínimo?', 'Los plazos se definen en la cotización según el servicio y el sitio.', 0, true),
+  ('servicios', '¿Atienden fuera de Querétaro?', 'Sí, cotizamos en el estado y zonas cercanas. Un asesor confirma la cobertura.', 1, true),
+  ('servicios', '¿Incluye equipo?', 'El equipo se cotiza aparte y puede financiarse a 3, 6 o 12 meses.', 2, true),
+  ('devoluciones', '¿Me devuelven el dinero en efectivo?', 'No. El valor de la devolución se abona como saldo a favor para comprar productos en la tienda.', 0, true),
+  ('devoluciones', '¿Qué pasa si el producto llegó con falla?', 'Otros casos los revisa un asesor. Escríbenos con fotos y el folio del pedido.', 1, true),
+  ('devoluciones', '¿El saldo a favor vence?', 'Por ahora no tiene fecha de vencimiento. Cualquier cambio se avisará con anticipación y se reflejará en el historial de movimientos de tu cuenta.', 2, true);
+
 commit;
 

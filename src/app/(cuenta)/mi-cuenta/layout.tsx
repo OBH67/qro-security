@@ -5,9 +5,7 @@ import { obtenerSesionActual } from "@/server/auth/sesion";
 import { cerrarSesion } from "@/server/actions/cuenta";
 
 /** index.html:1201-1213 (`isAccount`, `acctNav`) — navegación de "Mi
- * cuenta". El demo también lista "Saldo a favor" y "Devoluciones"
- * (Épica D, fuera de este incremento): se omiten a propósito en vez de
- * enlazar a una pantalla que no existe — ver `.devsquad/estado.md`. */
+ * cuenta". */
 export default async function LayoutMiCuenta({ children }: { children: React.ReactNode }) {
   // El middleware (`src/middleware.ts`) ya redirige antes de llegar aquí;
   // esta segunda verificación es el mismo criterio de capas del panel
@@ -20,6 +18,8 @@ export default async function LayoutMiCuenta({ children }: { children: React.Rea
     { href: "/mi-cuenta/datos", label: "Mis datos" },
     { href: "/mi-cuenta/direcciones", label: "Direcciones" },
     { href: "/mi-cuenta/datos-fiscales", label: "Datos de facturación" },
+    { href: "/mi-cuenta/saldo", label: "Saldo a favor" },
+    { href: "/mi-cuenta/devoluciones", label: "Devoluciones" },
   ];
 
   return (

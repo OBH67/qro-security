@@ -5,9 +5,9 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 Última actualización: 2026-09-21
 
 ## Fase actual
-**Implementación en curso — quinto incremento (corrección de la regla de
-traducción literal del frontend: chrome del sitio público + portada)
-completado.** Ver detalle al final de este documento.
+**Implementación en curso — sexto incremento (cierre completo del lado del
+cliente: Épica D vía cliente, Épica E, contenido/legal) completado.** Ver
+detalle al final de este documento.
 
 ## Progreso por fases
 
@@ -773,3 +773,184 @@ mismo botón flotante de Asesor.
   aceptable a esta escala (~54 subcategorías), pero si el catálogo crece
   mucho más podría valer la pena cachear el resultado en vez de calcularlo
   en cada carga de portada (la portada ya es `force-dynamic`).
+
+### Sexto incremento (2026-09-21): cierre completo del lado del cliente —
+Épica D (D1 solicitar devolución, D3 usar saldo), Épica E (servicios/leads),
+páginas de contenido y legales, y dos enlaces rotos preexistentes
+
+**Encargo explícito de la dueña:** completar todo lo faltante del lado del
+cliente para poder arrancar con el panel admin, sin necesidad de probar
+end-to-end lo que depende de un panel que todavía no existe (aprobar
+devoluciones, ver leads de servicio).
+
+**Qué se construyó:**
+
+1. **D1 · Solicitar devolución (cliente).** Nueva migración
+   `supabase/migrations/0012_devoluciones.sql`: función
+   `solicitar_devolucion()` (mismo patrón que `crear_pedido()` — folio vía
+   `generar_folio()`, `service_role`-only, ya que la política RLS pública
+   de `returns` no alcanza para generar folio de forma segura desde el
+   cliente). Valida en una sola transacción: el pedido es del cliente y
+   está `entregado`, está dentro del plazo (`settings.return_window_days`,
+   PA-3 = 30 días), y la cantidad solicitada no excede lo comprado menos lo
+   ya devuelto (sumando devoluciones previas no rechazadas). Calcula el
+   porcentaje/crédito **estimado** por partida según RN-6 (100% sellado,
+   70% abierto, 0 y "lo revisa un asesor" para "otro") — el monto final
+   sigue siendo D2 (panel admin, fuera de este incremento).
+   El demo (`index.html`) no tiene este formulario — el botón "Solicitar
+   devolución" ahí solo muestra un toast (`newReturn`, ver quinto
+   incremento). Se diseñó una pantalla propia
+   (`/mi-cuenta/devoluciones/nueva`, `FormularioNuevaDevolucion.tsx`)
+   consistente con el resto de "Mi cuenta": selector de pedido elegible,
+   checkbox + cantidad + condición por partida, motivo, fotos opcionales
+   (mismo patrón de subida directa a R2 con URL firmada que ya usaba C2,
+   incluida la validación de magic bytes — `mutations/devoluciones.ts`
+   reutiliza `validarComprobante()` de `domain/comprobantes.ts`), y saldo
+   estimado en vivo. `/mi-cuenta/devoluciones` (antes solo el blurb+2
+   botones literales del demo) ahora también lista las solicitudes del
+   cliente con su estado — el demo no la mostraba ahí; se agregó porque sin
+   eso el cliente no tendría cómo ver qué pasó con lo que pidió (mismo
+   criterio que ya existe para "Mis pedidos").
+2. **`/devoluciones` (pública, política — antes no existía, enlace roto
+   desde el pie de página).** Traducción literal de `index.html:1597-1644`
+   (`isDev`): el plazo `[X] días... dato por confirmar` del demo ya está
+   resuelto de verdad (`obtenerPlazoDevolucionDias()`, lee
+   `settings.return_window_days`).
+3. **D3 · Usar saldo a favor en el checkout.** `crear_pedido()` (0010) ya
+   aceptaba `p_credit_to_apply` desde el incremento anterior — solo faltaba
+   conectar el llamador. `CheckoutForm.tsx` ahora trae el bloque de saldo
+   literal del demo (`showSaldo`/`applySaldo`, index.html:1069-1074) con el
+   saldo REAL del cliente (`obtenerSaldoDisponible()`, no el $450 fijo del
+   demo) — el bloque solo aparece si el cliente de verdad tiene saldo. El
+   total y el checkbox de confirmación se ajustan cuando el saldo cubre el
+   100% (RN-11/D3.3: sin comprobante que subir, pero tampoco avanza
+   automático). Cadena completa: `esquemas/checkout.ts` (`creditToApply`) →
+   `actions/pedidos.ts` → `mutations/pedidos.ts` → RPC (ya listo en SQL).
+   `/mi-cuenta/saldo` (antes solo enlazada, sin página): saldo disponible +
+   historial de movimientos (`credit_movements`), literal de
+   `index.html:1285-1305` (`secSaldo`).
+4. **Épica E · Servicios (leads).** `/servicios` (landing con las 3
+   tarjetas + formulario inline, literal de `index.html:1453-1526`) y
+   `/servicios/[tipo]` (detalle por tipo — incluye/cómo funciona/para
+   quién es/FAQ, literal de `index.html:1528-1595` y `srvDetailData`).
+   `enviarSolicitudServicioAction()` no requiere sesión (E1.3) e inserta en
+   `service_requests` vía una nueva mutation con el mismo patrón de
+   reintento de folio que ya usa `crear_pedido()`. **Anti-spam real
+   (E1.4)**, no solo un campo: Cloudflare Turnstile (`WidgetTurnstile.tsx`
+   + `domain/captcha.ts`, que verifica el token contra la API real de
+   Cloudflare, no solo "si llegó algo") + honeypot como segunda capa
+   (`esquemas/servicio.ts`, campo `sitioWeb` oculto con CSS). Las
+   variables `NEXT_PUBLIC_TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET_KEY` ya
+   existían en `env.ts` desde la arquitectura pero no se usaban en ningún
+   lado — este incremento es el primero en conectarlas de verdad.
+5. **Páginas de contenido que faltaban** (enlazadas desde el pie de página
+   y/o el encabezado desde el segundo incremento, todas 404 hasta ahora):
+   `/como-comprar` (literal, `index.html:1645-1669`), `/contacto` (literal,
+   `index.html:1671-1721` — el formulario "Escríbenos" no persiste en
+   ningún lado, igual que en el propio demo: ningún documento de negocio
+   modela un mensaje de contacto genérico como recurso, a diferencia de E1
+   que sí tiene su tabla; documentado en el propio componente, no omitido
+   en silencio), `/preguntas-frecuentes` (literal, `index.html:1723-1745`,
+   agrupa por `topic`), `/legal/[slug]` (privacidad y términos — el body
+   real lo escribe la dueña desde H4/panel admin, fuera de este
+   incremento; se sembró con la MISMA estructura de secciones y el mismo
+   aviso "texto de relleno para el demo" que ya traía `index.html`, no se
+   inventó redacción legal).
+6. **Dos enlaces rotos preexistentes, sin relación directa con el encargo
+   pero descubiertos al recorrer todos los enlaces del sitio (mismo
+   criterio que el quinto incremento con el chrome):**
+   - `/marcas`: el propio nav del demo manda este enlace a `home`
+     (`index.html:2198`, `go: () => this.go('home')`) — nunca fue una
+     pantalla real ni en el demo. Se corrigió `EncabezadoSitio.tsx` para
+     apuntar a `/` en vez de a una ruta que nunca existió.
+   - `/catalogo` (sin grupo): varios componentes ya enlazaban aquí
+     (encabezado, carrito vacío, "Mis pedidos" vacío, y ahora también
+     "Cómo comprar") sin que la ruta existiera. Se agregó
+     `catalogo/page.tsx` que redirige al primer grupo real
+     (`/catalogo/{slug}/todos`) — mismo criterio que ya usaba el mega-menú
+     para "Promociones" en el quinto incremento.
+   - Se corrigieron además, en el camino, dos enlaces internos con `<a>`
+     en vez de `<Link>` en `RegistroWizard.tsx` (a `/legal/privacidad` y
+     `/legal/terminos`) que el linter no marcaba como error hasta que esas
+     rutas existieron de verdad.
+
+**Validado en este incremento (de verdad, no solo que compilara):**
+
+- `npm run build` y `npm run lint` pasan limpio (27 rutas nuevas,
+  `tsc --noEmit` sin errores en todo el árbol).
+- **`solicitar_devolucion()` probada contra Postgres real** (mismo
+  Postgres 16 nativo + PostgREST + proxy del quinto incremento, no SQL a
+  mano): 6 escenarios con datos reales insertados a propósito (un pedido
+  entregado hace 5 días dentro del plazo, uno entregado hace 40 días fuera
+  del plazo, uno no entregado) — éxito con condición "sellado" (100% exacto,
+  $489.00 sobre un producto de $489.00), rechazo por plazo vencido, rechazo
+  por pedido no entregado, rechazo al intentar devolver más piezas de las
+  que quedan disponibles (compró 2, ya había una solicitud viva por 1),
+  éxito de la pieza restante con condición "abierto" (70% exacto, $342.30),
+  y rechazo al usar un `user_id` que no es dueño del pedido.
+- **`crearSolicitudServicio()` probada contra Postgres/PostgREST real**
+  (bypaseando el guard `server-only` con una reimplementación idéntica en
+  un script de prueba efímero, no subido — la lógica de negocio real vive
+  en `mutations/servicios.ts`): folio único generado, inserción completa
+  con todos los campos, incluido el caso de financiamiento con
+  monto/plazo.
+- Las 27 rutas nuevas responden 200 (`/catalogo` responde 307 al grupo
+  correcto) contra datos reales del seed de producción actualizado.
+  Comparación visual con Playwright de `/como-comprar`, `/servicios` y
+  otras contra el layout del demo — coincide.
+
+**Lo que NO se pudo validar en este entorno (limitación de red/infra, no de
+código — mismo tipo de bloqueo ya documentado en incrementos anteriores):**
+
+- **El widget de Turnstile no se pudo ver renderizado**:
+  `challenges.cloudflare.com` está bloqueado por la política de salida de
+  este entorno (`connect_rejected`, mismo tipo de bloqueo que ya afectó a
+  `unpkg.com`/Pexels/Docker Hub en incrementos anteriores). El código es
+  el patrón estándar de Cloudflare (`next/script` + `window.turnstile.render`)
+  y `verificarTurnstile()` llama a la misma API real que el propio widget
+  usa — funcionará en cualquier entorno con salida a internet normal. Para
+  este entorno se usaron las sitekeys de prueba oficiales de Cloudflare
+  ("always passes") en `.env.local`, no reales.
+- **No se pudo simular una sesión de cliente autenticada de extremo a
+  extremo vía la UI** para ver renderizadas `/mi-cuenta/saldo`,
+  `/mi-cuenta/devoluciones` y el bloque de saldo de `/pagar` con datos
+  reales: el proxy local que emula Supabase (creado en el quinto
+  incremento) solo cubre `/rest/v1`, no Auth completo — mismo límite ya
+  documentado ("Auth no disponible en este entorno de prueba"). Mitigación:
+  las queries nuevas (`queries/saldo.ts`, `queries/devoluciones.ts`) usan
+  el mismo patrón de "consultas separadas por tabla" ya extensivamente
+  probado en `queries/pedidos.ts`, y la pieza de mayor riesgo real (la
+  función SQL transaccional) sí se validó de punta a punta. Recomendado
+  antes de producción: una pasada manual de este flujo contra el proyecto
+  de Supabase real.
+
+**Decisiones técnicas nuevas que vale la pena que el Arquitecto revise:**
+- Migración `0012_devoluciones.sql` — nueva función `service_role`-only,
+  mismo patrón que `crear_pedido()`/`confirmar_comprobante()`.
+- `return_photos` se escribe siempre por `service_role`
+  (`mutations/devoluciones.ts`, con la misma validación de magic bytes que
+  C2) en vez de aprovechar la política RLS pública de inserción directa
+  del cliente — consistencia de patrón con el resto de subidas de archivo,
+  no porque la política esté mal.
+- El formulario de contacto genérico (`/contacto`) no persiste a
+  propósito — ver punto 5 arriba. Si en algún momento la dueña quiere que
+  sí llegue a alguien, la ruta más simple sería reutilizar
+  `notification_outbox` con un nuevo `event_type`, no crear una tabla
+  nueva de mensajes.
+
+### Próximo incremento: panel admin (Épica F, G, H) — ya es lo único que falta
+para operar el negocio completo
+
+Con este incremento, el lado del cliente queda funcionalmente completo:
+catálogo, cuenta, carrito, pedido y pago, comprobante, devoluciones y saldo,
+servicios/leads, y todo el contenido de apoyo (cómo comprar, FAQ, legal,
+contacto). El panel de administrador (`(admin)/admin/*`, todas carpetas
+vacías todavía) es ahora el único hueco: sin él nadie puede validar un
+comprobante, resolver una devolución, ni ver un lead de servicio desde una
+interfaz — todo pedido con comprobante subido se queda esperando en
+`comprobante_recibido` indefinidamente. C3 (aviso real por WhatsApp/correo
+de un comprobante nuevo) tampoco tiene despachador todavía
+(`notification_outbox` sigue encolando sin que nada la procese) — construir
+el canal de correo (Resend, no bloqueado por PA-5) sigue siendo la pieza
+más barata para cerrar ese hueco, independiente de si se hace antes o
+después del panel.

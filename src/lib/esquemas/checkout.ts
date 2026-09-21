@@ -13,6 +13,11 @@ export const esquemaGenerarPedido = z.object({
    * usuario siga en esa pantalla. Obligatoria: sin ella no hay protección
    * real contra doble clic, reintento de red o dos pestañas. */
   idempotencyKey: z.uuid("Falta la llave de idempotencia del pedido."),
+  /** D3: cuánto saldo a favor quiere aplicar el cliente a este pedido — el
+   * servidor lo vuelve a acotar al subtotal y a lo que el cliente
+   * realmente tiene (`crear_pedido()`/`aplicar_saldo()`, RN-7); esto solo
+   * valida forma. */
+  creditToApply: z.coerce.number().min(0).default(0),
 });
 
 export type DatosGenerarPedido = z.infer<typeof esquemaGenerarPedido>;

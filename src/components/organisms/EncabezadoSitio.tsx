@@ -385,7 +385,10 @@ export function EncabezadoSitio({
                 Servicios
                 <IconoChevronAbajo />
               </button>
-              <EnlaceNav href="/marcas">
+              {/* index.html:2198 — el propio demo manda "Marcas" a home
+                  (`go('home')`), nunca hubo una pantalla de marcas. Traducción
+                  literal: no se inventa una página que el demo no tiene. */}
+              <EnlaceNav href="/">
                 <IconoEstrella />
                 Marcas
               </EnlaceNav>

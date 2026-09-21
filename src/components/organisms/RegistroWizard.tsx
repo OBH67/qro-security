@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { esquemaRegistro } from "@/lib/esquemas/registro";
 import { esquemaDireccion } from "@/lib/esquemas/direccion";
 import { esquemaDatosFiscales, REGIMENES_FISCALES, USOS_CFDI } from "@/lib/esquemas/datosFiscales";
@@ -232,8 +233,8 @@ export function RegistroWizard() {
           <button type="button" onClick={() => setAcepta((v) => !v)} style={{ display: "flex", gap: 12, alignItems: "flex-start", textAlign: "left", fontSize: 14, color: "var(--text-muted)" }}>
             <CasillaVisual marcada={acepta} />
             <span>
-              Acepto el <a href="/legal/privacidad" style={{ color: "var(--accent)" }}>Aviso de privacidad</a> y los{" "}
-              <a href="/legal/terminos" style={{ color: "var(--accent)" }}>Términos y condiciones</a>.
+              Acepto el <Link href="/legal/privacidad" style={{ color: "var(--accent)" }}>Aviso de privacidad</Link> y los{" "}
+              <Link href="/legal/terminos" style={{ color: "var(--accent)" }}>Términos y condiciones</Link>.
             </span>
           </button>
         </div>

@@ -22,6 +22,10 @@ export async function crearPedido(params: {
    * la regresa como el pedido ya creado si se repite la llamada, en vez de
    * duplicar el pedido. */
   idempotencyKey: string;
+  /** D3: saldo que el cliente pidió aplicar — `crear_pedido()` lo acota al
+   * subtotal y `aplicar_saldo()` valida que no exceda lo que el cliente
+   * realmente tiene (RN-7), con su propio candado transaccional. */
+  creditToApply: number;
 }): Promise<OrderRow> {
   const admin = crearClienteAdmin();
   const { data, error } = await admin.rpc("crear_pedido", {
@@ -30,7 +34,7 @@ export async function crearPedido(params: {
     p_shipping_address: params.shippingAddress,
     p_billing_data: params.billingData,
     p_wants_invoice: params.wantsInvoice,
-    p_credit_to_apply: 0, // Épica D (saldo a favor) no es parte de este incremento
+    p_credit_to_apply: params.creditToApply,
     p_notes: params.notes ?? null,
     p_idempotency_key: params.idempotencyKey,
   });
