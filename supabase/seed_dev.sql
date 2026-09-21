@@ -227,10 +227,23 @@ insert into public.faqs (scope, question, answer, position, active) values
   ('general', '¿Puedo pedir factura?', 'Sí. Activa "Quiero factura" al crear tu cuenta o al confirmar el pedido y captura tu RFC, régimen fiscal y uso de CFDI.', 2, true),
   ('general', '¿Cómo funcionan las devoluciones?', 'El valor se devuelve como saldo a favor para comprar productos: 100% si el producto está sellado de fábrica y 70% si está abierto o sin empaque.', 3, true);
 
-insert into public.banners (title, brand_label, image_url, group_id, position, active)
-select 'Tu tranquilidad, nuestra prioridad', 'VIDEOVIGILANCIA',
-  'https://images.pexels.com/photos/7364948/pexels-photo-7364948.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  id, 0, true
+-- Los 3 banners literales de index.html:1955-1959 (`heroSlidesData`), con
+-- sus imágenes reales (`uploads/hero1.png`..`hero3.png`, copiadas a
+-- `public/uploads/` — resuelven en local porque `urlImagenPublica()` deja
+-- pasar una clave relativa tal cual cuando no hay `NEXT_PUBLIC_R2_PUBLIC_URL`
+-- configurada) y sus colores de degradado exactos (`gradient_from`/`_to`),
+-- para que el encabezado y el muro de video ciclen con los mismos colores
+-- que el demo en desarrollo.
+insert into public.banners (title, brand_label, image_url, group_id, gradient_from, gradient_to, position, active)
+select 'Tu tranquilidad, nuestra prioridad', 'VIDEOVIGILANCIA', 'uploads/hero1.png', id, '#2E9E5B', '#0B2A17', 0, true
 from public.groups where slug = 'videovigilancia';
+
+insert into public.banners (title, brand_label, image_url, group_id, gradient_from, gradient_to, position, active)
+select 'Energía eficiente, clima perfecto', 'ENERGÍA Y CLIMATIZACIÓN', 'uploads/hero2.png', id, '#1D5C9E', '#0A2038', 1, true
+from public.groups where slug = 'energia-y-climatizacion';
+
+insert into public.banners (title, brand_label, image_url, group_id, gradient_from, gradient_to, position, active)
+select 'Energía limpia, ahorro real', 'ENERGÍA SOLAR', 'uploads/hero3.png', id, '#1E8A4F', '#082A19', 2, true
+from public.groups where slug = 'energia-y-climatizacion';
 
 commit;

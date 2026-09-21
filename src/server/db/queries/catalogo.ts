@@ -11,6 +11,8 @@ import {
   PRODUCTOS_POR_PAGINA,
   type OrdenCatalogo,
 } from "@/lib/constantes";
+import { formatearPrecio } from "@/lib/formato";
+import { urlImagenPublica } from "@/lib/imagenes";
 import type {
   BannerRow,
   BrandRow,
@@ -91,6 +93,10 @@ export interface GrupoConNavegacion {
   name: string;
   code: string;
   subcategoriasRaiz: { slug: string; name: string }[];
+  /** index.html:212-221 — panel "DESTACADO" del mega-menú: un producto por
+   * grupo (el más vendido). `null` si el grupo todavía no tiene productos
+   * activos, en vez de inventar uno. */
+  destacado: { slug: string; name: string; priceFmt: string; imagenUrl: string | null } | null;
 }
 
 /** Los 6 grupos + sus subcategorías de primer nivel, para el menú principal
@@ -102,7 +108,24 @@ export async function obtenerNavegacionGrupos(): Promise<GrupoConNavegacion[]> {
   const grupos = await obtenerGrupos();
   return Promise.all(
     grupos.map(async (grupo) => {
-      const subs = await obtenerSubcategoriasDeGrupo(grupo.id);
+      const [subs, destacados] = await Promise.all([
+        obtenerSubcategoriasDeGrupo(grupo.id),
+        obtenerDestacadosDeGrupo(grupo.id, 1),
+      ]);
+
+      let destacado: GrupoConNavegacion["destacado"] = null;
+      const crudo = destacados[0];
+      if (crudo) {
+        const imagenes = await obtenerImagenesPrincipales([crudo.id]);
+        const claveImagen = imagenes.get(crudo.id);
+        destacado = {
+          slug: crudo.slug,
+          name: crudo.name,
+          priceFmt: formatearPrecio(crudo.price),
+          imagenUrl: claveImagen ? urlImagenPublica(claveImagen) : null,
+        };
+      }
+
       return {
         id: grupo.id,
         slug: grupo.slug,
@@ -111,6 +134,7 @@ export async function obtenerNavegacionGrupos(): Promise<GrupoConNavegacion[]> {
         subcategoriasRaiz: subs
           .filter((s) => s.parent_id === null)
           .map((s) => ({ slug: s.slug, name: s.name })),
+        destacado,
       };
     }),
   );
@@ -338,16 +362,101 @@ export async function obtenerDestacadosDeGrupo(groupId: string, limite: number) 
   return data ?? [];
 }
 
+/** index.html:380-417 — "Más vendidos" de la portada, con `attributes` de
+ * más (para las chips de especificaciones `p.specs` del demo, que ahí eran
+ * datos fijos: aquí son las primeras claves reales de la ficha técnica). */
 export async function obtenerMasVendidos(limite = PRODUCTOS_MAS_VENDIDOS_HOME) {
   const supabase = await crearClienteServidor();
   const { data, error } = await supabase
     .from("catalogo_productos")
-    .select("id, sku, slug, name, price, stock, reserved, brand_id, condition, condition_detail")
+    .select("id, sku, slug, name, price, stock, reserved, brand_id, condition, condition_detail, attributes")
     .order("sales_count", { ascending: false })
     .limit(limite);
 
   if (error) throw new Error(`No se pudieron cargar los más vendidos: ${error.message}`);
   return data ?? [];
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// "Para Ti" (index.html:340-372) — pestañas por subcategoría con carrusel
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface PestanaParaTi {
+  subcategoriaId: string;
+  nombre: string;
+  href: string;
+  productos: {
+    id: string;
+    sku: string;
+    slug: string;
+    name: string;
+    price: string | number;
+    stock: number;
+    reserved: number;
+    brand_id: string | null;
+    condition: "nuevo" | "usado";
+    condition_detail: string | null;
+  }[];
+}
+
+/** El demo arma las pestañas a partir de las subcategorías que de verdad
+ * tienen productos, en el orden en que aparecen en el catálogo (index.html:
+ * 2076-2088, `ptTabList()`). Aquí se usa el mismo criterio sobre datos
+ * reales: subcategorías raíz (con sus descendientes) que tienen al menos
+ * un producto activo, ordenadas por cuántos tienen (las más surtidas
+ * primero), tope `limiteTabs`. */
+export async function obtenerParaTi(limiteTabs = 8, limiteItemsPorTab = 9): Promise<PestanaParaTi[]> {
+  const grupos = await obtenerGrupos();
+  const supabase = await crearClienteServidor();
+
+  const candidatos = (
+    await Promise.all(
+      grupos.map(async (grupo) => {
+        const filas = await obtenerSubcategoriasDeGrupo(grupo.id);
+        const raices = filas.filter((f) => f.parent_id === null);
+        return raices.map((raiz) => ({
+          grupo,
+          raiz,
+          ids: idsSubcategoriaConDescendientes(filas, raiz.id),
+        }));
+      }),
+    )
+  ).flat();
+
+  const conConteo = await Promise.all(
+    candidatos.map(async (c) => {
+      const { count, error } = await supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "activo")
+        .in("subcategory_id", c.ids);
+      if (error) throw new Error(`No se pudo contar productos de subcategoría: ${error.message}`);
+      return { ...c, count: count ?? 0 };
+    }),
+  );
+
+  const elegidos = conConteo
+    .filter((c) => c.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limiteTabs);
+
+  return Promise.all(
+    elegidos.map(async (c): Promise<PestanaParaTi> => {
+      const { data, error } = await supabase
+        .from("catalogo_productos")
+        .select("id, sku, slug, name, price, stock, reserved, brand_id, condition, condition_detail")
+        .in("subcategory_id", c.ids)
+        .order("sales_count", { ascending: false })
+        .limit(limiteItemsPorTab);
+      if (error) throw new Error(`No se pudieron cargar productos de "Para Ti": ${error.message}`);
+      return {
+        subcategoriaId: c.raiz.id,
+        nombre: c.raiz.name,
+        href: `/catalogo/${c.grupo.slug}/${c.raiz.slug}`,
+        productos: data ?? [],
+      };
+    }),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────

@@ -1,19 +1,46 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { ProductoTarjeta } from "@/lib/producto";
 import { Etiqueta } from "@/components/atoms/Etiqueta";
 import { Boton } from "@/components/atoms/Boton";
 import { IndicadorStock } from "@/components/molecules/IndicadorStock";
+import { useCarrito } from "@/components/providers/CarritoProvider";
+import { useToast } from "@/components/providers/ToastProvider";
 
 /**
  * Traducción de la tarjeta de producto que se repite en `index.html`
  * (portada l. 380-417, grupo l. 551-577, listado l. 652-687, relacionados
- * l. 829-842, búsqueda l. 1778-1793). El botón "Agregar al pedido" se
- * pinta con su estilo definitivo pero **sin acción todavía**: el carrito
- * es la Épica B, siguiente incremento (ver `.devsquad/estado.md`).
+ * l. 829-842, búsqueda l. 1778-1793). "Agregar al pedido" reproduce
+ * `Component.add()`/`Component.card().onAdd` (index.html:2015-2028,2050):
+ * agrega 1 pieza al carrito y muestra el mismo aviso ("Agregado a tu
+ * pedido"), acotado siempre al disponible real.
  */
 export function TarjetaProducto({ producto }: { producto: ProductoTarjeta }) {
   const href = `/producto/${producto.slug}`;
+  const carrito = useCarrito();
+  const { mostrarToast } = useToast();
+  const [agregando, setAgregando] = useState(false);
+
+  async function agregarAlPedido() {
+    setAgregando(true);
+    await carrito.agregar(
+      {
+        productId: producto.id,
+        sku: producto.sku,
+        slug: producto.slug,
+        name: producto.name,
+        price: producto.precio,
+        disponible: producto.disponible,
+        imagenUrl: producto.imagenUrl,
+      },
+      1,
+    );
+    setAgregando(false);
+    mostrarToast("Agregado a tu pedido");
+  }
 
   return (
     <div
@@ -88,6 +115,25 @@ export function TarjetaProducto({ producto }: { producto: ProductoTarjeta }) {
           {producto.name}
         </Link>
 
+        {producto.specs.length > 0 && (
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {producto.specs.map((spec, i) => (
+              <span
+                key={i}
+                style={{
+                  padding: "3px 8px",
+                  border: "1px solid var(--border)",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 11,
+                  color: "var(--text-muted)",
+                }}
+              >
+                {spec}
+              </span>
+            ))}
+          </div>
+        )}
+
         <div style={{ marginTop: "auto" }}>
           <span
             className="font-data"
@@ -114,14 +160,28 @@ export function TarjetaProducto({ producto }: { producto: ProductoTarjeta }) {
         </div>
 
         {producto.disponible > 0 ? (
-          <Boton variante="primaria" tamano="md" anchoCompleto style={{ marginTop: 4 }}>
-            Agregar al pedido
+          <Boton
+            variante="primaria"
+            tamano="md"
+            anchoCompleto
+            style={{ marginTop: 4 }}
+            onClick={agregarAlPedido}
+            disabled={agregando}
+          >
+            {agregando ? "Agregando…" : "Agregar al pedido"}
           </Boton>
         ) : (
           <div style={{ marginTop: 4 }}>
             <Boton variante="deshabilitada" tamano="md" anchoCompleto disabled>
               Agotado
             </Boton>
+            <button
+              type="button"
+              onClick={() => mostrarToast("Te avisamos a tu correo cuando llegue")}
+              style={{ display: "block", width: "100%", marginTop: 8, fontSize: 13, color: "var(--accent)", textAlign: "center" }}
+            >
+              Avísame cuando llegue
+            </button>
           </div>
         )}
       </div>
