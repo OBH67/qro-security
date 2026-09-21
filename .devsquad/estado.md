@@ -5,9 +5,9 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 Última actualización: 2026-09-21
 
 ## Fase actual
-**Implementación en curso — décimo incremento (panel admin, segunda
-tanda: C5 Pedidos completo) terminado. Ver plan de incrementos restante
-al final de este documento.**
+**Implementación en curso — decimoprimer incremento (panel admin, tercera
+tanda: F1 Catálogo — alta/edición de producto) terminado. Ver plan de
+incrementos restante al final de este documento.**
 
 ## Progreso por fases
 
@@ -1287,16 +1287,81 @@ una sesión de staff real (el proxy de este entorno no cubre
 `/auth/v1/token`) — mitigado probando por separado cada pieza de mayor
 riesgo (las funciones SQL, la mutation de cancelación, el candado).
 
+### Decimoprimer incremento (2026-09-21): panel admin, tercera tanda —
+Catálogo, alta y edición de producto (F1)
+
+**Qué se construyó:**
+
+1. **Nueva migración `0016_catalogo_admin.sql`**:
+   - **`admin_change_log`** — bitácora genérica por `entity_type` (no
+     solo de productos: H4.3 pide el mismo mecanismo para Configuración,
+     "mismo criterio que F1.5" — se modela una sola tabla reutilizable en
+     vez de duplicarla cuando llegue ese incremento).
+   - **`crear_producto()`** (F1.1): SKU único validado, slug generado del
+     nombre con reintento ante colisión (mismo patrón que
+     `generar_folio()`).
+   - **`actualizar_producto()`** (F1.2/F1.3): cada campo es opcional
+     (`null` = "no cambiar"), sirve tanto a la edición completa como a la
+     edición rápida de un solo campo (precio, en la tabla). Solo
+     price/stock/status quedan en bitácora, como pide F1.5. "Baja" (F1.3)
+     es este mismo camino con `status = 'descontinuado'` — nunca un
+     DELETE, RN-9 en `diseño.md` ("la palabra «eliminar» no aparece nunca
+     para productos").
+   - **Bug encontrado y corregido durante la propia prueba contra
+     Postgres real** (no en revisión de código): la primera versión de
+     `actualizar_producto()` decidía si limpiar `condition_detail`
+     comparando contra el parámetro crudo `p_condition` en vez del valor
+     RESULTANTE de `condition` — si se editaba solo el stock de un
+     producto que ya era "usado" (sin volver a mandar `p_condition`), el
+     motivo visible al cliente se habría borrado por accidente. Corregido
+     antes de aplicar la migración final.
+2. **UI** (`admin/catalogo`, `admin/catalogo/nuevo`, `admin/catalogo/[id]`)
+   — traducción literal de `panel-admin-maqueta.html:510-709`: lista con
+   filtros (búsqueda, grupo, estado, condición) y edición de precio con
+   doble clic en la tabla; formulario de alta/edición con la pestaña
+   "General" completa (único formulario compartido entre crear y editar).
+   Las otras 4 pestañas (Precio y stock, Fotos, Especificaciones,
+   Documentos) quedan como placeholder explícito, igual que la propia
+   maqueta — están documentadas en `diseño.md` §11.7 como pendientes de
+   una pasada posterior (H1-bis.2), no inventadas ni omitidas en
+   silencio. El comportamiento de "Usado" (stock fijo en 1, SKU sugerido
+   con sufijo `-U1`) sale de `diseño.md` §11.7, que cubre lo que la
+   maqueta no mostró por ser una interacción dinámica.
+3. **Exportar CSV no era parte de esta pantalla** en la maqueta (solo
+   Pedidos y Devoluciones lo muestran) — no se inventó.
+
+**Validado contra Postgres real, con las funciones SQL y las mutations de
+producción:**
+
+- `crear_producto()`: slug con sufijo ante nombre duplicado, rechazo
+  correcto de SKU duplicado.
+- `actualizar_producto()`, el bug ya corregido: cambiar solo precio no
+  toca condición; cambiar a "usado" con motivo lo guarda; **volver a
+  llamar sin pasar `condition` preserva el motivo existente** (el caso
+  exacto que habría fallado con el bug); volver a "nuevo" limpia el
+  motivo a `null`. Bitácora verificada con las 2 filas correctas (price,
+  stock) tras los cambios correspondientes.
+- Las mutations de TypeScript (`crearProductoAdmin`/
+  `actualizarProductoAdmin`, código de producción, no una
+  reimplementación) probadas contra Postgres/PostgREST reales de punta a
+  punta.
+- `npm run build`/`lint` limpios (se encontraron y corrigieron 4 errores
+  reales de lint en este incremento: dos `<a>` que debían ser `<Link>` y
+  comillas sin escapar en JSX — quedan los mismos 10 warnings
+  preexistentes de plantillas de correo).
+
+**Lo que NO se pudo validar:** la UI con sesión de staff real (mismo
+límite de siempre en este entorno).
+
 ### Plan de incrementos restante del panel admin
 
-El panel tiene 13 pantallas en la maqueta. Van dos tandas: base (acceso,
-roles, tablero) y Pedidos. Quedan, en el orden recomendado:
+El panel tiene 13 pantallas en la maqueta. Van tres tandas: base (acceso,
+roles, tablero), Pedidos, y Catálogo (alta/edición). Quedan, en el orden
+recomendado:
 
-1. **Catálogo (F1)** — lista + nuevo/editar producto (pestaña General
-   completa por la maqueta; las demás pestañas y el paso 3 del
-   importador quedan documentadas en `diseño.md` §11.7/§11.8 como
-   pendientes explícitos de una pasada posterior, igual que ya aclara
-   H1-bis.2) + categorías (F3, árbol D7).
+1. **Categorías (F3)** — árbol D7 (grupo → subcategoría → sub-
+   subcategoría), crear/renombrar/reordenar, sin eliminar una con
+   productos activos sin reasignarlos.
 2. **Importador CSV (F2)** — pasos 1 y 2 (paso 3, "Aplicar", es la
    pieza que de verdad escribe en la base; la maqueta y `diseño.md` lo
    dejan para después).
@@ -1307,4 +1372,5 @@ roles, tablero) y Pedidos. Quedan, en el orden recomendado:
    queries de "más/menos vendidos" del tablero; Configuración escribe en
    `settings` (ya leído desde el lado del cliente en varios lugares —
    C1.6, D1.1, D3 — así que un cambio ahí ya se refleja del lado público
-   sin tocar ese código).
+   sin tocar ese código), usando la misma `admin_change_log` de este
+   incremento (H4.3).
