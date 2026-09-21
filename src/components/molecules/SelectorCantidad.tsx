@@ -2,12 +2,31 @@
 
 import { useState } from "react";
 
-/** index.html:756-767 — selector de cantidad de la ficha de producto.
- * Estado solo local: todavía no hay carrito al que sumarlo (Épica B,
- * siguiente incremento) — ver `.devsquad/estado.md`. */
-export function SelectorCantidad({ maximo }: { maximo: number }) {
-  const [cantidad, setCantidad] = useState(1);
+/** index.html:756-767 — selector de cantidad. Funciona en modo NO
+ * controlado (ficha de producto, antes de agregar al carrito: expone la
+ * cantidad elegida vía `onChange`) o CONTROLADO (`valor` + `onChange`,
+ * carrito — Épica B, `it.onInc`/`it.onDec` de index.html:884-886). */
+export function SelectorCantidad({
+  maximo,
+  valor,
+  onChange,
+  tamano = "normal",
+}: {
+  maximo: number;
+  valor?: number;
+  onChange?: (cantidad: number) => void;
+  tamano?: "normal" | "compacto";
+}) {
+  const [cantidadInterna, setCantidadInterna] = useState(1);
+  const cantidad = valor ?? cantidadInterna;
   const enTope = cantidad >= maximo;
+  const dimension = tamano === "compacto" ? 44 : 46;
+
+  function cambiar(nueva: number) {
+    const acotada = Math.max(1, Math.min(maximo, nueva));
+    if (valor === undefined) setCantidadInterna(acotada);
+    onChange?.(acotada);
+  }
 
   return (
     <div>
@@ -15,19 +34,19 @@ export function SelectorCantidad({ maximo }: { maximo: number }) {
         <button
           type="button"
           aria-label="Quitar uno"
-          onClick={() => setCantidad((c) => Math.max(1, c - 1))}
-          style={{ width: 46, height: 46, fontSize: 20, color: "var(--text-muted)" }}
+          onClick={() => cambiar(cantidad - 1)}
+          style={{ width: dimension, height: dimension, fontSize: 18, color: "var(--text-muted)" }}
         >
           −
         </button>
-        <span className="font-data" style={{ minWidth: 44, textAlign: "center", fontSize: 16 }}>
+        <span className="font-data" style={{ minWidth: 40, textAlign: "center", fontSize: 15 }}>
           {cantidad}
         </span>
         <button
           type="button"
           aria-label="Agregar uno"
-          onClick={() => setCantidad((c) => Math.min(maximo, c + 1))}
-          style={{ width: 46, height: 46, fontSize: 20, color: "var(--text-muted)" }}
+          onClick={() => cambiar(cantidad + 1)}
+          style={{ width: dimension, height: dimension, fontSize: 18, color: "var(--text-muted)" }}
         >
           +
         </button>

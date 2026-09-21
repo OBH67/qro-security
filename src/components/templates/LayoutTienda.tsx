@@ -7,14 +7,16 @@ import { PiePagina } from "@/components/organisms/PiePagina";
  * datos reales" — aquí solo recibe la navegación ya resuelta). */
 export function LayoutTienda({
   grupos,
+  sesion,
   children,
 }: {
   grupos: GrupoConNavegacion[];
+  sesion: { nombre: string } | null;
   children: React.ReactNode;
 }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <EncabezadoSitio grupos={grupos} />
+      <EncabezadoSitio grupos={grupos} sesion={sesion} />
       <main style={{ flex: 1 }}>{children}</main>
       <PiePagina grupos={grupos} />
     </div>

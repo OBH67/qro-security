@@ -2,10 +2,11 @@
 
 Carpeta de trabajo: `/home/user/qro-security`
 Rama: `claude/sg-queretaro-sales-platform-6a7359`
-Última actualización: 2026-09-20
+Última actualización: 2026-09-21
 
 ## Fase actual
-**Implementación en curso — segundo incremento (catálogo público, Épica A) completado.**
+**Implementación en curso — tercer incremento (carrito, cuenta de cliente,
+pedido y comprobante — Épica B + C sin C3) completado.**
 
 ## Progreso por fases
 
@@ -17,7 +18,7 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 - [x] **Diseño de UI del panel administrativo** — `.devsquad/diseño.md` (1885 líneas): tokens heredados del demo del sitio público con 3 correcciones de contraste WCAG AA, navegación por rol, Atomic Design, y las 13 pantallas con sus estados. Incluye el tablero completo (G2, adelantado a V1 el 2026-09-20) con 6 gráficas justificadas y paleta de datos separada de los colores semánticos de estado. **Aprobado por la dueña (2026-09-20).**
 - [x] **Maqueta visual interactiva (Artifact)** — construida sobre `diseño.md`: Login, Tablero completo, Pedidos, Detalle de pedido (normal y variante RN-11), Catálogo, Alta de producto (con el selector de categoría de 3 niveles usando la taxonomía real de 54 subcategorías), Categorías (árbol D7), Devoluciones (con cajón de resolución), Solicitudes de servicio, Analítica, Configuración, e Importador CSV (pasos 1-2). Quedan sin maquetar, documentados en `diseño.md` con su sección exacta: las pestañas de Precio/Fotos/Especificaciones/Documentos del editor de producto (§11.7) y el paso 3 (aplicar) del importador CSV (§11.8) — ninguno bloquea la implementación, están completamente especificados.
 - [x] **Preparación del entorno** — verificado (2026-09-20): Node.js v22.22.2, npm 10.9.7, Git 2.43.0, Supabase CLI funcional vía `npx`. Todo cumple lo requerido en `arquitectura.md` §11.1, nada que instalar en este entorno.
-- [~] **Implementación** — en curso. Primer incremento (2026-09-20): andamiaje de Next.js + 8 migraciones de base de datos. Segundo incremento (2026-09-20): catálogo público (Épica A completa: A1-A4). Ver detalle debajo y "Próxima sesión".
+- [~] **Implementación** — en curso. Primer incremento (2026-09-20): andamiaje de Next.js + 8 migraciones de base de datos. Segundo incremento (2026-09-20): catálogo público (Épica A completa: A1-A4). Tercer incremento (2026-09-21): carrito y cuenta de cliente + pedido/comprobante (Épica B completa + Épica C sin C3). Ver detalle debajo.
 
 ## Decisiones ya tomadas (no volver a preguntar)
 
@@ -357,14 +358,138 @@ salir a producción.
 4. Decidir la ambigüedad de `legal_pages.slug` (punto 2 de arriba) cuando
    se llegue al incremento de contenido editorial — no urge ahora.
 
-### Próximo incremento: carrito y cuenta de cliente (Épica B)
-B1 (carrito: local para visitante, en base de datos con sesión —
-arquitectura.md §9.6), B2 (registro/login/recuperación con Supabase Auth)
-y B3 (direcciones y datos fiscales). Requiere finalmente activar
-`src/server/supabase/server.ts` en flujos de escritura, crear
-`src/lib/supabase/cliente.ts` (cliente de navegador, hasta ahora no hizo
-falta) y `src/middleware.ts` (refresco de sesión). Los botones "Agregar al
-pedido" ya están pintados en el catálogo (ver simplificación #10 arriba):
-ese incremento es cablearlos, no rediseñarlos. También es el momento de
-resolver PA-13 (marcas reales) si ya hay respuesta, y de decidir si el
-selector de cantidad de la PDP pasa a escribir en el carrito real.
+### Tercer incremento completado (2026-09-21): carrito y cuenta de cliente
+(Épica B completa) + pedido, pago por transferencia y comprobante (Épica C,
+**sin C3**)
+
+**Qué se construyó:**
+
+1. **B1 · Carrito.** `CarritoProvider` (cliente): sin sesión vive en
+   `localStorage` (`src/components/providers/CarritoProvider.tsx`), con
+   sesión vive en `carts`/`cart_items` (arquitectura §9.6). Nunca guarda
+   precio, solo intención (SKU/`productId` + cantidad); precio y
+   disponible se resuelven siempre contra `catalogo_productos` en el
+   servidor (B1.3/B1.4, RN-10). Fusión al iniciar sesión
+   (`fusionarCarritoAction`), acotada siempre al disponible actual.
+   Botones "Agregar al pedido"/"Comprar ahora" de la ficha de producto ya
+   quedaron cableados (`AgregarAlPedido.tsx`), cerrando la simplificación
+   #10 del incremento anterior.
+2. **B2 · Cuenta.** Registro (3 pasos, traducción literal de
+   `index.html:950-1023`), login, cierre de sesión, recuperación de
+   contraseña — todo sobre Supabase Auth (`src/server/actions/cuenta.ts`).
+   El trigger `on_auth_user_created` (0002) sigue creando `profiles`
+   automáticamente. Verificación de correo no bloquea la compra (§9.9): si
+   Auth exige confirmación y no regresa sesión, se hace un segundo intento
+   de login automático con la misma contraseña recién creada.
+3. **B3 · Direcciones y datos fiscales.** CRUD completo
+   (`src/server/actions/direcciones.ts` /
+   `src/server/actions/datosFiscales.ts`) usando el cliente CON SESIÓN
+   (RLS `addresses_own`/`billing_profiles_own` ya bastan — no hace falta
+   `service_role` para que alguien edite sus propias filas). RFC validado
+   en formato (12 o 13 caracteres) solo si se activa "Quiero factura".
+4. **C1 · Generar pedido.** Nueva función SQL `crear_pedido()`
+   (`supabase/migrations/0010_pedidos_carrito_b_c.sql`): congela
+   precio/nombre/SKU por partida (D3), valida disponible con el mismo
+   candado `FOR UPDATE` ordenado por id que `apartar_pedido` (§9.1),
+   genera folio único reutilizando `generar_folio()` (formato ya
+   confirmado, AR-4), y si el saldo cubriera el 100% (`total = 0` —
+   **no aplica todavía, ver punto 8**) reutiliza `apartar_pedido()` para
+   entrar directo a `comprobante_recibido` sin romper RN-11. Los datos
+   bancarios para "Datos para transferir" se leen de `settings` (nunca en
+   el código, C1.6); como H4 (pantalla para que el admin los edite) no es
+   parte de este incremento, la pantalla muestra un estado vacío
+   explícito en vez de datos inventados
+   (`src/components/organisms/DatosTransferencia.tsx`).
+5. **C2 · Subir comprobante.** Nueva función SQL `confirmar_comprobante()`
+   (mismo archivo 0010): inserta el comprobante y aparta las piezas en una
+   sola transacción, reusando `apartar_pedido()`. Subida directa
+   navegador→R2 con URL firmada de 5 minutos (arquitectura §7.1,
+   `src/server/storage/firmar.ts`); el servidor nunca recibe el archivo.
+   Tras el `PUT`, se verifica tamaño y **tipo real por magic bytes**
+   (`src/server/domain/comprobantes.ts` — JPG/PNG/PDF/HEIC, probado con
+   casos válidos e inválidos, incluida una extensión que miente sobre el
+   tipo real) antes de confirmar — no solo la extensión ni el
+   `Content-Type` declarado (criterio C2.2).
+6. **C4 · Mis pedidos.** Lista (`/mi-cuenta/pedidos`) y detalle
+   (`/mi-cuenta/pedidos/[folio]`) — folio, fecha, total, estado, señal de
+   progreso (`PasosPedido.tsx`, traducción de `index.html:1110-1121`),
+   productos, dirección y datos fiscales congelados, y el comprobante
+   subido con su estado. El historial de cambios (`order_status_history`)
+   **no** se muestra al cliente a propósito: RLS solo lo deja leer a
+   `admin` (modelo-datos.md §5) — mostrarlo habría requerido saltarse RLS
+   con `service_role` para una lectura que el propio modelo dice que no
+   es del cliente.
+
+**Lo que se dejó fuera, a propósito, y por qué:**
+
+- **C3 (WhatsApp al admin)**: instrucción explícita del encargo. Las
+  funciones `crear_pedido()`/`confirmar_comprobante()` sí encolan en
+  `notification_outbox` los eventos `comprobante.recibido` por canal
+  `correo` y `whatsapp` (ya lo hacía `apartar_pedido()` desde 0008) — el
+  punto de integración queda listo, pero no hay ningún despachador que la
+  procese todavía (ni correo ni WhatsApp salen de verdad en este
+  incremento). Falta construir `src/server/notifications/` completo
+  (§7.3): interfaz `CanalNotificacion`, canal `correo.ts` con Resend,
+  canal `whatsapp.ts` (bloqueado por PA-5) y el cron de reintentos.
+- **D3 (aplicar saldo a favor en el checkout)**: el bloque
+  `showSaldo`/`applySaldo` de `index.html:1069-1074` **no** se tradujo.
+  Épica D (devoluciones) no es parte de este incremento y es la única
+  fuente de saldo — mostrar ese bloque habría simulado una función que
+  ningún cliente puede usar todavía (nadie tiene saldo real). La función
+  SQL `crear_pedido()` sí acepta `p_credit_to_apply` y llama a
+  `aplicar_saldo()` si es mayor a cero — la lógica de servidor ya está
+  lista para cuando exista D2 (resolver devoluciones); en este incremento
+  el llamador de TypeScript siempre manda `0`.
+- **Nav de "Mi cuenta"**: se construyeron 4 secciones (Mis pedidos, Mis
+  datos, Direcciones, Datos de facturación) de las 7 que lista
+  `index.html:2671` (`acctNav`). Se omitieron "Saldo a favor" y
+  "Devoluciones" — mismo motivo que el punto anterior: son pantallas de
+  Épica D, enlazarlas habría sido navegación a un lugar que no existe.
+- **Panel admin / C5**: fuera de alcance de este incremento (Épica H no
+  arrancó); un pedido nunca avanza de estado sin acción del admin (RN-11)
+  y ese "admin" todavía no tiene panel — es consistente con lo pedido,
+  no un hueco nuevo.
+- **PA-22 (nueva, abierta)**: la pantalla de "Recuperar contraseña" no
+  existe en `index.html` ni en `diseño.md` (fuera de su alcance). Se
+  construyó con el mismo lenguaje visual que login/registro por ser la
+  única referencia disponible. Ver `requerimientos.md` §8.2.
+
+**Validado en este incremento:**
+`npm run build` y `npm run lint` pasan limpio (Next.js 16.3.5 con
+`proxy.ts`, no `middleware.ts` — convención renombrada en esta versión,
+ver `node_modules/next/dist/docs/.../proxy.md`, migrado en este mismo
+incremento). Los esquemas Zod (RFC, dirección, registro) y la detección de
+tipo real de archivo por magic bytes (`server/domain/comprobantes.ts`) se
+probaron con `npx tsx` contra casos válidos e inválidos — todos con el
+resultado esperado. **No se pudo validar `crear_pedido()` ni
+`confirmar_comprobante()` contra un Postgres real** (mismo bloqueo de red
+que el primer incremento: `supabase start` no puede descargar imágenes
+Docker en este entorno, y este agente no tiene permiso para crear un rol
+de prueba en el Postgres nativo local sin usar `sudo`/`su`, bloqueados
+aquí por seguridad del worktree). Mitigación aplicada: ambas funciones se
+validaron sintácticamente con `libpg-query` (parser real de Postgres,
+`parse()` + `parsePlPgSQL()`, sin errores) y se revisaron a mano
+reutilizando exactamente el patrón ya probado en vivo de `apartar_pedido`/
+`aplicar_saldo`/`generar_folio` (0008) en vez de escribir lógica nueva de
+concurrencia. **Se recomienda correr las 10 migraciones contra un
+Postgres real (nativo o `supabase start`) antes de la siguiente sesión**,
+con el mismo escenario de concurrencia de última pieza que ya se probó
+para 0008, esta vez disparando `crear_pedido()` dos veces con el mismo
+producto casi agotado.
+
+### Próximo incremento: C3 (WhatsApp), Épica D (devoluciones y saldo) o
+panel admin (Épica H)
+
+Con B + C (sin C3) completo, el negocio ya puede operar por transferencia
+de principio a fin salvo por dos huecos: (1) nadie recibe el aviso de un
+comprobante nuevo salvo quien revise `notification_outbox` a mano —
+`src/server/notifications/` (§7.3) es la pieza que falta, empezando por
+el canal de correo (Resend, no bloqueado por PA-5) antes que WhatsApp; y
+(2) no hay panel para que el admin valide nada (C5) — todo pedido con
+comprobante subido queda esperando en `comprobante_recibido` sin quien lo
+mueva a `listo_envio`. Cualquiera de los dos desbloquea el ciclo completo
+de v1 (`.devsquad/requerimientos.md` §1); la decisión de cuál primero es
+de negocio, no técnica. Antes de empezar cualquiera, correr la validación
+contra Postgres real pendiente (punto anterior) — construir sobre
+`crear_pedido()`/`confirmar_comprobante()` sin haberlas visto correr una
+vez es el riesgo más alto que deja este incremento.

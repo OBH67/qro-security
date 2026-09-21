@@ -453,6 +453,12 @@ Criterios:
 | **PA-5b** | Canal para las solicitudes de servicio: ¿correo, WhatsApp o ambos? | Sugerido: correo en v1, WhatsApp cuando PA-5 quede resuelto. |
 | **PA-11** | ¿Existe ya el catálogo en algún archivo (Excel, ERP, sitio del distribuidor)? | Determina qué tan real es F2 y cuánto trabajo manual de captura habrá. **Es la pregunta de mayor impacto en el calendario de lanzamiento.** |
 
+**Nueva, abierta desde este incremento (Épica B + C):**
+
+| # | Pregunta | Efecto | Qué se hizo mientras tanto |
+|---|---|---|---|
+| **PA-22** | La pantalla de "Recuperar contraseña" (B2.4) no está en `index.html` (el demo solo simula el enlace "¿Olvidaste tu contraseña?" con un mensaje de juguete, sin pantalla real) ni en `diseño.md` (fuera de su alcance, que es solo el panel admin). ¿Se aprueba la forma construida — mismo lenguaje visual que login/registro, un solo campo de correo — o la dueña quiere algo distinto? | Cosmético, no bloquea nada | Se construyó siguiendo la misma paleta/tipografía/estructura de campos que login y registro (única referencia disponible), documentado en el código (`src/components/organisms/RecuperarForm.tsx`). |
+
 ### 8.3 Dependencias externas a gestionar desde ya (tardan, no dependen del código)
 
 1. **Alta de WhatsApp Business API** ante Meta o el proveedor elegido: requiere número dedicado y verificación del negocio; suele tardar días o semanas.
