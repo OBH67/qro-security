@@ -29,6 +29,15 @@ export function CheckoutForm({
   const [agree, setAgree] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Llave de idempotencia (0011): se genera UNA sola vez por montaje del
+  // componente, no en cada clic — así un doble clic, un reintento de red o
+  // dos pestañas con el MISMO montaje mandan la misma llave, y el servidor
+  // regresa el mismo pedido en vez de duplicarlo. Se guarda en estado de
+  // React, a propósito, NO en sessionStorage: un refresh de /pagar es, para
+  // este negocio, un intento de compra distinto (el usuario pudo cambiar de
+  // opinión sobre el carrito), así que debe generar una llave nueva — y un
+  // remount de React ya hace eso solo, sin código adicional.
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
 
   async function generar() {
     setError(null);
@@ -46,6 +55,7 @@ export function CheckoutForm({
       wantsInvoice,
       billingProfileId: wantsInvoice ? billingProfileId : undefined,
       agree: true,
+      idempotencyKey,
     });
     setEnviando(false);
     if (!resultado.ok) {
