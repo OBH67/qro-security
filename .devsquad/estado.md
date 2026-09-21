@@ -5,10 +5,11 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 Última actualización: 2026-09-21
 
 ## Fase actual
-**Implementación en curso — decimoséptimo incremento (2026-09-21):
-catálogo público, filtros enriquecidos (rediseño pedido por la dueña
-sobre una referencia visual de otro sitio). El panel admin sigue con
-el paso 3 del Importador CSV como único pendiente. Ver detalle debajo.**
+**Implementación en curso — decimoctavo incremento (2026-09-21):
+encabezado y barra de filtros del catálogo con comportamiento de scroll
+(se revirtió una desviación anterior del demo, a pedido explícito de la
+dueña). El panel admin sigue con el paso 3 del Importador CSV como único
+pendiente. Ver detalle debajo.**
 
 ## Progreso por fases
 
@@ -1707,3 +1708,69 @@ tomó una captura del listado de Videovigilancia mostrando las 4
 secciones del panel (Promociones/Marca/Precio/Resolución) y la marca en
 las tarjetas, y otra tras aplicar el filtro de atributo confirmando que
 el conteo bajó de 5 a 2 resultados con el chip correcto.
+
+### Decimoctavo incremento (2026-09-21): encabezado con scroll +
+barra de filtros pegajosa en catálogo móvil
+
+La dueña compartió capturas de otros sitios (con una barra de filtros
+compacta que se queda fija arriba al hacer scroll en móvil) y pidió ese
+comportamiento. Al investigar el patrón equivalente en `index.html`
+(`floatNavStyle`, `onScroll`, líneas 1991-2004/2139) se encontró que
+**una sesión anterior había revertido deliberadamente ese comportamiento**
+para todo el sitio (`EncabezadoSitio.tsx`, comentario de cabecera,
+documentado como "pedido explícito de la dueña" porque consideraron que
+el comportamiento del demo era un bug). Se le preguntó a la dueña si
+confirmaba revertir esa decisión anterior — **confirmó que sí**, así que
+esta tanda deshace esa desviación y además resuelve el pedido nuevo de
+la barra de filtros en móvil, que no tiene precedente en `index.html`
+(se construyó aparte, con el mismo mecanismo de `position:sticky`).
+
+**Qué se construyó:**
+
+1. **`EncabezadoSitio.tsx`** — el encabezado principal vuelve a ser
+   `position:relative` (como el demo): en vez de sobreponerse siempre al
+   contenido, se va con la página al hacer scroll (en la portada, con el
+   hero, por eso el degradado que ya solo aplica en `/` — esa primera
+   desviación del comentario de cabecera SÍ se mantiene, la dueña no pidió
+   revertirla). Se agregó la barra flotante compacta (traducción literal
+   de index.html:39-60): oculta por default, aparece solo al hacer scroll
+   hacia arriba estando a más de 80px del top, se oculta de nuevo al bajar
+   o acercarse al top — mismo estado que `floatNav` del demo, con la
+   misma lógica exacta de `onScroll` (index.html:1991-2004) traducida a
+   un `useEffect` con `window.scrollY`. Se quitó la medición de
+   `--header-height` con `ResizeObserver` (ya no hace falta: el
+   encabezado no se sobrepone a nada) y `LayoutTienda.tsx` ya no compensa
+   con `padding-top`.
+2. **`BarraFiltrosMovil.tsx`** (nuevo) + `ListadoCatalogo.tsx` — en
+   catálogo móvil, un disparador "Filtros y orden" (index.html:596) que
+   abre un cajón deslizante desde abajo con el `PanelFiltros` completo
+   (index.html:600/2402, `filterPanelStyle`) — cajón que el sitio nunca
+   había tenido: antes `PanelFiltros` solo se apilaba completo arriba de
+   la cuadrícula en móvil, ocupando toda la pantalla. El disparador es
+   `position:sticky`, así que al hacer scroll hacia abajo (una vez que el
+   encabezado —ya `position:relative`— sale de vista) queda pegado arriba
+   con solo el acceso a filtros; al volver al inicio de la página el
+   encabezado completo reaparece de forma natural, sin JS adicional.
+   **Bug real encontrado y corregido durante la propia verificación**: el
+   primer intento envolvía el disparador en un `<div>` aparte con la
+   clase que lo muestra/oculta por media query — `position:sticky` se
+   "pega" dentro de los límites de su contenedor de bloque más cercano
+   (su padre inmediato), y ese `<div>` envoltorio medía exactamente lo
+   alto del botón, sin margen para quedarse pegado mientras se hacía
+   scroll por el resto de la página (se iba con el scroll como si fuera
+   `position:static`). Se corrigió poniendo la clase de visibilidad en el
+   mismo nodo que `position:sticky`, para que su padre real sea la
+   `<section>` completa (alta, con espacio de sobra).
+
+**Validado con el servidor de desarrollo corriendo de verdad** (Playwright
+vía navegador real, no solo lectura de código): en escritorio, captura en
+el top de la portada (encabezado con degradado del hero), al hacer scroll
+hacia abajo (encabezado completamente fuera de vista) y al hacer scroll
+hacia arriba (barra flotante compacta visible: logo, buscador, cuenta,
+carrito). En móvil, captura en el top del catálogo (encabezado completo +
+disparador de filtros debajo del banner), al hacer scroll (disparador
+pegado arriba, encabezado fuera de vista — se verificó primero que
+`getBoundingClientRect().top` daba negativo, confirmando el bug antes de
+corregirlo, y `0` después), y con el cajón de filtros abierto mostrando
+las 4 secciones completas. `npx tsc --noEmit`, `npm run build` y
+`npm run lint` limpios (mismos 14 warnings preexistentes).

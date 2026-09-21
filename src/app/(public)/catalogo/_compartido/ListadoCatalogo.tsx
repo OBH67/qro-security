@@ -11,6 +11,7 @@ import { leerFiltros, type SearchParamsCrudos } from "@/lib/filtros";
 import { mapearTarjetaProducto } from "@/lib/producto";
 import { Migas, type MigaItem } from "@/components/molecules/Migas";
 import { PanelFiltros, ChipsFiltrosActivos } from "@/components/organisms/PanelFiltros";
+import { BarraFiltrosMovil } from "@/components/organisms/BarraFiltrosMovil";
 import { BannerCatalogo } from "@/components/organisms/BannerCatalogo";
 import { CuadriculaProductos } from "@/components/organisms/CuadriculaProductos";
 import { Paginacion } from "@/components/molecules/Paginacion";
@@ -82,8 +83,22 @@ export async function ListadoCatalogo({
         <BannerCatalogo banner={banner} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,260px) minmax(0,1fr)", gap: 32, alignItems: "start" }} className="listado-grid">
+      {/* Móvil: disparador pegajoso ("Filtros y orden") que abre un cajón
+          desde abajo (index.html:596/600) — oculto en escritorio.
+          `position:sticky` "se pega" dentro de los límites de su
+          contenedor de bloque más cercano — por eso la clase que lo
+          muestra/oculta va en el MISMO nodo que `position:sticky`, nunca
+          en un `<div>` envoltorio aparte que solo mide lo alto de la
+          barra: si el contenedor termina ahí, no hay margen para que se
+          quede pegada mientras se hace scroll por el resto de la página. */}
+      <BarraFiltrosMovil resultados={total} className="filtros-barra-movil-envoltura">
         <PanelFiltros basePath={basePath} filtros={filtros} opcionesMarca={opcionesMarca} facetasAtributo={facetasAtributo} />
+      </BarraFiltrosMovil>
+
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,260px) minmax(0,1fr)", gap: 32, alignItems: "start" }} className="listado-grid">
+        <div className="filtros-panel-escritorio">
+          <PanelFiltros basePath={basePath} filtros={filtros} opcionesMarca={opcionesMarca} facetasAtributo={facetasAtributo} />
+        </div>
 
         <div>
           <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", paddingBottom: 16, borderBottom: "1px solid var(--border)" }}>
@@ -109,8 +124,11 @@ export async function ListadoCatalogo({
       </div>
 
       <style>{`
+        .filtros-barra-movil-envoltura { display: none; }
         @media (max-width: 900px) {
           .listado-grid { grid-template-columns: 1fr !important; }
+          .filtros-panel-escritorio { display: none; }
+          .filtros-barra-movil-envoltura { display: block; }
         }
       `}</style>
     </section>

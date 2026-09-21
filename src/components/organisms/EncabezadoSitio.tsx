@@ -15,9 +15,11 @@ import { useCarrito } from "@/components/providers/CarritoProvider";
  * "Regla de traducción a código"): un token que vale lo mismo no sustituye
  * al valor literal en este archivo.
  *
- * Dos desviaciones deliberadas frente al demo, pedidas explícitamente por
- * la dueña porque el propio `index.html` tiene el bug (no es traducción
- * literal en estos dos puntos, a propósito):
+ * Una desviación deliberada frente al demo (la única que queda — ver
+ * historial de este archivo para la otra, revertida el 2026-09-21 a
+ * pedido de la dueña: el encabezado principal volvió a ser
+ * `position:relative`, como el demo, con la barra flotante compacta
+ * reapareciendo según scroll):
  * 1. **Degradado solo en la portada.** En el demo `headerStyle`
  *    (index.html:2136) usa el degradado del hero (`hs.a`/`hs.b`) en TODAS
  *    las pantallas — al entrar al catálogo, producto, etc. el encabezado
@@ -28,14 +30,15 @@ import { useCarrito } from "@/components/providers/CarritoProvider";
  *    un fondo sólido oscuro fijo. El carrusel real de banners de la
  *    portada (`BannerHero`) sigue siendo independiente (lee `banners` de
  *    la base de datos).
- * 2. **Encabezado fijo, sin empujar el contenido.** En el demo el
- *    encabezado principal es `position:relative` (empuja el contenido) y
- *    solo la barra compacta (`floatNavStyle`, index.html:2139) es
- *    `position:fixed`, apareciendo/desapareciendo según la dirección del
- *    scroll. Aquí el encabezado principal es siempre `position:fixed` y
- *    se sobrepone al contenido (que hace scroll por debajo, compensado con
- *    `--header-height` — ver `LayoutTienda.tsx`); no existe una segunda
- *    barra flotante porque ya no hace falta.
+ *
+ * **Barra flotante compacta** (index.html:39-60, `floatNavStyle`
+ * index.html:2139, lógica de scroll index.html:1991-2004): traducción
+ * literal. El encabezado principal es `position:relative` — al hacer
+ * scroll se va con el contenido (en la portada, con el hero). La barra
+ * compacta es `position:fixed`, oculta por default; se muestra solo al
+ * hacer scroll hacia arriba y estando a más de 80px del top; se oculta
+ * de nuevo al hacer scroll hacia abajo o al llegar cerca del top
+ * (`useBarraFlotante`, mismo estado que `floatNav` del demo).
  */
 
 const HERO_SLIDES = [
@@ -124,7 +127,6 @@ export function EncabezadoSitio({
   const [flash, setFlash] = useState(false);
   const carrito = useCarrito();
   const cantidadPrevia = useRef(carrito.cantidadTotal);
-  const coreRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const esHome = pathname === "/";
 
@@ -148,20 +150,28 @@ export function EncabezadoSitio({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Mide solo la parte siempre visible del encabezado (fila principal +
-  // chips/nav) — NO el mega-menú ni el panel de servicios, que deben
-  // flotar sobre el contenido sin cambiar el espacio que le reservamos
-  // (comentario de cabecera, punto 2). Se expone como variable CSS para
-  // que `LayoutTienda` compense con `padding-top` sin necesitar contexto.
+  // Barra flotante compacta — index.html:1991-2004 (`onScroll`), traducción
+  // literal: oculta a menos de 80px del top, oculta al bajar, visible al
+  // subir.
+  const [barraFlotanteVisible, setBarraFlotanteVisible] = useState(false);
   useEffect(() => {
-    const el = coreRef.current;
-    if (!el) return;
-    const aplicar = () => document.documentElement.style.setProperty("--header-height", `${el.offsetHeight}px`);
-    aplicar();
-    const observer = new ResizeObserver(aplicar);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [esMovil]);
+    let ultimoY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const subiendo = y < ultimoY;
+      const bajando = y > ultimoY;
+      ultimoY = y;
+      setBarraFlotanteVisible((actual) => {
+        if (y < 80) return false;
+        if (bajando) return false;
+        if (subiendo) return true;
+        return actual;
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // Destello del botón de carrito al agregar algo — index.html:2189 (`s.flash`).
   useEffect(() => {
@@ -176,16 +186,75 @@ export function EncabezadoSitio({
 
   return (
     <>
-      {/* Encabezado principal — index.html:62-225. Fijo, se sobrepone al
-          contenido en vez de empujarlo (punto 2 del comentario de
-          cabecera); ya no existe una barra flotante separada. */}
-      <header
+      {/* Barra flotante compacta — index.html:39-60. Oculta por default,
+          `translateY(-100%)` + `opacity:0` cuando no debe verse (mismo
+          patrón que el demo: siempre montada, se anima con `transform`). */}
+      <div
         style={{
           position: "fixed",
           top: 0,
           left: 0,
           right: 0,
           zIndex: 80,
+          transition: "transform 260ms ease, opacity 260ms ease",
+          transform: barraFlotanteVisible ? "translateY(0)" : "translateY(-100%)",
+          opacity: barraFlotanteVisible ? 1 : 0,
+          background: "#07111CF2",
+          backdropFilter: "blur(8px)",
+          borderBottom: "1px solid #1F3244",
+        }}
+      >
+        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "10px 16px", display: "flex", gap: 12, alignItems: "center" }}>
+          {esMovil && (
+            <button
+              type="button"
+              aria-label="Abrir menú"
+              onClick={() => {
+                setMenuMovilAbierto(true);
+                setGrupoMovil(null);
+                setPilaSubMovil([]);
+              }}
+              style={{ width: 40, height: 40, display: "grid", placeItems: "center", border: "1px solid #1F3244", flex: "0 0 auto" }}
+            >
+              <IconoMenu tamano={18} />
+            </button>
+          )}
+          <Link href="/" aria-label="Inicio" style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flex: "0 0 auto", display: "block" }}>
+            <Image src={LOGO_SRC} alt="SGQ" width={36} height={36} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          </Link>
+          <form action="/buscar" method="GET" style={{ flex: 1, minWidth: 0 }}>
+            <input
+              type="search"
+              name="q"
+              placeholder="Busca por producto, marca o SKU"
+              aria-label="Buscar"
+              style={{ width: "100%", padding: "9px 12px", background: "#0F1D2B", border: "1px solid #1F3244", borderRadius: 4, color: "#EAF2F8", fontSize: 14 }}
+            />
+          </form>
+          <Link href={sesion ? "/mi-cuenta/pedidos" : "/ingresar"} aria-label="Mi cuenta" style={{ width: 40, height: 40, display: "grid", placeItems: "center", color: "#EAF2F8", flex: "0 0 auto" }}>
+            <IconoCuenta tamano={20} />
+          </Link>
+          <Link
+            href="/carrito"
+            aria-label={`Mi pedido, ${carrito.cantidadTotal} productos`}
+            style={{ display: "flex", gap: 6, alignItems: "center", padding: "9px 12px", background: "#3CE7FF", color: "#07111C", flex: "0 0 auto" }}
+            className="clip-corner-sm"
+          >
+            <IconoCarrito tamano={19} />
+            <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 13, fontWeight: 500 }}>{carrito.cantidadTotal}</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Encabezado principal — index.html:62-225. `position:relative`: se
+          va con el contenido al hacer scroll (en la portada, con el hero,
+          por eso el degradado de arriba) — la barra flotante de arriba es
+          la que cubre la navegación mientras el encabezado no está a la
+          vista. */}
+      <header
+        style={{
+          position: "relative",
+          zIndex: 5,
           backdropFilter: "blur(8px)",
           borderBottom: "1px solid #FFFFFF1A",
           background: esHome
@@ -193,7 +262,6 @@ export function EncabezadoSitio({
             : "#07111CF2",
         }}
       >
-        <div ref={coreRef}>
         <div
           style={{
             maxWidth: 1400,
@@ -411,9 +479,6 @@ export function EncabezadoSitio({
             </div>
           </div>
         )}
-        </div>
-        {/* fin del bloque medido por coreRef — lo de abajo flota sobre el
-            contenido sin cambiar `--header-height` */}
 
         {/* Panel de servicios — index.html:177-188 */}
         {servAbierto && (
