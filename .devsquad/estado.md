@@ -5,9 +5,9 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 Última actualización: 2026-09-21
 
 ## Fase actual
-**Implementación en curso — decimocuarto incremento (panel admin, sexta
-tanda: D2 Devoluciones) terminado. Ver plan de incrementos restante al
-final de este documento.**
+**Implementación en curso — decimoquinto incremento (panel admin, séptima
+tanda: E2 Solicitudes de servicio) terminado. Ver plan de incrementos
+restante al final de este documento.**
 
 ## Progreso por fases
 
@@ -19,7 +19,7 @@ final de este documento.**
 - [x] **Diseño de UI del panel administrativo** — `.devsquad/diseño.md` (1885 líneas): tokens heredados del demo del sitio público con 3 correcciones de contraste WCAG AA, navegación por rol, Atomic Design, y las 13 pantallas con sus estados. Incluye el tablero completo (G2, adelantado a V1 el 2026-09-20) con 6 gráficas justificadas y paleta de datos separada de los colores semánticos de estado. **Aprobado por la dueña (2026-09-20).**
 - [x] **Maqueta visual interactiva (Artifact)** — construida sobre `diseño.md`: Login, Tablero completo, Pedidos, Detalle de pedido (normal y variante RN-11), Catálogo, Alta de producto (con el selector de categoría de 3 niveles usando la taxonomía real de 54 subcategorías), Categorías (árbol D7), Devoluciones (con cajón de resolución), Solicitudes de servicio, Analítica, Configuración, e Importador CSV (pasos 1-2). Quedan sin maquetar, documentados en `diseño.md` con su sección exacta: las pestañas de Precio/Fotos/Especificaciones/Documentos del editor de producto (§11.7) y el paso 3 (aplicar) del importador CSV (§11.8) — ninguno bloquea la implementación, están completamente especificados.
 - [x] **Preparación del entorno** — verificado (2026-09-20): Node.js v22.22.2, npm 10.9.7, Git 2.43.0, Supabase CLI funcional vía `npx`. Todo cumple lo requerido en `arquitectura.md` §11.1, nada que instalar en este entorno.
-- [~] **Implementación** — en curso. Primer incremento (2026-09-20): andamiaje de Next.js + 8 migraciones de base de datos. Segundo incremento (2026-09-20): catálogo público (Épica A completa: A1-A4). Tercer incremento (2026-09-21): carrito y cuenta de cliente + pedido/comprobante (Épica B completa + Épica C sin C3). Panel admin en curso desde el noveno incremento (base/tablero); decimocuarto incremento (2026-09-21) es la sexta tanda, Devoluciones (D2). Ver detalle debajo.
+- [~] **Implementación** — en curso. Primer incremento (2026-09-20): andamiaje de Next.js + 8 migraciones de base de datos. Segundo incremento (2026-09-20): catálogo público (Épica A completa: A1-A4). Tercer incremento (2026-09-21): carrito y cuenta de cliente + pedido/comprobante (Épica B completa + Épica C sin C3). Panel admin en curso desde el noveno incremento (base/tablero); decimoquinto incremento (2026-09-21) es la séptima tanda, Solicitudes de servicio (E2). Ver detalle debajo.
 
 ## Decisiones ya tomadas (no volver a preguntar)
 
@@ -1504,20 +1504,59 @@ script standalone — mismo límite documentado en tandas anteriores.
 `npx tsc --noEmit`, `npm run build` y `npm run lint` limpios (mismos 12
 warnings preexistentes, 0 errores).
 
+### Decimoquinto incremento (2026-09-21): panel admin, séptima tanda —
+Solicitudes de servicio (E2)
+
+**Qué se construyó** — traducción literal de
+`panel-admin-maqueta.html:851-910` (`isSolicitudes`): bandeja con
+búsqueda + filtro por servicio + chips de estado, cajón de contacto.
+Solo `admin` (H5.1). Más simple que Devoluciones/Pedidos porque
+`service_requests` no mueve inventario ni dinero, así que no hizo falta
+ninguna función SQL nueva — mismo razonamiento ya usado para
+`crearSolicitudServicio()` (E1):
+
+1. **`queries/admin/solicitudes.ts`** — bandeja filtrable por estado,
+   tipo de servicio y búsqueda (nombre/correo/teléfono), con conteos por
+   estado para los chips. Cada fila ya trae todos los campos capturados,
+   así que el cajón de detalle no necesita una consulta aparte (a
+   diferencia de Devoluciones, que sí agrega datos de varias tablas).
+2. **`mutations/admin/solicitudes.ts`** — `actualizarEstadoSolicitud()`,
+   un `update` directo con `service_role` (sin función SQL: no hay
+   concurrencia que proteger).
+3. **`actions/admin/solicitudes.ts`** — `marcarEnSeguimientoAction()` /
+   `marcarCerradaAction()`, mismo patrón de guardia que el resto del
+   panel.
+4. **UI** (`TablaSolicitudesAdmin.tsx` + `admin/solicitudes/page.tsx`) —
+   tabla + cajón con los 3 botones de contacto directo (`tel:`,
+   `wa.me`, `mailto:`, sin integración real — igual que la maqueta) y
+   las acciones de cambio de estado.
+5. **`/api/admin/solicitudes/exportar`** — CSV, mismo patrón que
+   `/api/admin/pedidos/exportar` (E2.4).
+
+**Validado contra Postgres 16 + PostgREST real** (mismo criterio de
+`server-only` neutralizado temporalmente): se creó una solicitud real vía
+`generar_folio()` + insert directo, y se probó `actualizarEstadoSolicitud()`
+de nueva → contactada → cerrada, confirmando en cada paso el `status` y
+que `assigned_to` quedó con el id de quien resolvió. Se aprovechó la
+misma corrida para volver a probar `resolver_devolucion()` end-to-end
+(el entorno de Postgres/PostgREST/proxy local se había caído entre
+sesiones y se reinició) — sin regresiones. `npx tsc --noEmit`, `npm run
+build` y `npm run lint` limpios (mismos 12 warnings preexistentes).
+
 ### Plan de incrementos restante del panel admin
 
-El panel tiene 13 pantallas en la maqueta. Van seis tandas: base
+El panel tiene 13 pantallas en la maqueta. Van siete tandas: base
 (acceso, roles, tablero), Pedidos, Catálogo (alta/edición), Categorías,
-Importador CSV, y Devoluciones. Quedan, en el orden recomendado:
+Importador CSV, Devoluciones, y Solicitudes de servicio. Quedan, en el
+orden recomendado:
 
-1. **Solicitudes de servicio (E2)** — bandeja + cajón.
-2. **Analítica (G1) y Configuración (H4)** — Analítica reutiliza las
+1. **Analítica (G1) y Configuración (H4)** — Analítica reutiliza las
    queries de "más/menos vendidos" del tablero; Configuración escribe en
    `settings` (ya leído desde el lado del cliente en varios lugares —
    C1.6, D1.1, D3 — así que un cambio ahí ya se refleja del lado público
    sin tocar ese código), usando la misma `admin_change_log` del
    decimoprimer incremento (H4.3).
-3. **Importador CSV, paso 3 ("Aplicar")** — pendiente real, no
+2. **Importador CSV, paso 3 ("Aplicar")** — pendiente real, no
    planeado para una tanda específica todavía: requiere una tabla de
    trabajos por lotes y un procesamiento en segundo plano
    (`arquitectura.md` §9.5), infraestructura que no existe hoy.
