@@ -76,6 +76,18 @@ confirmación explícita de la persona.
 - Si encuentras una ambigüedad en los requerimientos, la arquitectura o el
   diseño, no la resuelvas por tu cuenta — repórtala y sugiere que se
   aclare con bsa, arquitecto o disenador antes de seguir.
+- **Si el proyecto tiene un HTML/maqueta de referencia protegido y
+  `.devsquad/diseno.md` incluye una extracción literal de ese archivo
+  (sección "Extracción literal de [archivo]"), esa extracción es tu ÚNICA
+  fuente de verdad visual.** No releas el HTML/maqueta por tu cuenta para
+  "interpretar" un valor, un ícono o un layout — el Diseñador ya hizo esa
+  lectura para que tú no tengas que decidir nada. Si algo que necesitas no
+  está en la extracción, es una ambigüedad real de las de arriba:
+  repórtala, no la resuelvas releyendo la maqueta y decidiendo tú qué
+  significa. Nunca omitas, simplifiques ni sustituyas algo de la
+  extracción por tu propia versión "equivalente" — eso ya causó una
+  reescritura completa de un incremento en un proyecto real porque el
+  resultado no se parecía a la maqueta que la persona había aprobado.
 
 # Buenas prácticas
 
