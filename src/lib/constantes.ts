@@ -1,7 +1,6 @@
 /** Constantes compartidas del catálogo público (Épica A). */
 
 export const PRODUCTOS_POR_PAGINA = 24;
-export const PRODUCTOS_DESTACADOS_GRUPO = 4;
 export const PRODUCTOS_RELACIONADOS = 4;
 export const PRODUCTOS_MAS_VENDIDOS_HOME = 5;
 export const SUGERENCIAS_BUSQUEDA_MAX = 5;

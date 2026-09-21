@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { resolverRutaCatalogo } from "@/server/db/queries/catalogo";
+import { resolverRutaCatalogo, obtenerSubcategoriasHijas } from "@/server/db/queries/catalogo";
 import { ListadoCatalogo } from "@/app/(public)/catalogo/_compartido/ListadoCatalogo";
 import type { SearchParamsCrudos } from "@/lib/filtros";
 import type { MigaItem } from "@/components/molecules/Migas";
@@ -22,6 +22,14 @@ export default async function PaginaSubcategoria({
   const ruta = await resolverRutaCatalogo(grupoSlug, subcategoria);
   if (!ruta) notFound();
 
+  // D7: "si estás en subcategorías dentro de categorías se muestran las
+  // categorías de nivel 3" — la sección "Categorías" del panel siempre
+  // muestra el siguiente nivel del árbol, las hijas directas de la hoja
+  // actual (vacío si ya no hay más niveles, y el panel simplemente no
+  // la muestra).
+  const subcategoriasHijas = await obtenerSubcategoriasHijas(ruta.grupo.id, ruta.hoja.id);
+  const basePathActual = `/catalogo/${ruta.grupo.slug}/${subcategoria.join("/")}`;
+
   const migas: MigaItem[] = [
     { label: "Inicio", href: "/" },
     { label: ruta.grupo.name, href: `/catalogo/${ruta.grupo.slug}` },
@@ -38,8 +46,9 @@ export default async function PaginaSubcategoria({
       subcategoryIds={ruta.idsAlcance}
       migas={migas}
       titulo={ruta.hoja.name}
-      basePath={`/catalogo/${ruta.grupo.slug}/${subcategoria.join("/")}`}
+      basePath={basePathActual}
       searchParams={sp}
+      categorias={subcategoriasHijas.map((s) => ({ slug: s.slug, name: s.name, conteo: s.conteo, href: `${basePathActual}/${s.slug}` }))}
     />
   );
 }

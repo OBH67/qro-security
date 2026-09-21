@@ -29,16 +29,25 @@ const PROMOCIONES: { valor: CondicionProducto; label: string }[] = [
  * (D1) — cierran PA-17 para las categorías que ya tienen atributos
  * declarados; las que no, simplemente no muestran esa sección.
  */
+export interface CategoriaNav {
+  slug: string;
+  name: string;
+  conteo: number;
+  href: string;
+}
+
 export function PanelFiltros({
   basePath,
   filtros,
   opcionesMarca,
   facetasAtributo,
+  categorias,
 }: {
   basePath: string;
   filtros: FiltrosListado;
   opcionesMarca: OpcionMarca[];
   facetasAtributo: FacetaAtributo[];
+  categorias?: CategoriaNav[];
 }) {
   const [busquedaMarca, setBusquedaMarca] = useState("");
   const marcasFiltradas = busquedaMarca.trim()
@@ -55,6 +64,23 @@ export function PanelFiltros({
 
   return (
     <aside style={{ display: "flex", flexDirection: "column", gap: 26 }}>
+      {categorias && categorias.length > 0 && (
+        <div>
+          <TituloSeccion>Categorías</TituloSeccion>
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            {categorias.map((c) => (
+              <Link key={c.slug} href={c.href} style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 14, color: "var(--text-secondary)" }}>
+                <span style={{ flex: 1 }}>{c.name}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>{c.conteo}</span>
+                <span aria-hidden="true" style={{ color: "var(--text-dim)" }}>
+                  ›
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div>
         <TituloSeccion>Promociones</TituloSeccion>
         <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>

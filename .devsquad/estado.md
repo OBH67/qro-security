@@ -5,10 +5,10 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 Última actualización: 2026-09-21
 
 ## Fase actual
-**Implementación en curso — decimoctavo incremento (2026-09-21):
-encabezado y barra de filtros del catálogo con comportamiento de scroll
-(se revirtió una desviación anterior del demo, a pedido explícito de la
-dueña). El panel admin sigue con el paso 3 del Importador CSV como único
+**Implementación en curso — decimonoveno incremento (2026-09-21): la
+página de categoría (grupo) usa el mismo panel de filtros que una
+subcategoría, con una nueva sección "Categorías" que navega el árbol por
+nivel. El panel admin sigue con el paso 3 del Importador CSV como único
 pendiente. Ver detalle debajo.**
 
 ## Progreso por fases
@@ -1773,4 +1773,58 @@ pegado arriba, encabezado fuera de vista — se verificó primero que
 `getBoundingClientRect().top` daba negativo, confirmando el bug antes de
 corregirlo, y `0` después), y con el cajón de filtros abierto mostrando
 las 4 secciones completas. `npx tsc --noEmit`, `npm run build` y
+`npm run lint` limpios (mismos 14 warnings preexistentes).
+
+### Decimonoveno incremento (2026-09-21): página de categoría unificada
+con la de subcategoría + sección "Categorías" en el panel
+
+La dueña notó que el rediseño del panel de filtros (decimoséptimo
+incremento) solo se aplicó a las páginas de subcategoría
+(`/catalogo/[grupo]/[...subcategoria]` y `/todos`), pero `/catalogo/[grupo]`
+(la página de aterrizaje de una categoría) seguía siendo una pantalla
+aparte (tarjetas de subcategoría + destacados, sin filtros ni banner —
+traducción literal de index.html:517-581, `isGroup`). Pidió que entrar a
+una categoría tenga el mismo panel, y que ese panel tenga una sección
+"Categorías" que navegue el árbol: en una categoría se muestran sus
+subcategorías raíz; dentro de una subcategoría se muestran sus hijas
+(el "nivel 3" cuando aplica).
+
+**Qué se construyó:**
+
+1. **`queries/catalogo.ts`** — `obtenerSubcategoriasHijas(groupId,
+   parentId)` (nueva), generaliza `contarProductosPorSubcategoriaRaiz`
+   (eliminada, quedó sin uso) a cualquier profundidad del árbol:
+   `parentId: null` regresa las categorías raíz; `parentId: <id>`
+   regresa las hijas directas de esa subcategoría, cada una con su
+   conteo de productos activos (incluyendo descendientes).
+2. **`PanelFiltros.tsx`** — nueva sección "Categorías" (prop opcional
+   `categorias: CategoriaNav[]`, con `href` ya armado por quien llama):
+   lista de navegación (no checkboxes — son rutas, no filtros
+   multi-selección) con conteo y una `›` indicando que lleva a otra
+   página. Se oculta sola cuando no hay hijas (la hoja más profunda del
+   árbol).
+3. **`/catalogo/[grupo]/page.tsx`** — reescrita por completo: en vez de
+   la pantalla de tarjetas + destacados, ahora renderiza el mismo
+   `ListadoCatalogo` que una subcategoría (banner, Promociones, Marca,
+   Precio, atributos dinámicos, orden, cajón de filtros en móvil), con
+   "Categorías" mostrando las subcategorías raíz del grupo.
+4. **`/catalogo/[grupo]/todos/page.tsx`**: mismo contenido (ya usaba
+   `ListadoCatalogo`), ahora también con la sección "Categorías" —
+   se conserva como ruta aparte porque varios enlaces del sitio
+   (mega-menú, portada, contacto) ya apuntan ahí explícitamente.
+5. **`/catalogo/[grupo]/[...subcategoria]/page.tsx`** — "Categorías"
+   ahora muestra las hijas directas de la hoja actual del árbol (D7),
+   con sus propios `href` construidos sobre la ruta en curso.
+6. Limpieza: `PRODUCTOS_DESTACADOS_GRUPO` (constantes.ts) quedó sin uso
+   y se eliminó junto con la función que reemplazó
+   `obtenerSubcategoriasHijas`.
+
+**Validado con el servidor de desarrollo corriendo de verdad** (captura
+en navegador real en los 3 niveles): entrar a "Videovigilancia" (grupo)
+muestra el panel completo con "Categorías" listando sus 9 subcategorías
+raíz con conteo; entrar a "Cámaras IP y NVRs" (subcategoría nivel 1)
+muestra sus propias hijas (4G, Bala, Cubo, etc.); entrar a "Bala"
+(nivel 2, sin hijas en el catálogo de muestra) esconde la sección
+"Categorías" por completo y muestra el estado vacío correcto (sin
+productos en esa hoja). `npx tsc --noEmit`, `npm run build` y
 `npm run lint` limpios (mismos 14 warnings preexistentes).

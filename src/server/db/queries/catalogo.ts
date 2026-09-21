@@ -182,32 +182,33 @@ export async function resolverRutaCatalogo(
   };
 }
 
-/** Cuenta productos activos por cada subcategoría raíz de un grupo
- * (incluye a sus descendientes) — para el texto "N productos" de la
- * página de grupo. */
-export async function contarProductosPorSubcategoriaRaiz(
-  groupId: string,
-): Promise<Map<string, number>> {
+export interface SubcategoriaHija {
+  id: string;
+  slug: string;
+  name: string;
+  conteo: number;
+}
+
+/** Hijas directas de un nodo del árbol (D7) con conteo de productos
+ * activos, incluyendo a sus propios descendientes — `parentId: null`
+ * regresa las categorías raíz de un grupo; `parentId: <id de una
+ * subcategoría>` regresa sus hijas directas (el "nivel siguiente" del
+ * filtro "Categorías" del panel). */
+export async function obtenerSubcategoriasHijas(groupId: string, parentId: string | null): Promise<SubcategoriaHija[]> {
   const filas = await obtenerSubcategoriasDeGrupo(groupId);
-  const raices = filas.filter((f) => f.parent_id === null);
+  const hijas = filas.filter((f) => f.parent_id === parentId).sort((a, b) => a.position - b.position);
+  if (hijas.length === 0) return [];
 
   const supabase = await crearClienteServidor();
-  const conteos = new Map<string, number>();
-
-  await Promise.all(
-    raices.map(async (raiz) => {
-      const ids = idsSubcategoriaConDescendientes(filas, raiz.id);
-      const { count, error } = await supabase
-        .from("products")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "activo")
-        .in("subcategory_id", ids);
+  const resultados = await Promise.all(
+    hijas.map(async (hija) => {
+      const ids = idsSubcategoriaConDescendientes(filas, hija.id);
+      const { count, error } = await supabase.from("products").select("id", { count: "exact", head: true }).eq("status", "activo").in("subcategory_id", ids);
       if (error) throw new Error(`No se pudo contar productos: ${error.message}`);
-      conteos.set(raiz.id, count ?? 0);
+      return { id: hija.id, slug: hija.slug, name: hija.name, conteo: count ?? 0 };
     }),
   );
-
-  return conteos;
+  return resultados;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

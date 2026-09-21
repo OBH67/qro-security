@@ -10,7 +10,7 @@ import {
 import { leerFiltros, type SearchParamsCrudos } from "@/lib/filtros";
 import { mapearTarjetaProducto } from "@/lib/producto";
 import { Migas, type MigaItem } from "@/components/molecules/Migas";
-import { PanelFiltros, ChipsFiltrosActivos } from "@/components/organisms/PanelFiltros";
+import { PanelFiltros, ChipsFiltrosActivos, type CategoriaNav } from "@/components/organisms/PanelFiltros";
 import { BarraFiltrosMovil } from "@/components/organisms/BarraFiltrosMovil";
 import { BannerCatalogo } from "@/components/organisms/BannerCatalogo";
 import { CuadriculaProductos } from "@/components/organisms/CuadriculaProductos";
@@ -31,6 +31,7 @@ export async function ListadoCatalogo({
   titulo,
   basePath,
   searchParams,
+  categorias,
 }: {
   grupo: GroupRow;
   subcategoryIds?: string[];
@@ -38,6 +39,11 @@ export async function ListadoCatalogo({
   titulo: string;
   basePath: string;
   searchParams: SearchParamsCrudos;
+  /** "Categorías" del panel de filtros (D7): hijas directas del nodo
+   * actual (raíz del grupo o de la subcategoría en curso), cada una ya
+   * con su `href` armado por quien llama — la página resuelve el nivel
+   * exacto porque solo ella conoce en qué punto del árbol está parada. */
+  categorias?: CategoriaNav[];
 }) {
   const filtros = leerFiltros(searchParams);
   const marcas = await obtenerMarcasActivas();
@@ -92,12 +98,12 @@ export async function ListadoCatalogo({
           barra: si el contenedor termina ahí, no hay margen para que se
           quede pegada mientras se hace scroll por el resto de la página. */}
       <BarraFiltrosMovil resultados={total} className="filtros-barra-movil-envoltura">
-        <PanelFiltros basePath={basePath} filtros={filtros} opcionesMarca={opcionesMarca} facetasAtributo={facetasAtributo} />
+        <PanelFiltros basePath={basePath} filtros={filtros} opcionesMarca={opcionesMarca} facetasAtributo={facetasAtributo} categorias={categorias} />
       </BarraFiltrosMovil>
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,260px) minmax(0,1fr)", gap: 32, alignItems: "start" }} className="listado-grid">
         <div className="filtros-panel-escritorio">
-          <PanelFiltros basePath={basePath} filtros={filtros} opcionesMarca={opcionesMarca} facetasAtributo={facetasAtributo} />
+          <PanelFiltros basePath={basePath} filtros={filtros} opcionesMarca={opcionesMarca} facetasAtributo={facetasAtributo} categorias={categorias} />
         </div>
 
         <div>
