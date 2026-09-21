@@ -493,3 +493,112 @@ de negocio, no técnica. Antes de empezar cualquiera, correr la validación
 contra Postgres real pendiente (punto anterior) — construir sobre
 `crear_pedido()`/`confirmar_comprobante()` sin haberlas visto correr una
 vez es el riesgo más alto que deja este incremento.
+
+### Cuarto incremento (2026-09-21): idempotencia de pedidos — cierra un hueco de seguridad real
+
+**El problema:** el backend no tenía ninguna protección contra pedidos
+duplicados por doble clic, reintento de red tras timeout, o el mismo
+cliente confirmando el mismo carrito en dos pestañas. El candado de
+`apartar_pedido()` (0008, §9.1) protege el STOCK entre pedidos de
+clientes DISTINTOS que compiten por el mismo producto, pero no protegía
+contra que el MISMO cliente creara dos pedidos por el mismo carrito.
+
+**Qué se construyó** (`supabase/migrations/0011_idempotencia_pedidos.sql`,
+no se editó 0010 — instrucción explícita):
+
+1. **Llave de idempotencia end-to-end.** `orders.idempotency_key uuid`,
+   índice único COMPUESTO `(user_id, idempotency_key)` (parcial, `where
+   idempotency_key is not null`) — único por CLIENTE, no global, porque la
+   llave la genera el cliente. `crear_pedido()` recibe
+   `p_idempotency_key uuid default null` (parámetro nuevo al final, para
+   no romper llamadas existentes sin llave): si ya existe un pedido de
+   ese cliente con esa llave, lo regresa tal cual en vez de crear uno
+   nuevo. `generarPedidoAction` la exige (`esquemaGenerarPedido.idempotencyKey`,
+   `z.uuid()` obligatorio) — obligatoria desde la Server Action hacia
+   adelante, no a nivel de base de datos (compatibilidad con llamadas
+   internas/pruebas sin llave, como pidió el encargo).
+2. **Candado transaccional por cliente**, mismo patrón que
+   `aplicar_saldo()` (0008): `perform pg_advisory_xact_lock(hashtext(p_user_id::text))`
+   al inicio de `crear_pedido()`, ANTES de la verificación de
+   idempotencia. Cierra la ventana de carrera real: sin este candado, dos
+   llamadas concurrentes con la misma llave podrían ambas llegar al
+   "¿ya existe?" antes de que la primera hiciera commit, y ambas crear su
+   propio pedido — la llave sola no basta bajo concurrencia genuina.
+3. **`confirmar_comprobante()` revisado por el mismo riesgo** (dos
+   subidas simultáneas insertando dos filas en `payment_proofs`).
+   Veredicto documentado en el propio SQL: la función YA estaba protegida
+   por su `select ... for update` sobre la fila del pedido (primera línea
+   del cuerpo desde 0010) combinado con el chequeo de estado estricto de
+   `apartar_pedido()`, que revierte toda la transacción de la segunda
+   llamada — verificado con la prueba de concurrencia (abajo). Se agregó
+   de cualquier forma un `pg_advisory_xact_lock(hashtext(p_order_id::text))`
+   explícito y un chequeo de estado más temprano con mensaje de negocio
+   claro, por consistencia de patrón y para fallar más rápido — no porque
+   hiciera falta para la corrección.
+4. **Frontend.** `CheckoutForm.tsx`: `const [idempotencyKey] =
+   useState(() => crypto.randomUUID())` — se genera UNA vez por montaje
+   del componente (no en cada clic: reintentos/doble clic dentro de la
+   misma pantalla reusan la misma llave) y se guarda en estado de React,
+   a propósito, no en `sessionStorage`: un refresh de `/pagar` es, para
+   este negocio, un intento de compra distinto (decisión técnica
+   documentada en el propio SQL, no una pregunta abierta — el usuario
+   pudo cambiar de opinión sobre el carrito entre un refresh y el
+   siguiente). Un remount de React ya genera la llave nueva solo. El
+   formulario de comprobante no necesitó cambios: `confirmar_comprobante()`
+   ya es idempotente por el mecanismo del punto 3, sin necesitar una
+   llave adicional del cliente.
+5. **Bug preexistente encontrado y corregido en el camino** (no
+   introducido en este incremento, bloqueaba la prueba de concurrencia
+   que este mismo incremento exige correr): `crear_pedido()` y
+   `confirmar_comprobante()` (0010) insertaban `source = 'cliente'` en
+   `order_status_history`, pero el `CHECK` de esa columna (0004) solo
+   permitía `'panel' | 'correo' | 'sistema'` — es decir, **toda llamada
+   real a `crear_pedido()` fallaba** desde que se escribió 0010, nunca se
+   había probado contra un Postgres real (confirma la advertencia del
+   incremento anterior: "no se pudo validar... contra un Postgres real").
+   Se corrigió el `CHECK` para incluir `'cliente'`, en la misma migración
+   0011 donde se detectó.
+
+**Cómo se probó (de verdad, no solo que compilara):**
+
+- **Bloqueo real de este entorno, superado igual que en el incremento
+  anterior:** `npx supabase start` sigue sin poder descargar imágenes
+  Docker aquí. Esta vez sí fue posible instalar y arrancar Postgres 16
+  nativo (`apt`, ya presente) como root, simulando con un harness mínimo
+  los roles (`anon`/`authenticated`/`service_role`/`supabase_auth_admin`),
+  `auth.users` y `auth.uid()`/`auth.jwt()` — y aplicar las 11 migraciones
+  en orden, de punta a punta, sin errores, contra una base limpia.
+- **Prueba de concurrencia real** (no simulada, no solo revisión de
+  código): dos transacciones separadas (`psql` en dos procesos de
+  sistema operativo distintos), sincronizadas con una barrera explícita
+  en base de datos para forzar que ambas ejecuten `crear_pedido()` con
+  el **mismo** `user_id`/`idempotency_key`/`items` en el mismo instante
+  (arrancaron con **5 ms** de diferencia, verificado con
+  `clock_timestamp()`). Resultado: **un solo pedido** (`SGQ-B8DK8J`),
+  confirmado con `select count(*) ... where idempotency_key = '...'` → 1.
+  La segunda transacción esperó el candado advisory, vio el pedido ya
+  comiteado por la primera, y lo devolvió tal cual — sin duplicar.
+- Misma prueba para `confirmar_comprobante()`: dos transacciones
+  concurrentes (100 microsegundos de diferencia) confirmando el mismo
+  pedido con distinto archivo de comprobante. Resultado: **un solo
+  `payment_proofs`** insertado; la segunda llamada recibió el error de
+  negocio "Este pedido ya no está pendiente de comprobante." y se
+  revirtió limpio, sin dejar fila huérfana.
+- Defensa en profundidad verificada por separado: un `INSERT` directo a
+  `orders` con una `(user_id, idempotency_key)` ya usada es rechazado por
+  el índice único, incluso sin pasar por `crear_pedido()`.
+- `npm run build` y `npm run lint` pasan limpio.
+
+**Lo que NO se hizo, a propósito:**
+
+- No se agregó expiración a la llave de idempotencia. Decisión técnica
+  documentada en el propio SQL: nunca expira, es 1:1 con "un intento de
+  checkout"; un refresh de `/pagar` genera una llave nueva porque es, en
+  los hechos, un intento de compra distinto. No se abrió como pregunta
+  abierta (PA) porque el criterio es defendible por sí solo, tal como
+  permitía el encargo.
+- No se le agregó una llave de idempotencia al formulario de comprobante:
+  `confirmar_comprobante()` no crea un recurso nuevo por clave (reemplaza
+  o inserta bajo el candado de la fila del pedido), así que agregar una
+  llave ahí habría sido protección redundante sin un riesgo real que
+  cerrar — documentado en el punto 3 de arriba.

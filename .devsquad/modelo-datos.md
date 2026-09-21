@@ -458,6 +458,7 @@ order_status  ENUM('pendiente_pago', 'comprobante_recibido',
 | paid_at | timestamptz | Cuando el admin valida el comprobante |
 | shipped_at | timestamptz | Cuando se marca "Enviado" → baja el stock |
 | delivered_at | timestamptz | |
+| idempotency_key | uuid, nulo | **Origen: incremento de idempotencia (0011)**, no era parte del modelo original. UUID generado por el cliente al entrar a `/pagar`; único por `(user_id, idempotency_key)` (no global — la llave la genera el cliente). Repetir `crear_pedido()` con la misma llave nunca crea un segundo pedido: la función regresa el existente. Nulo para llamadas internas/pruebas sin llave. |
 
 **`order_items`**
 | Campo | Tipo | Notas |

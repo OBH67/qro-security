@@ -16,6 +16,12 @@ export async function crearPedido(params: {
   billingData: DatosFiscalesCongelados | null;
   wantsInvoice: boolean;
   notes?: string | null;
+  /** Llave de idempotencia (0011): un UUID por intento de checkout,
+   * generado en el cliente al entrar a /pagar. Obligatoria desde esta
+   * acción hacia el servidor — ver `esquemaGenerarPedido`. La función SQL
+   * la regresa como el pedido ya creado si se repite la llamada, en vez de
+   * duplicar el pedido. */
+  idempotencyKey: string;
 }): Promise<OrderRow> {
   const admin = crearClienteAdmin();
   const { data, error } = await admin.rpc("crear_pedido", {
@@ -26,6 +32,7 @@ export async function crearPedido(params: {
     p_wants_invoice: params.wantsInvoice,
     p_credit_to_apply: 0, // Épica D (saldo a favor) no es parte de este incremento
     p_notes: params.notes ?? null,
+    p_idempotency_key: params.idempotencyKey,
   });
 
   if (error) throw new Error(traducirErrorPedido(error.message));

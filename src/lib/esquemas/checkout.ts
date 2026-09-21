@@ -8,6 +8,11 @@ export const esquemaGenerarPedido = z.object({
   billingProfileId: z.uuid().optional(),
   agree: z.literal(true, { error: "Confirma la casilla para generar tu pedido." }),
   notes: z.string().trim().max(500).optional(),
+  /** Llave de idempotencia (0011): generada una sola vez en el cliente al
+   * entrar a /pagar (CheckoutForm) y reenviada en cada intento mientras el
+   * usuario siga en esa pantalla. Obligatoria: sin ella no hay protección
+   * real contra doble clic, reintento de red o dos pestañas. */
+  idempotencyKey: z.uuid("Falta la llave de idempotencia del pedido."),
 });
 
 export type DatosGenerarPedido = z.infer<typeof esquemaGenerarPedido>;

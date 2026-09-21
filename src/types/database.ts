@@ -274,6 +274,9 @@ export interface OrderRow {
   paid_at: string | null;
   shipped_at: string | null;
   delivered_at: string | null;
+  /** 0011: llave de idempotencia generada por el cliente en /pagar. Nula
+   * para pedidos previos a este incremento o llamadas internas sin llave. */
+  idempotency_key: string | null;
 }
 
 export interface OrderItemRow {
@@ -388,6 +391,7 @@ export interface Database {
           p_wants_invoice?: boolean;
           p_credit_to_apply?: number;
           p_notes?: string | null;
+          p_idempotency_key?: string | null;
         };
         Returns: OrderRow;
       };
