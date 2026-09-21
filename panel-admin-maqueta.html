@@ -1,0 +1,1782 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Panel Admin SG Querétaro</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg-base:#07111C;--bg-surface:#0B1622;--bg-card:#0F1D2B;--bg-elevated:#122234;--bg-hover:#16283A;--bg-inset:#0B1622;
+    --text-primary:#EAF2F8;--text-secondary:#C7D5E0;--text-muted:#9FB2C3;--text-dim:#7E93A6;
+    --accent:#3CE7FF;--accent-hover:#6FEEFF;--accent-bright:#9AF1FF;--accent-wash:rgba(60,231,255,.08);--accent-tint:rgba(60,231,255,.05);
+    --warning:#FFB547;--warning-tint:rgba(255,181,71,.06);
+    --success:#45E39A;--success-tint:rgba(69,227,154,.05);
+    --danger:#FF4D5E;--danger-text:#FF7A86;--danger-tint:rgba(255,77,94,.07);
+    --border-subtle:#16283A;--border:#1F3244;--border-strong:#2C4560;--border-input:#52708F;--track:#22344A;
+    --font-title:'Chakra Petch',sans-serif;--font-body:'IBM Plex Sans',sans-serif;--font-mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{color-scheme:dark}
+  body{margin:0;background:var(--bg-base);color:var(--text-primary);font-family:var(--font-body);-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{color:var(--accent-hover)}
+  button{font-family:inherit;cursor:pointer}
+  input,select,textarea{font-family:inherit}
+  table{border-collapse:collapse;width:100%}
+  .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+  .title{font-family:var(--font-title);font-weight:600}
+  *:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .cut:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--accent),inset 0 0 0 4px var(--bg-base)}
+  .cut-14{clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)}
+  .cut-12{clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%)}
+  .cut-10{clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)}
+  .cut-8{clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+  .btn{font-family:var(--font-title);font-weight:600;border:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;transition:background .15s,border-color .15s,color .15s}
+  .btn-primario{background:var(--accent);color:var(--bg-base);box-shadow:0 0 18px rgba(60,231,255,.35);padding:0 22px;height:52px;font-size:15px}
+  .btn-primario:hover{background:var(--accent-hover)}
+  .btn-secundario{background:transparent;color:var(--accent);border:1px solid var(--accent);padding:0 20px;height:44px;font-size:14px}
+  .btn-secundario:hover{background:var(--accent-wash)}
+  .btn-fantasma{background:transparent;color:var(--text-muted);border:1px solid var(--border);padding:0 18px;height:40px;font-size:14px}
+  .btn-fantasma:hover{color:var(--text-primary);border-color:var(--border-strong)}
+  .btn-peligro{background:transparent;color:var(--danger-text);border:1px solid var(--danger);padding:0 18px;height:40px;font-size:14px}
+  .btn-peligro:hover{background:var(--danger-tint)}
+  .btn-peligro-lleno{background:var(--danger);color:#07111C;padding:0 20px;height:44px;font-size:14px}
+  .btn-sm{height:32px;padding:0 12px;font-size:13px}
+  .campo{width:100%;background:var(--bg-inset);border:1px solid var(--border-input);border-radius:4px;color:var(--text-primary);height:44px;padding:0 12px;font-size:15px}
+  .campo:focus{outline:2px solid var(--accent);outline-offset:1px}
+  .campo::placeholder{color:var(--text-dim)}
+  .tarjeta{background:var(--bg-card);border:1px solid var(--border)}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:.3px;padding:4px 9px;border-radius:3px;white-space:nowrap}
+  @keyframes sgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes sgPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,181,71,.55)}50%{box-shadow:0 0 0 6px rgba(255,181,71,0)}}
+  .sg-in{animation:sgIn .2s ease both}
+  .sg-pulse{animation:sgPulse 1.8s infinite}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+  .scrollnav::-webkit-scrollbar{height:6px}
+  .scrollnav::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px}
+  .navitem{display:flex;align-items:center;gap:10px;padding:12px 16px;min-height:44px;color:var(--text-muted);font-family:var(--font-title);font-weight:500;font-size:15px;border-left:2px solid transparent;cursor:pointer;border:none;background:transparent;width:100%;text-align:left}
+  .navitem:hover{color:var(--text-primary);background:var(--bg-hover)}
+  .navitem.activo{color:var(--accent);background:var(--bg-card);border-left-color:var(--accent)}
+  .contador{background:var(--warning);color:#07111C;font-family:var(--font-mono);font-weight:500;font-size:11px;border-radius:9px;padding:1px 7px;min-width:18px;text-align:center}
+  .chip{padding:8px 14px;font-size:13px;font-family:var(--font-body);border:1px solid var(--border);color:var(--text-muted);border-radius:3px;background:transparent;cursor:pointer;white-space:nowrap}
+  .chip.activo{border-color:var(--accent);color:var(--accent);background:var(--accent-wash)}
+  th{font-family:var(--font-mono);font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--border)}
+  td{padding:12px 14px;font-size:14px;color:var(--text-primary);border-bottom:1px solid var(--border-subtle);vertical-align:middle}
+  tr.fila:hover td{background:var(--bg-hover)}
+  .modal-overlay{position:fixed;inset:0;background:rgba(7,17,28,.7);display:flex;align-items:center;justify-content:center;z-index:100}
+  .modal{background:var(--bg-elevated);border:1px solid var(--border-strong);box-shadow:0 26px 50px rgba(0,0,0,.55);width:460px;padding:28px}
+</style>
+</helmet>
+
+<div style="width:100%;min-height:100vh;display:flex;background:var(--bg-base)">
+
+<!-- ============ LOGIN ============ -->
+<sc-if value="{{isLogin}}" hint-placeholder-val="{{false}}">
+<div style="width:100%;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:20px">
+    <div class="tarjeta sg-in" style="width:400px;padding:36px 32px;display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center">
+        <div style="width:48px;height:48px;border-radius:50%;background:var(--accent-wash);border:1px solid var(--accent);display:grid;place-items:center;color:var(--accent);font-family:var(--font-title);font-weight:600;font-size:18px">SG</div>
+        <div class="title" style="font-size:20px;margin-top:6px">Seguridad General</div>
+        <div class="mono" style="font-size:10px;letter-spacing:2px;color:var(--text-muted)">QUERÉTARO · PANEL</div>
+      </div>
+      <sc-if value="{{loginError}}" hint-placeholder-val="{{false}}">
+        <div role="alert" style="background:var(--danger-tint);border:1px solid var(--danger);padding:12px 14px;font-size:13px;color:var(--danger-text)">Correo o contraseña incorrectos. Revisa los datos e inténtalo de nuevo.</div>
+      </sc-if>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="font-size:13px;color:var(--text-muted)">Correo electrónico</label>
+        <input class="campo" type="email" value="{{loginEmail}}" onChange="{{onLoginEmail}}" placeholder="tu@sgqueretaro.com" autocomplete="username">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="font-size:13px;color:var(--text-muted)">Contraseña</label>
+        <input class="campo" type="password" value="{{loginPass}}" onChange="{{onLoginPass}}" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primario cut cut-12" style="width:100%" onClick="{{onLogin}}">Entrar</button>
+      <a href="#" style="font-size:14px;text-align:center">¿Olvidaste tu contraseña?</a>
+    </div>
+    <div style="font-size:13px;color:var(--text-muted);text-align:center">Acceso exclusivo del personal<br>de SG Querétaro</div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ APP ============ -->
+<sc-if value="{{isApp}}" hint-placeholder-val="{{true}}">
+
+<!-- SIDEBAR -->
+<div style="width:248px;flex:0 0 248px;background:var(--bg-surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh">
+  <div style="padding:20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+    <div style="width:32px;height:32px;border-radius:50%;background:var(--accent-wash);border:1px solid var(--accent);display:grid;place-items:center;color:var(--accent);font-family:var(--font-title);font-weight:600;font-size:12px;flex:0 0 auto">SG</div>
+    <div>
+      <div class="title" style="font-size:15px;line-height:1.2">Seguridad General</div>
+      <div class="mono" style="font-size:10px;letter-spacing:2px;color:var(--text-muted)">QUERÉTARO · PANEL</div>
+    </div>
+  </div>
+
+  <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px">
+    <div style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono);letter-spacing:.5px">VISTA DE DEMOSTRACIÓN</div>
+    <div style="display:flex;gap:6px">
+      <button class="chip {{adminChipClase}}" style="flex:1;padding:6px 8px;font-size:12px" onClick="{{verComoAdmin}}">Admin</button>
+      <button class="chip {{invChipClase}}" style="flex:1;padding:6px 8px;font-size:12px" onClick="{{verComoInventario}}">Inventario</button>
+    </div>
+  </div>
+
+  <nav style="flex:1;padding:8px 0;overflow-y:auto" aria-label="Navegación del panel">
+    <sc-for list="{{navItems}}" as="item" hint-placeholder-count="7">
+      <button class="navitem {{item.clase}}" onClick="{{item.onClick}}">
+        <span style="flex:1">{{item.label}}</span>
+        <sc-if value="{{item.contador}}" hint-placeholder-val="{{false}}">
+          <span class="contador {{item.pulso}}">{{item.contadorTxt}}</span>
+        </sc-if>
+      </button>
+    </sc-for>
+  </nav>
+
+  <div style="padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px">
+    <div style="width:32px;height:32px;border-radius:50%;background:var(--bg-hover);border:1px solid var(--border-strong);display:grid;place-items:center;font-family:var(--font-mono);font-size:12px;color:var(--accent);flex:0 0 auto">MB</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Mariana Balanzar</div>
+      <div style="font-size:12px;color:var(--text-muted)">{{rolLabel}}</div>
+    </div>
+  </div>
+  <button class="navitem" style="border-top:1px solid var(--border);font-size:13px" onClick="{{onLogout}}">Cerrar sesión</button>
+</div>
+
+<!-- MAIN -->
+<div style="flex:1;min-width:0;padding:28px 32px 64px;max-width:1400px">
+
+  <!-- ===== ACCESO DENEGADO ===== -->
+  <sc-if value="{{isAccesoDenegado}}" hint-placeholder-val="{{false}}">
+    <div style="max-width:480px;margin:80px auto;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px">
+      <div style="width:56px;height:56px;border-radius:50%;background:var(--warning-tint);border:1px solid var(--warning);display:grid;place-items:center;color:var(--warning);font-size:24px">!</div>
+      <div class="title" style="font-size:24px">Esta sección no es parte de tu acceso</div>
+      <div style="font-size:15px;color:var(--text-secondary);line-height:1.55">Tu cuenta tiene permiso para administrar el catálogo. Si necesitas ver pedidos, pídeselo al administrador.</div>
+      <button class="btn btn-primario cut cut-12" onClick="{{irACatalogo}}">Ir a Catálogo</button>
+    </div>
+  </sc-if>
+
+  <!-- ===== PLACEHOLDER ===== -->
+  <sc-if value="{{isPlaceholder}}" hint-placeholder-val="{{false}}">
+    <div style="max-width:520px;margin:100px auto;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px">
+      <div style="width:52px;height:52px;border-radius:50%;background:var(--accent-wash);border:1px solid var(--accent);display:grid;place-items:center;color:var(--accent);font-size:22px">◐</div>
+      <div class="title" style="font-size:22px">{{placeholderTitulo}}</div>
+      <div style="font-size:14px;color:var(--text-muted);line-height:1.5">Esta pantalla está especificada en <span class="mono">diseño.md</span> §{{placeholderSeccion}} y se construye en una siguiente pasada de la maqueta. Esta demostración se enfocó en el tablero, pedidos, catálogo e importador CSV.</div>
+      <button class="btn btn-secundario cut cut-10" onClick="{{irATablero}}">Volver al inicio</button>
+    </div>
+  </sc-if>
+
+  <!-- ===== TABLERO ===== -->
+  <sc-if value="{{isTablero}}" hint-placeholder-val="{{false}}">
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:24px">
+      <div>
+        <h1 class="title" style="font-size:28px;margin:0">Inicio</h1>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px">Actualizado 11:04 · <a href="#" onClick="{{noop}}" style="font-size:13px">Actualizar</a></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap" role="group" aria-label="Periodo">
+        <sc-for list="{{periodos}}" as="p" hint-placeholder-count="4">
+          <button class="chip {{p.clase}}" onClick="{{p.onClick}}">{{p.label}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <h2 style="font-family:var(--font-title);font-weight:600;font-size:14px;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase;margin:0 0 12px">Lo que necesita tu atención hoy — martes 20 de septiembre</h2>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:32px">
+      <sc-for list="{{tarjetasAtencion}}" as="t" hint-placeholder-count="6">
+        <a href="#" onClick="{{t.onClick}}" class="tarjeta {{t.claseCorte}}" style="{{t.estiloTarjeta}}" aria-label="{{t.aria}}">
+          <div class="mono" style="{{t.estiloCifra}}">{{t.cifra}}</div>
+          <div style="font-family:var(--font-title);font-weight:600;font-size:11px;letter-spacing:.5px;color:{{t.colorEtiqueta}};line-height:1.3;margin-top:2px">{{t.etiqueta}}</div>
+          <div style="font-size:12px;color:{{t.colorAccion}};margin-top:6px">{{t.accion}}</div>
+        </a>
+      </sc-for>
+    </div>
+
+    <h2 style="font-family:var(--font-title);font-weight:600;font-size:14px;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase;margin:0 0 12px">Cómo va el negocio · {{periodoActivoLabel}}</h2>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+      <sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+        <div class="tarjeta" style="padding:18px">
+          <div class="mono" style="font-size:28px;font-weight:500">{{k.valor}}</div>
+          <div style="font-size:12px;color:var(--text-muted);font-family:var(--font-title);font-weight:500;letter-spacing:.4px;text-transform:uppercase;margin-top:2px">{{k.etiqueta}}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+            <span style="font-size:12px;color:{{k.colorDelta}};font-family:var(--font-mono)">{{k.delta}}</span>
+            <svg width="64" height="20" viewBox="0 0 64 20" aria-hidden="true"><polyline points="{{k.spark}}" fill="none" stroke="var(--accent)" stroke-width="2" opacity=".6"/></svg>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);background:var(--accent-tint);border:1px solid var(--border);padding:8px 14px;margin-bottom:20px">ⓘ Los KPI cuentan solo pedidos con pago validado (Listo para envío en adelante), no pedidos pendientes.</div>
+
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:20px">
+      <!-- A: Ventas por dia -->
+      <div class="tarjeta" style="padding:20px">
+        <h3 style="font-family:var(--font-title);font-weight:600;font-size:16px;margin:0">Ventas por día</h3>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">¿Cómo va este mes contra el anterior?</div>
+        <div style="display:flex;gap:16px;font-size:12px;color:var(--text-muted);margin-bottom:8px">
+          <span><span style="display:inline-block;width:16px;height:2px;background:var(--accent);vertical-align:middle;margin-right:6px"></span>Este periodo</span>
+          <span><span style="display:inline-block;width:16px;height:2px;background:var(--text-dim);vertical-align:middle;margin-right:6px;border-top:2px dashed var(--text-dim)"></span>Periodo anterior</span>
+        </div>
+        <svg viewBox="0 0 560 190" style="width:100%;height:220px" role="img" aria-label="Ventas por día del 1 al 20 de septiembre. Máximo $38,400 el 15 de septiembre. Total del periodo $486,230.">
+          <sc-for list="{{gridLinesVentas}}" as="g" hint-placeholder-count="4">
+            <line x1="0" y1="{{g.y}}" x2="560" y2="{{g.y}}" stroke="var(--track)" stroke-width="1"/>
+          </sc-for>
+          <polyline points="{{ventasPuntosAnterior}}" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-dasharray="4,4"/>
+          <polyline points="{{ventasPuntosActual}}" fill="none" stroke="var(--accent)" stroke-width="2"/>
+          <polygon points="{{ventasAreaActual}}" fill="url(#gradVentas)" opacity=".22"/>
+          <defs><linearGradient id="gradVentas" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent)" stop-opacity=".8"/><stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+          <circle cx="{{ventasMaxX}}" cy="{{ventasMaxY}}" r="4" fill="var(--accent)"/>
+          <text x="{{ventasMaxX}}" y="{{ventasMaxYTexto}}" class="mono" font-size="11" fill="var(--text-primary)" text-anchor="middle">$38,400</text>
+          <text x="536" y="172" class="mono" font-size="11" fill="var(--text-muted)" text-anchor="end">1 sep</text>
+          <text x="280" y="172" class="mono" font-size="11" fill="var(--text-muted)" text-anchor="middle">10 sep</text>
+          <text x="24" y="172" class="mono" font-size="11" fill="var(--text-muted)" text-anchor="start">20 sep</text>
+        </svg>
+        <details style="margin-top:6px"><summary style="font-size:13px;color:var(--accent);cursor:pointer">Ver los datos</summary>
+          <table style="margin-top:10px"><thead><tr><th>Día</th><th>Este periodo</th><th>Periodo anterior</th></tr></thead><tbody>
+          <sc-for list="{{ventasTabla}}" as="v" hint-placeholder-count="5"><tr><td class="mono">{{v.dia}}</td><td class="mono">{{v.actual}}</td><td class="mono">{{v.anterior}}</td></tr></sc-for>
+          </tbody></table>
+        </details>
+      </div>
+      <!-- B: Embudo -->
+      <div class="tarjeta" style="padding:20px">
+        <h3 style="font-family:var(--font-title);font-weight:600;font-size:16px;margin:0">¿Dónde están mis pedidos?</h3>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Pedidos abiertos ahora mismo (foto del momento, no depende del periodo)</div>
+        <sc-for list="{{embudo}}" as="e" hint-placeholder-count="4">
+          <a href="#" onClick="{{e.onClick}}" style="display:block;margin-bottom:14px;text-decoration:none;color:inherit">
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text-secondary);margin-bottom:4px"><span>{{e.etapa}}</span><span class="mono" style="color:var(--text-primary)">{{e.cifra}}</span></div>
+            <div style="background:var(--track);height:10px;width:100%"><div style="height:100%;width:{{e.pct}};background:{{e.color}}"></div></div>
+          </a>
+        </sc-for>
+        <details style="margin-top:4px"><summary style="font-size:13px;color:var(--accent);cursor:pointer">Ver los datos</summary>
+          <table style="margin-top:10px"><thead><tr><th>Etapa</th><th>Pedidos</th></tr></thead><tbody>
+          <sc-for list="{{embudo}}" as="e" hint-placeholder-count="4"><tr><td>{{e.etapa}}</td><td class="mono">{{e.cifra}}</td></tr></sc-for>
+          </tbody></table>
+        </details>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+      <!-- D: Mas vendidos -->
+      <div class="tarjeta" style="padding:20px">
+        <h3 style="font-family:var(--font-title);font-weight:600;font-size:16px;margin:0">Más vendidos</h3>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">¿Qué debo reabastecer?</div>
+        <sc-for list="{{masVendidos}}" as="m" hint-placeholder-count="5">
+          <a href="#" onClick="{{noop}}" style="display:block;margin-bottom:12px;text-decoration:none;color:inherit">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:var(--text-secondary)">{{m.nombre}} <span class="mono" style="color:var(--text-dim);font-size:11px">{{m.sku}}</span></span><span class="mono" style="color:var(--text-primary)">{{m.unidades}}</span></div>
+            <div style="background:var(--track);height:8px;width:100%"><div style="height:100%;width:{{m.pct}};background:var(--accent)"></div></div>
+          </a>
+        </sc-for>
+        <a href="#" onClick="{{irAAnalitica}}" style="font-size:13px">Ver los 10 · Analítica</a>
+      </div>
+      <!-- C: Por vencer -->
+      <div class="tarjeta" style="padding:20px">
+        <h3 style="font-family:var(--font-title);font-weight:600;font-size:16px;margin:0">Pedidos por vencer</h3>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Se cancelan solos a los 3 días sin comprobante</div>
+        <svg viewBox="0 0 400 150" style="width:100%;height:150px" role="img" aria-label="Pedidos por vencer: hoy 5, 1 día 4, 2 días 2 en riesgo, 3 o más días 1 vencido">
+          <sc-for list="{{porVencer}}" as="c" hint-placeholder-count="4">
+            <rect x="{{c.x}}" y="{{c.y}}" width="70" height="{{c.h}}" rx="4" fill="{{c.color}}"/>
+            <text x="{{c.cx}}" y="{{c.textoY}}" class="mono" font-size="13" fill="var(--text-primary)" text-anchor="middle">{{c.valor}}{{c.icono}}</text>
+            <text x="{{c.cx}}" y="140" class="mono" font-size="11" fill="var(--text-muted)" text-anchor="middle">{{c.etiqueta}}</text>
+          </sc-for>
+        </svg>
+        <a href="#" onClick="{{irAPedidosPendientes}}" style="font-size:13px">Ver pedidos pendientes de pago</a>
+      </div>
+    </div>
+
+    <!-- E: Por grupo -->
+    <div class="tarjeta" style="padding:20px;margin-bottom:20px">
+      <h3 style="font-family:var(--font-title);font-weight:600;font-size:16px;margin:0">¿De qué vive el negocio?</h3>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Importe validado por grupo · {{periodoActivoLabel}}</div>
+      <div style="display:flex;width:100%;height:28px;overflow:hidden">
+        <sc-for list="{{porGrupo}}" as="g" hint-placeholder-count="6">
+          <div style="width:{{g.pct}};background:{{g.color}};margin-right:2px;height:100%" title="{{g.nombre}} {{g.pctTxt}}"></div>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:14px">
+        <sc-for list="{{porGrupo}}" as="g" hint-placeholder-count="6">
+          <div style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text-secondary)"><span style="width:10px;height:10px;background:{{g.color}};display:inline-block;border-radius:2px"></span>{{g.nombre}} <span class="mono" style="color:var(--text-primary)">{{g.pctTxt}}</span></div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+      <!-- F: Saldo -->
+      <div class="tarjeta" style="padding:20px">
+        <h3 style="font-family:var(--font-title);font-weight:600;font-size:16px;margin:0">Saldo a favor comprometido</h3>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Dinero que ya debes en mercancía</div>
+        <div class="mono" style="font-size:40px;font-weight:500">$18,430.00</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">de 23 clientes</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span style="color:var(--text-secondary)">Tasa de devoluciones</span><span class="mono" style="color:var(--success)">4.2%</span></div>
+        <div style="background:var(--track);height:10px;width:100%"><div style="height:100%;width:28%;background:var(--success)"></div></div>
+      </div>
+      <!-- Stock critico -->
+      <div class="tarjeta" style="padding:20px">
+        <h3 style="font-family:var(--font-title);font-weight:600;font-size:16px;margin:0">Se te va a acabar</h3>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Productos con 3 piezas o menos</div>
+        <sc-for list="{{stockCritico}}" as="s" hint-placeholder-count="4">
+          <a href="#" onClick="{{irACatalogo}}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-subtle);text-decoration:none;color:inherit">
+            <div style="min-width:0">
+              <div class="mono" style="font-size:11px;color:var(--text-dim)">{{s.sku}}</div>
+              <div style="font-size:13px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{s.nombre}}</div>
+            </div>
+            <span class="badge" style="background:{{s.bg}};color:{{s.color}};border:1px solid {{s.color}}">{{s.etiqueta}}</span>
+          </a>
+        </sc-for>
+        <a href="#" onClick="{{irACatalogo}}" style="font-size:13px;display:block;margin-top:10px">Ver todos en Catálogo</a>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===== PEDIDOS ===== -->
+  <sc-if value="{{isPedidos}}" hint-placeholder-val="{{false}}">
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <h1 class="title" style="font-size:28px;margin:0">Pedidos</h1>
+      <button class="btn btn-fantasma cut cut-10">Exportar CSV</button>
+    </div>
+    <sc-if value="{{vieneDelTablero}}" hint-placeholder-val="{{false}}">
+      <div style="background:var(--accent-tint);border:1px solid var(--accent);padding:10px 14px;font-size:13px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+        <span>Te mostramos solo los pedidos que esperan tu revisión.</span>
+        <a href="#" onClick="{{limpiarFiltroPedidos}}">Ver todos los pedidos</a>
+      </div>
+    </sc-if>
+    <input class="campo" style="max-width:340px;margin-bottom:14px" placeholder="🔍 Folio, cliente o correo" value="{{busquedaPedidos}}" onChange="{{onBuscarPedidos}}">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" role="group" aria-label="Filtro por estado">
+      <sc-for list="{{chipsPedidos}}" as="c" hint-placeholder-count="7">
+        <button class="chip {{c.clase}}" onClick="{{c.onClick}}"><sc-if value="{{c.pulso}}" hint-placeholder-val="{{false}}"><span class="sg-pulse" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--warning);margin-right:6px"></span></sc-if>{{c.label}} {{c.cuenta}}</button>
+      </sc-for>
+    </div>
+    <div class="tarjeta">
+      <table>
+        <thead><tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Prods.</th><th>Total</th><th>Saldo</th><th>Estado</th></tr></thead>
+        <tbody>
+        <sc-for list="{{pedidosFiltrados}}" as="p" hint-placeholder-count="6">
+          <tr class="fila" style="cursor:pointer" onClick="{{p.onClick}}">
+            <td class="mono">{{p.folio}}</td>
+            <td class="mono" style="color:var(--text-muted);font-size:12px">{{p.fecha}}</td>
+            <td>{{p.cliente}}<div style="font-size:12px;color:var(--text-muted)">{{p.correo}}</div></td>
+            <td class="mono">{{p.prods}}</td>
+            <td class="mono">{{p.total}}</td>
+            <td class="mono" style="color:{{p.colorSaldo}}">{{p.saldo}}</td>
+            <td><span class="badge" style="{{p.estiloBadge}}">{{p.estadoLabel}}</span></td>
+          </tr>
+        </sc-for>
+        </tbody>
+      </table>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:13px;color:var(--text-muted)">
+      <span>Mostrando {{pedidosMostrando}} de 84</span>
+      <span>Filas: 25</span>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===== DETALLE DE PEDIDO — normal ===== -->
+  <sc-if value="{{isDetalleNormal}}" hint-placeholder-val="{{false}}">
+  <div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+      <a href="#" onClick="{{irAPedidos}}" style="font-size:13px">‹ Pedidos</a>
+      <span style="color:var(--border-strong)">·</span>
+      <h1 class="title mono" style="font-size:22px;margin:0">SGQ-7K4M2X</h1>
+      <span class="badge" style="background:var(--accent);color:#07111C;margin-left:auto">Comprobante recibido</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="tarjeta" style="padding:18px">
+          <h3 style="font-family:var(--font-title);font-weight:600;font-size:13px;letter-spacing:.5px;color:var(--text-muted);text-transform:uppercase;margin:0 0 10px">Comprobante de pago</h3>
+          <div style="background:var(--bg-inset);border:1px solid var(--border);height:420px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px">[ imagen del comprobante — captura de transferencia ]</div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn btn-fantasma btn-sm">− 100% +</button>
+            <button class="btn btn-fantasma btn-sm">↻ Rotar</button>
+            <button class="btn btn-fantasma btn-sm">⤢ Ajustar</button>
+            <button class="btn btn-fantasma btn-sm">↓ Descargar</button>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:8px">Subido 16 sep 2026 · 10:42</div>
+        </div>
+        <div class="tarjeta" style="padding:18px">
+          <h3 style="font-family:var(--font-title);font-weight:600;font-size:13px;letter-spacing:.5px;color:var(--text-muted);text-transform:uppercase;margin:0 0 10px">Productos del pedido</h3>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-subtle)">
+            <div><div style="font-size:14px">Cámara IP bala 4 MP</div><div class="mono" style="font-size:12px;color:var(--text-muted)">SGQ-VV-0012 · 1 × $1,289.00 · Disponible: 23 pzas</div></div>
+            <div class="mono">$1,289.00</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-subtle)">
+            <div><div style="font-size:14px">NVR 8 canales 4K</div><div class="mono" style="font-size:12px;color:var(--text-muted)">SGQ-VV-0031 · 1 × $4,590.00 · Disponible: 6 pzas</div></div>
+            <div class="mono">$4,590.00</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding-top:12px;font-size:13px;color:var(--text-muted)"><span>Subtotal</span><span class="mono">$5,879.00</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text-muted)"><span>Saldo aplicado</span><span class="mono">−$0.00</span></div>
+          <div style="display:flex;justify-content:space-between;padding-top:8px;margin-top:6px;border-top:1px solid var(--border);font-size:15px;font-weight:500"><span>Total a transferir</span><span class="mono">$5,879.00</span></div>
+        </div>
+        <div class="tarjeta" style="padding:18px">
+          <h3 style="font-family:var(--font-title);font-weight:600;font-size:13px;letter-spacing:.5px;color:var(--text-muted);text-transform:uppercase;margin:0 0 10px">Historial</h3>
+          <div style="display:flex;gap:10px;font-size:13px;margin-bottom:8px"><span style="color:var(--accent)">●</span><span>Pedido generado</span><span class="mono" style="color:var(--text-muted);margin-left:auto">16 sep · 09:58</span></div>
+          <div style="display:flex;gap:10px;font-size:13px;margin-bottom:8px"><span style="color:var(--accent)">●</span><span>Comprobante recibido</span><span class="mono" style="color:var(--text-muted);margin-left:auto">16 sep · 10:42</span></div>
+          <div style="display:flex;gap:10px;font-size:13px;color:var(--text-dim)"><span>○</span><span>Listo para envío</span></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="tarjeta" style="padding:18px">
+          <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-title);font-weight:600">Importe esperado</div>
+          <div class="mono" style="font-size:30px;font-weight:500;margin:4px 0 14px">$5,879.00</div>
+          <div style="border-top:1px solid var(--border);padding-top:14px">
+            <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-title);font-weight:600">Declarado por el cliente</div>
+            <div class="mono" style="font-size:30px;font-weight:500;margin:4px 0 8px">$5,879.00</div>
+            <div style="color:var(--success);font-size:13px;display:flex;align-items:center;gap:6px">✓ Los montos coinciden</div>
+          </div>
+          <dl style="margin:16px 0 0;font-size:13px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:space-between"><dt style="color:var(--text-muted)">Fecha transferencia</dt><dd class="mono" style="margin:0">16 sep 2026</dd></div>
+            <div style="display:flex;justify-content:space-between"><dt style="color:var(--text-muted)">Banco de origen</dt><dd class="mono" style="margin:0">Banco Demo</dd></div>
+            <div style="display:flex;justify-content:space-between;gap:10px"><dt style="color:var(--text-muted)">Clave SPEI</dt><dd class="mono" style="margin:0;font-size:11px">2026091640044200000000</dd></div>
+          </dl>
+          <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:14px;font-size:13px">
+            <div style="font-family:var(--font-title);font-weight:600;font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Cliente</div>
+            <div>Mariana López Ríos</div>
+            <div style="color:var(--text-muted);font-size:12px">mariana@correo.com · 442 000 0000</div>
+            <div style="color:var(--warning);font-size:12px;margin-top:4px">⚠ Correo sin verificar</div>
+          </div>
+          <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:14px;font-size:13px">
+            <div style="font-family:var(--font-title);font-weight:600;font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Envío</div>
+            <div>Av. Ejemplo 123, Col. Centro</div>
+            <div>C.P. 76000, Querétaro, Qro.</div>
+            <div style="color:var(--text-muted);font-size:12px">Recibe: Mariana López Ríos</div>
+          </div>
+          <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:14px;font-size:13px"><span style="color:var(--text-muted)">Factura</span> Sí · RFC XAXX010101000</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;position:sticky;top:20px">
+          <button class="btn btn-primario cut cut-12" onClick="{{abrirModalValidar}}">Validar pago</button>
+          <button class="btn btn-peligro cut cut-10" onClick="{{abrirModalRechazar}}">Rechazar comprobante</button>
+          <button class="btn btn-fantasma cut cut-10" onClick="{{abrirModalCancelar}}">Cancelar pedido</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===== DETALLE DE PEDIDO — RN-11 (pagado con saldo) ===== -->
+  <sc-if value="{{isDetalleRN11}}" hint-placeholder-val="{{false}}">
+  <div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+      <a href="#" onClick="{{irAPedidos}}" style="font-size:13px">‹ Pedidos</a>
+      <span style="color:var(--border-strong)">·</span>
+      <h1 class="title mono" style="font-size:22px;margin:0">SGQ-3H8N5Q</h1>
+      <span class="badge" style="background:var(--accent);color:#07111C;margin-left:auto">Comprobante recibido</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px">
+      <div class="tarjeta" style="padding:18px;height:fit-content">
+        <h3 style="font-family:var(--font-title);font-weight:600;font-size:15px;margin:0 0 8px">Pagado con saldo a favor</h3>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.55;margin-bottom:16px">Este pedido no tiene comprobante porque el saldo a favor del cliente cubrió el 100% del importe. Aun así requiere tu confirmación.</div>
+        <div style="font-family:var(--font-title);font-weight:600;font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Movimientos de saldo del cliente</div>
+        <div style="background:var(--bg-inset);border:1px solid var(--border);padding:12px">
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid var(--border-subtle)">
+            <div><a href="#" onClick="{{noop}}">22 ago · Devolución SGQ-00219</a><div style="color:var(--text-muted);font-size:12px">producto sellado</div></div>
+            <div class="mono" style="color:var(--success)">+$2,600.00</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px">
+            <div>16 sep · Aplicado a SGQ-3H8N5Q</div>
+            <div class="mono" style="color:var(--text-secondary)">−$2,150.00</div>
+          </div>
+        </div>
+        <a href="#" onClick="{{noop}}" style="font-size:13px;display:block;margin-top:10px">Ver historial completo de saldo →</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="tarjeta" style="padding:18px">
+          <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-title);font-weight:600">Importe del pedido</div>
+          <div class="mono" style="font-size:30px;font-weight:500;margin:4px 0 14px">$2,150.00</div>
+          <div style="border-top:1px solid var(--border);padding-top:14px">
+            <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-title);font-weight:600">Saldo aplicado</div>
+            <div class="mono" style="font-size:30px;font-weight:500;margin:4px 0 8px">−$2,150.00</div>
+            <div style="color:var(--success);font-size:13px">✓ El saldo cubre el total</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding-top:14px;margin-top:14px;border-top:1px solid var(--border);font-size:15px;font-weight:500"><span>A transferir</span><span class="mono">$0.00</span></div>
+          <dl style="margin:16px 0 0;font-size:13px;display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--border);padding-top:14px">
+            <div style="font-family:var(--font-title);font-weight:600;font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">Saldo del cliente</div>
+            <div style="display:flex;justify-content:space-between"><dt style="color:var(--text-muted)">Antes del pedido</dt><dd class="mono" style="margin:0">$2,600.00</dd></div>
+            <div style="display:flex;justify-content:space-between"><dt style="color:var(--text-muted)">Aplicado aquí</dt><dd class="mono" style="margin:0">−$2,150.00</dd></div>
+            <div style="display:flex;justify-content:space-between"><dt style="color:var(--text-primary)">Disponible ahora</dt><dd class="mono" style="margin:0">$450.00</dd></div>
+          </dl>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button class="btn btn-primario cut cut-12" onClick="{{abrirModalValidar}}">Confirmar pedido</button>
+          <button class="btn btn-fantasma cut cut-10" onClick="{{abrirModalCancelar}}">Rechazar / Cancelar pedido</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===== CATALOGO ===== -->
+  <sc-if value="{{isCatalogo}}" hint-placeholder-val="{{false}}">
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+      <h1 class="title" style="font-size:28px;margin:0">Catálogo</h1>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-fantasma cut cut-10" onClick="{{irACategorias}}">Categorías</button>
+        <button class="btn btn-fantasma cut cut-10" onClick="{{irAImportar}}">Importar CSV</button>
+        <button class="btn btn-primario cut cut-10" onClick="{{irANuevoProducto}}">Nuevo producto</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+      <input class="campo" style="max-width:280px" placeholder="🔍 Nombre, SKU o marca">
+      <select class="campo" style="max-width:160px"><option>Grupo: Todos</option></select>
+      <select class="campo" style="max-width:160px"><option>Estado: Todos</option></select>
+      <select class="campo" style="max-width:170px"><option>Condición: Todas</option></select>
+    </div>
+    <div class="tarjeta">
+      <table>
+        <thead><tr><th></th><th>Foto</th><th>SKU</th><th>Nombre</th><th>Marca</th><th>Precio</th><th>Stock</th><th>Estado</th></tr></thead>
+        <tbody>
+        <sc-for list="{{productos}}" as="p" hint-placeholder-count="6">
+          <tr class="fila">
+            <td><input type="checkbox" aria-label="Seleccionar {{p.nombre}}"></td>
+            <td><div style="width:36px;height:36px;background:var(--bg-hover);border:1px solid var(--border);display:grid;place-items:center;font-size:10px;color:var(--text-dim)" class="mono">{{p.iniciales}}</div></td>
+            <td class="mono">{{p.sku}}<sc-if value="{{p.usado}}" hint-placeholder-val="{{false}}"><div><span class="badge" style="background:transparent;border:1px solid var(--warning);color:var(--warning);margin-top:4px">Usado</span><div style="font-size:11px;color:var(--text-muted);margin-top:2px">{{p.detalleCondicion}}</div></div></sc-if></td>
+            <td>{{p.nombre}}</td>
+            <td style="color:var(--text-muted)">{{p.marca}}</td>
+            <td class="mono">
+              <sc-if value="{{p.editando}}" hint-placeholder-val="{{false}}">
+                <input class="campo" style="height:32px;width:100px" value="{{editValor}}" onChange="{{onEditValor}}" onKeyDown="{{onEditKeyDown}}">
+              </sc-if>
+              <sc-if value="{{p.noEditando}}" hint-placeholder-val="{{true}}">
+                <span onClick="{{p.onEditar}}" style="cursor:pointer;border-bottom:1px dashed var(--text-dim)" title="Doble clic para editar">{{p.precio}}</span>
+              </sc-if>
+            </td>
+            <td class="mono">{{p.stockTxt}}</td>
+            <td><span class="badge" style="{{p.estiloEstado}}">{{p.estadoLabel}}</span></td>
+          </tr>
+        </sc-for>
+        </tbody>
+      </table>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:13px;color:var(--text-muted)">
+      <span>Mostrando 1–{{productos.length}} de 1,047</span>
+      <span>Filas: 50</span>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===== NUEVO / EDITAR PRODUCTO (F1, D6) ===== -->
+  <sc-if value="{{isNuevoProducto}}" hint-placeholder-val="{{false}}">
+  <div style="max-width:1100px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap">
+      <a href="#" onClick="{{irACatalogo}}" style="font-size:13px">‹ Catálogo</a>
+      <span style="color:var(--border-strong)">·</span>
+      <h1 class="title" style="font-size:22px;margin:0">Nuevo producto</h1>
+      <sc-if value="{{tieneCambiosSinGuardar}}" hint-placeholder-val="{{false}}">
+        <span class="badge" style="background:transparent;border:1px solid var(--warning);color:var(--warning);margin-left:6px">Cambios sin guardar</span>
+      </sc-if>
+    </div>
+    <div style="display:flex;gap:4px;margin:18px 0;border-bottom:1px solid var(--border)">
+      <sc-for list="{{pestañasProducto}}" as="t" hint-placeholder-count="5">
+        <button onClick="{{t.onClick}}" style="background:none;border:none;padding:10px 16px;font-family:var(--font-title);font-weight:500;font-size:14px;color:{{t.color}};border-bottom:2px solid {{t.borde}};cursor:pointer">{{t.label}}</button>
+      </sc-for>
+    </div>
+
+    <!-- Pestaña: General -->
+    <sc-if value="{{tabGeneral}}" hint-placeholder-val="{{true}}">
+    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:20px">
+      <div class="tarjeta" style="padding:20px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div>
+            <label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">SKU *</label>
+            <input class="campo mono" value="{{formSku}}" onChange="{{onFormSku}}" placeholder="SGQ-VV-0000">
+            <div style="font-size:12px;color:{{skuValidoColor}};margin-top:4px">{{skuValidoTexto}}</div>
+          </div>
+          <div>
+            <label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">Estado *</label>
+            <select class="campo" value="{{formEstado}}" onChange="{{onFormEstado}}">
+              <option>Activo</option><option>Agotado</option><option>Descontinuado</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">Nombre *</label>
+          <input class="campo" value="{{formNombre}}" onChange="{{onFormNombre}}" placeholder="Cámara IP bala 4 MP con detección de personas y vehículos">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div>
+            <label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">Marca *</label>
+            <select class="campo" value="{{formMarca}}" onChange="{{onFormMarca}}">
+              <sc-for list="{{marcasDisponibles}}" as="m" hint-placeholder-count="5"><option>{{m}}</option></sc-for>
+            </select>
+          </div>
+          <div></div>
+        </div>
+
+        <div style="border-top:1px solid var(--border);padding-top:16px">
+          <div class="title" style="font-size:14px;margin-bottom:2px">Categoría del producto</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Grupo, subcategoría y — cuando aplica — la sub-subcategoría del árbol de 3 niveles (D7). Un producto siempre queda en el nivel más específico disponible.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+            <div>
+              <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;font-family:var(--font-title);font-weight:600;letter-spacing:.3px;text-transform:uppercase">① Grupo *</label>
+              <select class="campo" value="{{formGrupoId}}" onChange="{{onFormGrupo}}">
+                <option value="">Elige un grupo…</option>
+                <sc-for list="{{gruposDisponibles}}" as="g" hint-placeholder-count="6"><option value="{{g.id}}">{{g.nombre}}</option></sc-for>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;font-family:var(--font-title);font-weight:600;letter-spacing:.3px;text-transform:uppercase">② Subcategoría *</label>
+              <select class="campo" value="{{formSubId}}" onChange="{{onFormSub}}" disabled="{{subDeshabilitada}}">
+                <option value="">{{subPlaceholder}}</option>
+                <sc-for list="{{subsDisponibles}}" as="sub" hint-placeholder-count="8"><option value="{{sub.id}}">{{sub.nombre}}</option></sc-for>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;font-family:var(--font-title);font-weight:600;letter-spacing:.3px;text-transform:uppercase">③ Sub-subcategoría</label>
+              <sc-if value="{{haySubSub}}" hint-placeholder-val="{{false}}">
+                <select class="campo" value="{{formSubSubId}}" onChange="{{onFormSubSub}}">
+                  <option value="">Elige (opcional)…</option>
+                  <sc-for list="{{subSubsDisponibles}}" as="ss" hint-placeholder-count="6"><option value="{{ss}}">{{ss}}</option></sc-for>
+                </select>
+              </sc-if>
+              <sc-if value="{{noHaySubSub}}" hint-placeholder-val="{{true}}">
+                <div class="campo" style="display:flex;align-items:center;color:var(--text-dim);font-size:13px;background:var(--bg-surface)">{{subSubVacioTexto}}</div>
+              </sc-if>
+            </div>
+          </div>
+          <sc-if value="{{rutaCompleta}}" hint-placeholder-val="{{false}}">
+            <div class="mono" style="margin-top:12px;padding:10px 12px;background:var(--accent-tint);border:1px solid var(--border);font-size:13px;color:var(--text-secondary)">
+              {{rutaCompletaTexto}}
+            </div>
+          </sc-if>
+        </div>
+
+        <div>
+          <label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">Descripción</label>
+          <textarea class="campo" style="height:88px;padding-top:10px" placeholder="Descripción larga para la ficha del producto"></textarea>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="tarjeta" style="padding:18px">
+          <div style="font-family:var(--font-title);font-weight:600;font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Foto principal</div>
+          <div style="background:var(--bg-inset);border:1px dashed var(--border-input);height:150px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:12px;text-align:center;padding:10px">arrastra o elige una foto</div>
+          <div style="display:flex;gap:6px;margin-top:10px">
+            <div style="width:44px;height:44px;background:var(--bg-hover);border:1px solid var(--border)"></div>
+            <div style="width:44px;height:44px;background:var(--bg-hover);border:1px solid var(--border)"></div>
+            <div style="width:44px;height:44px;border:1px dashed var(--border-input);display:grid;place-items:center;color:var(--text-dim);font-size:18px">+</div>
+          </div>
+        </div>
+
+        <div class="tarjeta" style="padding:18px">
+          <div style="font-family:var(--font-title);font-weight:600;font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Condición (D6)</div>
+          <div style="display:flex;gap:18px;font-size:14px;margin-bottom:4px">
+            <label style="display:flex;align-items:center;gap:7px;cursor:pointer"><input type="radio" name="condicion" checked="{{condicionNuevoChecked}}" onChange="{{onCondicionNuevo}}"> Nuevo</label>
+            <label style="display:flex;align-items:center;gap:7px;cursor:pointer"><input type="radio" name="condicion" checked="{{condicionUsadoChecked}}" onChange="{{onCondicionUsado}}"> Usado</label>
+          </div>
+          <sc-if value="{{esUsado}}" hint-placeholder-val="{{false}}">
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:12px">
+              <div>
+                <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Stock</label>
+                <div class="campo mono" style="display:flex;align-items:center;color:var(--text-dim);background:var(--bg-surface)">1 (pieza única)</div>
+              </div>
+              <div>
+                <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Motivo visible al cliente *</label>
+                <select class="campo" value="{{formMotivoUsado}}" onChange="{{onFormMotivoUsado}}">
+                  <option>Usado para prueba</option>
+                  <option>Incompleto — faltan piezas</option>
+                  <option>Unidad de exhibición</option>
+                  <option>Otro</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Devolución de origen</label>
+                <select class="campo"><option>DEV-00034 · Jorge Cruz</option></select>
+              </div>
+              <div style="font-size:12px;color:var(--warning);line-height:1.5;background:var(--warning-tint);border:1px solid var(--warning);padding:10px">Esta ficha se publica aparte del producto nuevo, con su propio precio y su propia foto real. Sube una foto de la pieza, no la del catálogo.</div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- Otras pestañas: placeholder simple -->
+    <sc-if value="{{tabOtra}}" hint-placeholder-val="{{false}}">
+      <div class="tarjeta" style="padding:40px;text-align:center;color:var(--text-muted);font-size:14px">La pestaña «{{tabActivaLabel}}» sigue la misma especificación de <span class="mono">diseño.md</span> §11.7 — no incluida en esta pasada de la maqueta.</div>
+    </sc-if>
+
+    <div style="position:sticky;bottom:0;background:var(--bg-surface);border-top:1px solid var(--border);padding:14px 0;margin-top:24px;display:flex;justify-content:space-between">
+      <button class="btn btn-fantasma cut cut-10" onClick="{{irACatalogo}}">Cancelar</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-fantasma cut cut-10">Guardar como borrador</button>
+        <button class="btn btn-primario cut cut-12" onClick="{{guardarProducto}}">Guardar</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===== CATEGORÍAS (F3, árbol de D7) ===== -->
+  <sc-if value="{{isCategorias}}" hint-placeholder-val="{{false}}">
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <a href="#" onClick="{{irACatalogo}}" style="font-size:13px">‹ Catálogo</a>
+        <span style="color:var(--border-strong)">·</span>
+        <h1 class="title" style="font-size:22px;margin:0">Categorías</h1>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-fantasma cut cut-10">Nuevo grupo</button>
+        <button class="btn btn-primario cut cut-10">Nueva subcategoría</button>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Grupo → subcategoría → sub-subcategoría (D7). Sin límite de profundidad impuesto por la interfaz.</div>
+    <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:16px">
+      <div class="tarjeta" style="padding:10px 0;max-height:640px;overflow:auto">
+        <sc-for list="{{arbolGrupos}}" as="g" hint-placeholder-count="6">
+          <button onClick="{{g.onClick}}" style="width:100%;text-align:left;background:none;border:none;padding:9px 14px;display:flex;align-items:center;gap:8px;color:var(--text-primary);font-family:var(--font-title);font-weight:600;font-size:14px;cursor:pointer">
+            <span style="color:var(--text-muted);width:12px">{{g.flecha}}</span>{{g.nombre}}
+            <span class="mono" style="margin-left:auto;color:var(--text-muted);font-size:12px">{{g.codigo}} {{g.conteo}}</span>
+          </button>
+          <sc-if value="{{g.abierto}}" hint-placeholder-val="{{false}}">
+            <sc-for list="{{g.subs}}" as="sub" hint-placeholder-count="8">
+              <button onClick="{{sub.onClick}}" style="width:100%;text-align:left;background:{{sub.bg}};border:none;border-left:2px solid {{sub.borde}};padding:7px 14px 7px 36px;display:flex;align-items:center;gap:8px;color:{{sub.color}};font-size:13px;cursor:pointer">
+                <span style="color:var(--text-muted);width:10px">{{sub.flecha}}</span>{{sub.nombre}}
+                <span class="mono" style="margin-left:auto;color:var(--text-muted);font-size:11px">{{sub.conteo}}</span>
+              </button>
+              <sc-if value="{{sub.abierto}}" hint-placeholder-val="{{false}}">
+                <sc-for list="{{sub.subsubs}}" as="ss" hint-placeholder-count="6">
+                  <button onClick="{{ss.onClick}}" style="width:100%;text-align:left;background:{{ss.bg}};border:none;padding:6px 14px 6px 60px;display:flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:12.5px;cursor:pointer;border-left:2px solid var(--border-subtle)">
+                    {{ss.nombre}}<span class="mono" style="margin-left:auto;color:var(--text-dim);font-size:11px">{{ss.conteo}}</span>
+                  </button>
+                </sc-for>
+              </sc-if>
+            </sc-for>
+          </sc-if>
+        </sc-for>
+      </div>
+      <div class="tarjeta" style="padding:20px;height:fit-content">
+        <sc-if value="{{catNadaSeleccionado}}" hint-placeholder-val="{{true}}">
+          <div style="color:var(--text-muted);font-size:14px">Elige una categoría del árbol para editarla.</div>
+        </sc-if>
+        <sc-if value="{{catAlgoSeleccionado}}" hint-placeholder-val="{{false}}">
+          <div style="font-family:var(--font-title);font-weight:600;font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">Editando {{catSelTipo}}</div>
+          <label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">Nombre *</label>
+          <input class="campo" value="{{catSelNombre}}" style="margin-bottom:14px">
+          <label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">Dirección web (slug)</label>
+          <input class="campo mono" value="{{catSelSlug}}" style="margin-bottom:14px">
+          <label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">Está dentro de</label>
+          <div class="mono" style="font-size:13px;color:var(--text-secondary);background:var(--bg-inset);border:1px solid var(--border);padding:10px 12px;margin-bottom:14px">{{catSelPadre}}</div>
+          <div style="display:flex;gap:14px;font-size:14px;margin-bottom:16px">
+            <label style="display:flex;align-items:center;gap:7px"><input type="radio" name="visib" checked> Visible en la tienda</label>
+            <label style="display:flex;align-items:center;gap:7px"><input type="radio" name="visib"> Oculta</label>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <button class="btn btn-peligro cut cut-10">Eliminar</button>
+            <button class="btn btn-primario cut cut-10">Guardar</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===== DEVOLUCIONES (D2) ===== -->
+  <sc-if value="{{isDevoluciones}}" hint-placeholder-val="{{false}}">
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <h1 class="title" style="font-size:28px;margin:0">Devoluciones</h1>
+      <button class="btn btn-fantasma cut cut-10">Exportar CSV</button>
+    </div>
+    <input class="campo" style="max-width:340px;margin-bottom:14px" placeholder="🔍 Folio de devolución, pedido o cliente">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      <sc-for list="{{chipsDevoluciones}}" as="c" hint-placeholder-count="5">
+        <button class="chip {{c.clase}}" onClick="{{c.onClick}}">{{c.label}} {{c.cuenta}}</button>
+      </sc-for>
+    </div>
+    <div class="tarjeta">
+      <table>
+        <thead><tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Pedido</th><th>Producto</th><th>Saldo</th><th>Estado</th></tr></thead>
+        <tbody>
+        <sc-for list="{{devolucionesFiltradas}}" as="d" hint-placeholder-count="3">
+          <tr class="fila" style="cursor:pointer" onClick="{{d.onClick}}">
+            <td class="mono">{{d.folio}}</td>
+            <td class="mono" style="color:var(--text-muted);font-size:12px">{{d.fecha}}</td>
+            <td>{{d.cliente}}</td>
+            <td class="mono">{{d.pedido}}</td>
+            <td>{{d.producto}}<div style="font-size:12px;color:var(--text-muted)">{{d.condicion}} · {{d.pctSugerido}}%</div></td>
+            <td class="mono">{{d.monto}}</td>
+            <td><span class="badge" style="{{d.estiloBadge}}">{{d.estadoLabel}}</span></td>
+          </tr>
+        </sc-for>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <!-- Cajón de resolución -->
+  <sc-if value="{{drawerDevAbierto}}" hint-placeholder-val="{{false}}">
+    <div class="modal-overlay" style="justify-content:flex-end" onClick="{{cerrarDrawerDev}}">
+      <div class="tarjeta sg-in" style="width:440px;height:100vh;overflow:auto;padding:22px" onClick="{{noop}}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+          <div>
+            <div class="title mono" style="font-size:18px">{{devSel.folio}}</div>
+            <div style="font-size:13px;color:var(--text-muted)">{{devSel.cliente}} · pedido {{devSel.pedido}}</div>
+          </div>
+          <button class="btn btn-fantasma btn-sm" onClick="{{cerrarDrawerDev}}">✕</button>
+        </div>
+        <div style="font-family:var(--font-title);font-weight:600;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Producto devuelto</div>
+        <div style="font-size:14px;margin-bottom:2px">{{devSel.producto}}</div>
+        <div class="mono" style="font-size:12px;color:var(--text-muted);margin-bottom:14px">{{devSel.sku}} · 1 pieza · {{devSel.monto}}</div>
+        <div style="font-family:var(--font-title);font-weight:600;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Motivo del cliente</div>
+        <div style="font-size:13px;color:var(--text-secondary);font-style:italic;margin-bottom:14px">"{{devSel.motivo}}"</div>
+        <div style="font-family:var(--font-title);font-weight:600;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Condición declarada</div>
+        <div class="badge" style="background:transparent;border:1px solid var(--border-strong);color:var(--text-primary);margin-bottom:16px">{{devSel.condicion}}</div>
+        <div style="border-top:1px solid var(--border);padding-top:16px;margin-bottom:16px">
+          <div style="font-family:var(--font-title);font-weight:600;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Saldo a favor que se otorga</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;margin-bottom:10px">
+            <label style="display:flex;align-items:center;gap:8px"><input type="radio" name="pct" checked="{{pct100}}" onChange="{{onPct100}}"> 100% — {{montoAl100}} <span style="color:var(--text-muted);font-size:12px">(propuesto)</span></label>
+            <label style="display:flex;align-items:center;gap:8px"><input type="radio" name="pct" checked="{{pct70}}" onChange="{{onPct70}}"> 70% — {{montoAl70}}</label>
+            <label style="display:flex;align-items:center;gap:8px"><input type="radio" name="pct" checked="{{pctOtro}}" onChange="{{onPctOtro}}"> Otro</label>
+          </div>
+          <div class="mono" style="font-size:30px;font-weight:500">{{montoCalculado}}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:6px">Saldo actual: {{devSel.saldoActual}} · Quedará con: {{saldoResultante}}</div>
+        </div>
+        <div style="border-top:1px solid var(--border);padding-top:16px;margin-bottom:18px">
+          <div style="font-family:var(--font-title);font-weight:600;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">¿Qué pasa con la pieza física?</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
+            <label style="display:flex;align-items:flex-start;gap:8px"><input type="radio" name="dest" checked="{{destNueva}}" onChange="{{onDestNueva}}" style="margin-top:3px"><span>Regresa al inventario como nueva<div style="color:var(--text-muted);font-size:12px">stock de {{devSel.sku}} sube 1 pieza</div></span></label>
+            <label style="display:flex;align-items:flex-start;gap:8px"><input type="radio" name="dest" checked="{{destUsado}}" onChange="{{onDestUsado}}" style="margin-top:3px"><span>Publicarla aparte como «Usado»<div style="color:var(--text-muted);font-size:12px">abre el editor de producto precargado</div></span></label>
+            <label style="display:flex;align-items:flex-start;gap:8px"><input type="radio" name="dest" checked="{{destNo}}" onChange="{{onDestNo}}" style="margin-top:3px"><span>No revenderla</span></label>
+          </div>
+        </div>
+        <button class="btn btn-primario cut cut-12" style="width:100%;margin-bottom:10px" onClick="{{cerrarDrawerDev}}">Aprobar y abonar {{montoCalculado}}</button>
+        <button class="btn btn-peligro cut cut-10" style="width:100%" onClick="{{cerrarDrawerDev}}">Rechazar devolución</button>
+      </div>
+    </div>
+  </sc-if>
+  </sc-if>
+
+  <!-- ===== SOLICITUDES DE SERVICIO (E2) ===== -->
+  <sc-if value="{{isSolicitudes}}" hint-placeholder-val="{{false}}">
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <h1 class="title" style="font-size:28px;margin:0">Solicitudes de servicio</h1>
+      <button class="btn btn-fantasma cut cut-10">Exportar CSV</button>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <input class="campo" style="max-width:260px" placeholder="🔍 Nombre, correo o teléfono">
+      <select class="campo" style="max-width:160px"><option>Servicio: Todos</option></select>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      <sc-for list="{{chipsSolicitudes}}" as="c" hint-placeholder-count="4">
+        <button class="chip {{c.clase}}" onClick="{{c.onClick}}">{{c.label}} {{c.cuenta}}</button>
+      </sc-for>
+    </div>
+    <div class="tarjeta">
+      <table>
+        <thead><tr><th>Folio</th><th>Fecha</th><th>Nombre</th><th>Servicio</th><th>Ubicación</th><th>Estado</th></tr></thead>
+        <tbody>
+        <sc-for list="{{solicitudesFiltradas}}" as="s" hint-placeholder-count="3">
+          <tr class="fila" style="cursor:pointer" onClick="{{s.onClick}}">
+            <td class="mono">{{s.folio}}</td>
+            <td class="mono" style="color:var(--text-muted);font-size:12px">{{s.fecha}}</td>
+            <td>{{s.nombre}}<div style="font-size:12px;color:var(--text-muted)">{{s.tipoCliente}}</div></td>
+            <td>{{s.servicio}}</td>
+            <td style="color:var(--text-muted)">{{s.ubicacion}}</td>
+            <td><span class="badge" style="{{s.estiloBadge}}">{{s.estadoLabel}}</span></td>
+          </tr>
+        </sc-for>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <sc-if value="{{drawerSolAbierto}}" hint-placeholder-val="{{false}}">
+    <div class="modal-overlay" style="justify-content:flex-end" onClick="{{cerrarDrawerSol}}">
+      <div class="tarjeta sg-in" style="width:420px;height:100vh;overflow:auto;padding:22px" onClick="{{noop}}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+          <div class="title mono" style="font-size:18px">{{solSel.folio}}</div>
+          <button class="btn btn-fantasma btn-sm" onClick="{{cerrarDrawerSol}}">✕</button>
+        </div>
+        <div style="font-family:var(--font-title);font-weight:600;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Contacto</div>
+        <div style="font-size:14px">{{solSel.nombre}} · {{solSel.tipoCliente}}</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">{{solSel.telefono}} · {{solSel.correo}}</div>
+        <div style="font-family:var(--font-title);font-weight:600;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Servicio de interés</div>
+        <div style="font-size:14px;margin-bottom:14px">{{solSel.servicio}}<sc-if value="{{solSel.tieneMonto}}" hint-placeholder-val="{{false}}"><div style="color:var(--text-muted);font-size:12px">{{solSel.montoTxt}} · {{solSel.plazo}}</div></sc-if></div>
+        <div style="font-family:var(--font-title);font-weight:600;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Ubicación e inmueble</div>
+        <div style="font-size:14px;margin-bottom:20px">{{solSel.ubicacion}} · {{solSel.inmueble}}</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+          <button class="btn btn-primario cut cut-10" onClick="{{cerrarDrawerSol}}">Marcar en seguimiento</button>
+          <button class="btn btn-secundario cut cut-10" onClick="{{cerrarDrawerSol}}">Marcar cerrada</button>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-fantasma btn-sm" style="flex:1">Llamar</button>
+          <button class="btn btn-fantasma btn-sm" style="flex:1">WhatsApp</button>
+          <button class="btn btn-fantasma btn-sm" style="flex:1">Correo</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+  </sc-if>
+
+  <!-- ===== ANALÍTICA (G1) ===== -->
+  <sc-if value="{{isAnalitica}}" hint-placeholder-val="{{false}}">
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h1 class="title" style="font-size:28px;margin:0">Analítica</h1>
+      <button class="btn btn-fantasma cut cut-10">Exportar CSV</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="chip">7 días</button><button class="chip activo">30 días</button><button class="chip">Este mes</button><button class="chip">Personalizado</button>
+      <select class="campo" style="max-width:150px;margin-left:10px"><option>Grupo: Todos</option></select>
+      <select class="campo" style="max-width:170px"><option>Subcategoría: Todas</option></select>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);background:var(--accent-tint);border:1px solid var(--border);padding:8px 14px;margin-bottom:18px">ⓘ Solo se cuentan pedidos con pago validado (de «Listo para envío» en adelante). Los pedidos pendientes no aparecen aquí.</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px">
+      <div class="tarjeta" style="padding:16px"><div class="mono" style="font-size:24px;font-weight:500">312</div><div style="font-size:12px;color:var(--text-muted);font-family:var(--font-title);font-weight:600;text-transform:uppercase">Piezas</div></div>
+      <div class="tarjeta" style="padding:16px"><div class="mono" style="font-size:24px;font-weight:500">$486,230.00</div><div style="font-size:12px;color:var(--text-muted);font-family:var(--font-title);font-weight:600;text-transform:uppercase">Importe</div></div>
+      <div class="tarjeta" style="padding:16px"><div class="mono" style="font-size:24px;font-weight:500">47</div><div style="font-size:12px;color:var(--text-muted);font-family:var(--font-title);font-weight:600;text-transform:uppercase">Pedidos</div></div>
+      <div class="tarjeta" style="padding:16px"><div class="mono" style="font-size:24px;font-weight:500">$10,345.32</div><div style="font-size:12px;color:var(--text-muted);font-family:var(--font-title);font-weight:600;text-transform:uppercase">Ticket promedio</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="tarjeta" style="padding:20px">
+        <h3 style="font-family:var(--font-title);font-weight:600;font-size:16px;margin:0 0 14px">Más vendidos</h3>
+        <sc-for list="{{masVendidosAnalitica}}" as="m" hint-placeholder-count="10">
+          <div style="margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:var(--text-secondary)">{{m.nombre}}</span><span class="mono">{{m.unidades}}</span></div>
+            <div style="background:var(--track);height:8px;width:100%"><div style="height:100%;width:{{m.pct}};background:var(--accent)"></div></div>
+            <div class="mono" style="font-size:11px;color:var(--text-muted);margin-top:2px">{{m.sku}} · {{m.importe}}</div>
+          </div>
+        </sc-for>
+        <a href="#" onClick="{{noop}}" style="font-size:13px">Ver los 10 · Ver los datos</a>
+      </div>
+      <div class="tarjeta" style="padding:20px">
+        <h3 style="font-family:var(--font-title);font-weight:600;font-size:16px;margin:0 0 14px">Menos vendidos</h3>
+        <sc-for list="{{menosVendidosAnalitica}}" as="m" hint-placeholder-count="10">
+          <div style="margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:var(--text-secondary)">{{m.nombre}}</span><span class="mono">{{m.unidades}}</span></div>
+            <div style="background:var(--track);height:8px;width:100%"><div style="height:100%;width:{{m.pct}};background:var(--warning)"></div></div>
+            <div class="mono" style="font-size:11px;color:var(--text-muted);margin-top:2px">{{m.sku}} · {{m.importe}}</div>
+          </div>
+        </sc-for>
+        <a href="#" onClick="{{noop}}" style="font-size:13px">Ver los 10 · Ver los datos</a>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===== CONFIGURACIÓN (H4) ===== -->
+  <sc-if value="{{isConfiguracion}}" hint-placeholder-val="{{false}}">
+  <div>
+    <h1 class="title" style="font-size:28px;margin:0 0 18px">Configuración</h1>
+    <div style="display:grid;grid-template-columns:160px 720px;gap:20px">
+      <div style="position:sticky;top:20px;height:fit-content;display:flex;flex-direction:column;gap:2px">
+        <a href="#config-bancarios" style="font-size:13px;padding:8px 10px;color:var(--accent);border-left:2px solid var(--accent);background:var(--bg-card)">Datos bancarios</a>
+        <a href="#config-contacto" style="font-size:13px;padding:8px 10px;color:var(--text-muted);border-left:2px solid transparent">Contacto</a>
+        <a href="#config-plazos" style="font-size:13px;padding:8px 10px;color:var(--text-muted);border-left:2px solid transparent">Plazos</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div class="tarjeta" id="config-bancarios" style="padding:22px">
+          <h2 style="font-family:var(--font-title);font-weight:600;font-size:16px;margin:0 0 12px">Datos bancarios</h2>
+          <div style="font-size:13px;color:var(--warning);background:var(--warning-tint);border:1px solid var(--warning);padding:10px 12px;margin-bottom:16px">⚠ Estos datos se le muestran al cliente al generar su pedido. Un error aquí significa transferencias a una cuenta equivocada. Revísalos dos veces.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+            <div><label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">Banco *</label><input class="campo" value="{{cfgBanco}}" onChange="{{onCfgBanco}}"></div>
+            <div><label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">Beneficiario *</label><input class="campo" value="Seguridad General Querétaro"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:8px">
+            <div><label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">CLABE interbancaria *</label><input class="campo mono" value="{{cfgClabe}}" onChange="{{onCfgClabe}}"></div>
+            <div><label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">Número de cuenta</label><input class="campo mono" value="0123456789"></div>
+          </div>
+          <div style="font-size:12px;color:var(--success);margin-bottom:18px">✓ 18 dígitos · dígito verificador correcto</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Vista previa de lo que verá el cliente:</div>
+          <div style="background:var(--bg-inset);border:1px solid var(--border);padding:14px;font-size:13px;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Banco</span><span>{{cfgBanco}}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Beneficiario</span><span>Seguridad General Querétaro</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">CLABE</span><span class="mono">{{cfgClabeFormateada}}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Referencia</span><span class="mono">SGQ-7K4M2X</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Importe</span><span class="mono">$5,879.00</span></div>
+          </div>
+          <div style="text-align:right;margin-top:16px"><button class="btn btn-primario cut cut-10">Guardar datos bancarios</button></div>
+        </div>
+        <div class="tarjeta" id="config-contacto" style="padding:22px">
+          <h2 style="font-family:var(--font-title);font-weight:600;font-size:16px;margin:0 0 12px">Contacto del administrador</h2>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:10px">
+            <div><label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">Correo para avisos *</label><input class="campo" value="ventas@sgqro.mx"></div>
+            <div><label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">WhatsApp para avisos</label><input class="campo mono" value="+52 442 000 0000"></div>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Aquí llegan los avisos de comprobante recibido y las solicitudes de servicio.</div>
+          <div style="display:flex;justify-content:space-between"><button class="btn btn-fantasma cut cut-10">Enviarme un correo de prueba</button><button class="btn btn-primario cut cut-10">Guardar contacto</button></div>
+        </div>
+        <div class="tarjeta" id="config-plazos" style="padding:22px">
+          <h2 style="font-family:var(--font-title);font-weight:600;font-size:16px;margin:0 0 12px">Plazos</h2>
+          <div style="margin-bottom:14px">
+            <label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">Días para solicitar una devolución</label>
+            <input class="campo mono" style="width:100px;display:inline-block" value="30"> <span style="font-size:13px;color:var(--text-muted)">días desde que se entrega el pedido</span>
+          </div>
+          <div style="margin-bottom:6px">
+            <label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">Días para cancelar un pedido no pagado</label>
+            <input class="campo mono" style="width:100px;display:inline-block" value="3"> <span style="font-size:13px;color:var(--text-muted)">días desde que se genera el pedido</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Se envía un recordatorio por correo el día 2.</div>
+          <div style="text-align:right"><button class="btn btn-primario cut cut-10">Guardar plazos</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===== IMPORTADOR CSV — paso 1 ===== -->
+  <sc-if value="{{isImportPaso1}}" hint-placeholder-val="{{false}}">
+  <div style="max-width:760px">
+    <h1 class="title" style="font-size:28px;margin:0 0 6px">Importar catálogo</h1>
+    <div style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--accent);margin-bottom:24px">
+      <span style="font-weight:600">① Subir archivo</span><span style="color:var(--border-strong)">────</span><span style="color:var(--text-dim)">② Revisar</span><span style="color:var(--border-strong)">────</span><span style="color:var(--text-dim)">③ Aplicar</span>
+    </div>
+    <div style="border:1px dashed var(--border-input);padding:48px 24px;text-align:center;margin-bottom:16px">
+      <div style="font-size:15px;margin-bottom:10px">Arrastra aquí tu archivo CSV o Excel</div>
+      <button class="btn btn-secundario cut cut-10" onClick="{{irAImportarPaso2}}">Elige un archivo</button>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:12px">Hasta 10 MB · formatos .csv y .xlsx</div>
+    </div>
+    <div style="background:var(--accent-tint);border:1px solid var(--border);padding:12px 14px;font-size:13px;margin-bottom:16px">ⓘ ¿Primera vez? <a href="#" onClick="{{noop}}">Descarga la plantilla</a> con las columnas correctas y un ejemplo lleno. Los productos se identifican por su SKU: si ya existe, se actualiza; si no, se crea.</div>
+    <div style="font-size:14px;margin-bottom:8px">Qué quieres actualizar:</div>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--text-secondary)">
+      <label style="display:flex;gap:8px;align-items:center"><input type="radio" name="quetipo" checked> Todo el producto</label>
+      <label style="display:flex;gap:8px;align-items:center"><input type="radio" name="quetipo"> Solo precios</label>
+      <label style="display:flex;gap:8px;align-items:center"><input type="radio" name="quetipo"> Solo existencias</label>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===== IMPORTADOR CSV — paso 2 ===== -->
+  <sc-if value="{{isImportPaso2}}" hint-placeholder-val="{{false}}">
+  <div>
+    <h1 class="title" style="font-size:28px;margin:0 0 6px">Importar catálogo · Revisar</h1>
+    <div style="display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:8px">
+      <span style="color:var(--success)">✓ Subir archivo</span><span style="color:var(--border-strong)">────</span><span style="color:var(--accent);font-weight:600">② Revisar</span><span style="color:var(--border-strong)">────</span><span style="color:var(--text-dim)">③ Aplicar</span>
+    </div>
+    <div class="mono" style="font-size:12px;color:var(--text-muted);margin-bottom:20px">catalogo-sept.csv · 1,050 filas</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px">
+      <div class="tarjeta cut cut-12" style="padding:18px;text-align:center;border-color:var(--success)">
+        <div class="mono" style="font-size:36px;color:var(--success);font-weight:500">980</div>
+        <div style="font-size:12px;color:var(--text-muted);font-family:var(--font-title);font-weight:600;letter-spacing:.5px">CORRECTAS ✓</div>
+      </div>
+      <div class="tarjeta cut cut-12" style="padding:18px;text-align:center;border-color:var(--danger)">
+        <div class="mono" style="font-size:36px;color:var(--danger-text);font-weight:500">70</div>
+        <div style="font-size:12px;color:var(--text-muted);font-family:var(--font-title);font-weight:600;letter-spacing:.5px">CON ERROR ✕</div>
+      </div>
+      <div class="tarjeta cut cut-12" style="padding:18px;text-align:center">
+        <div class="mono" style="font-size:22px;font-weight:500">312 / 668</div>
+        <div style="font-size:12px;color:var(--text-muted);font-family:var(--font-title);font-weight:600;letter-spacing:.5px">NUEVOS / ACTUALIZAR</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="chip {{filtroErrorClase}}" onClick="{{filtrarSoloError}}">Solo con error (70)</button>
+      <button class="chip {{filtroCorrectaClase}}" onClick="{{filtrarSoloCorrecta}}">Solo correctas (980)</button>
+      <button class="chip {{filtroTodasClase}}" onClick="{{filtrarTodas}}">Todas</button>
+    </div>
+    <div class="tarjeta">
+      <table>
+        <thead><tr><th>Fila</th><th>SKU</th><th>Nombre</th><th>Precio</th><th>Stock</th><th>Qué pasa</th></tr></thead>
+        <tbody>
+        <sc-for list="{{filasImportacion}}" as="f" hint-placeholder-count="4">
+          <tr>
+            <td class="mono" style="color:{{f.color}}">{{f.icono}} {{f.fila}}</td>
+            <td class="mono">{{f.sku}}</td>
+            <td>{{f.nombre}}</td>
+            <td class="mono">{{f.precio}}</td>
+            <td class="mono">{{f.stock}}</td>
+            <td style="color:{{f.color}};font-size:13px">{{f.motivo}} <sc-if value="{{f.crear}}" hint-placeholder-val="{{false}}"><a href="#" onClick="{{noop}}">[Crearla]</a></sc-if></td>
+          </tr>
+        </sc-for>
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:13px;color:var(--text-muted);margin:14px 0">ⓘ Las 70 filas con error se omiten; las 980 correctas sí se aplican.</div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-fantasma cut cut-10" onClick="{{irAImportarPaso1}}">‹ Cambiar archivo</button>
+        <button class="btn btn-fantasma cut cut-10">Descargar las 70 filas con error</button>
+      </div>
+      <button class="btn btn-primario cut cut-12">Aplicar 980 productos</button>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</sc-if>
+</div>
+
+<!-- MODALES -->
+<sc-if value="{{modalOpen}}" hint-placeholder-val="{{false}}">
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+  <div class="modal sg-in">
+    <h2 id="modal-titulo" style="font-family:var(--font-title);font-weight:600;font-size:18px;margin:0 0 10px">{{modalTitulo}}</h2>
+    <div style="font-size:14px;color:var(--text-secondary);line-height:1.5;margin-bottom:18px">{{modalCuerpo}}</div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-fantasma cut cut-10" onClick="{{cerrarModal}}">Cancelar</button>
+      <button class="btn {{modalBotonClase}} cut cut-10" onClick="{{confirmarModal}}">{{modalBotonTexto}}</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  state = {
+    loggedIn: false,
+    loginEmail: '',
+    loginPass: '',
+    loginError: false,
+    role: 'admin',
+    screen: 'tablero',
+    folioSeleccionado: 'SGQ-7K4M2X',
+    filtroPedidos: 'todos',
+    busquedaPedidos: '',
+    vieneDelTablero: false,
+    periodoActivo: '30',
+    editandoSku: null,
+    editValor: '',
+    modalTipo: null,
+    csvFiltro: 'todas',
+    placeholderInfo: { titulo: '', seccion: '' },
+    tabProducto: 'general',
+    formSku: '',
+    formNombre: '',
+    formMarca: 'Hikvision',
+    formEstado: 'Activo',
+    formGrupoId: '',
+    formSubId: '',
+    formSubSubId: '',
+    formMotivoUsado: 'Usado para prueba',
+    condicion: 'nuevo',
+    filtroDevoluciones: 'pendientes',
+    drawerDevolucion: null,
+    devSaldoPct: '100',
+    devDestinoPieza: 'nueva',
+    filtroSolicitudes: 'nuevas',
+    drawerSolicitud: null,
+    catSeleccionado: null,
+    catGrupoAbierto: 'vv',
+    catSubAbierto: null,
+    analiticaOrden: 'unidades',
+    cfgBanco: 'BBVA México',
+    cfgClabe: '012680012345678901'
+  };
+
+  // Taxonomía real del catálogo (docs/contexto-negocio.md §3) — grupo → subcategoría → sub-subcategoría
+  categoriasData = [
+    { id:'vv', nombre:'Videovigilancia', subs:[
+      { nombre:'Cámaras IP y NVRs', sub:['4G','Ambientes Salinos (Anticorrosión)','Antiexplosión','Bala','Codificadores y Decodificadores de Video','Cubo','Domo / Eyeball / Turret','Fisheye y Hemisféricas','Lente Motorizado','NVRs Network Video Recorders','Oculta - Pinhole','Profesionales - Caja','PTZ','Térmicas','WiFi'] },
+      { nombre:'Cámaras y DVRs HD TurboHD / AHD / HD-TVI', sub:['Ambientes Salinos','Antiexplosión','Bala','Domo / Eyeball / Turret','Especiales','Lente Motorizado','Ocultas - Pinhole','Profesionales - Caja','PTZ','Videograbadoras Analógicas - TurboHD TVI / AHD / CVI'] },
+      { nombre:'Cables y Conectores', sub:['Cable Coaxial y Conectores','Cable de Red UTP (Cat5e / 6 / 6A)','Cables A/V (HDMI / VGA / DVI / RCA / Audio)','Fibra Óptica','Para Alimentación y Electricidad','Telefónico'] },
+      { nombre:'Energía', sub:['Baterías','Fuentes de Alimentación','PDU','PoE: Inyectores y Largo Alcance','Protección de Líneas (Red / Coaxial)','Supresores / Corriente AC-DC','UPS - No Break'] },
+      { nombre:'Kits - Sistemas Completos', sub:['IP Megapixel','Móviles (Para Vehículos)','TurboHD de 16 Canales','TurboHD de 4 Canales','TurboHD de 8 Canales'] },
+      { nombre:'Monitores Pantallas y Mobiliario', sub:['Accesorios','Consolas y Mobiliario de Monitoreo','Pantallas / Monitores','Videowall Seguridad'] },
+      { nombre:'Servidores / Almacenamiento', sub:['Accesorios','Almacenamiento NAS / SAN / eSATA','Discos Duros Mecánicos (HDD)','Estaciones de Trabajo (Workstation)','Memorias SD / Memorias Micro SD','Servidores de Aplicación','Unidades de Estado Sólido (SSD)'] },
+      { nombre:'Software VMS y Analíticas', sub:['Digifort','EPCOM Cloud','HIKVISION','Honeywell','IDIS','ISS','Milestone','SYNOLOGY','Wisenet Wave','XMR CEIBAII / KAPOK'] },
+      { nombre:'Videograbadoras Móviles, Dash Cams y Body Cams', sub:['Accesorios','Body Cams (Portátiles)','Cámaras Móviles','Dash Cams','MDVR / MNVR'] },
+      { nombre:'Videoporteros e Interfonos', sub:['Accesorios','Intercomunicadores','Intercomunicadores por Radio','Interfonos','Multiapartamentos','Videoporteros Analógicos','Videoporteros IP','Videoporteros IP Doorbell'] }
+    ]},
+    { id:'ca', nombre:'Control de Acceso', subs:[
+      { nombre:'Acceso vehicular', sub:['Accesorios','Barreras Vehiculares','Pilonas o Bolardos','Puertas Abatibles y Corredizas','Refacciones','Semáforos, Radares y Señalización','Topes, Picos y Reductores'] },
+      { nombre:'Accesorios', sub:['Bisagras y Pasacables','Botones de Salida','Cables para Control de Acceso','Cierrapuertas','Contactos Magnéticos','Controles Inalámbricos','Mobiliario de Apoyo','Sensores para Puertas Automáticas','Tarjetas de Relevador','Tarjetas y Tags'] },
+      { nombre:'Administración de Hoteles', sub:[] },
+      { nombre:'Biométricos', sub:['Accesorios','Enroladores y Lectores USB','Para Control de Acceso','Para Tiempo y Asistencia / Checadores'] },
+      { nombre:'Cerraduras', sub:['Accesorios','Autónomas / Inteligentes','Cerrojos y Candados Digitales','Chapas y Contrachapas','Eléctricas','Mecánicas y de Perno'] },
+      { nombre:'Fuentes de Alimentación', sub:['Baterías','Fuentes de Respaldo','Transformadores'] },
+      { nombre:'Inspección por Rayos X y Explosivos', sub:['Escaneo Corporal','Sistemas de Inspección por Rayos X'] },
+      { nombre:'Lectoras y Tarjetas', sub:['Bluetooth','Enroladores y Lectores USB','MIFARE®/iCLASS (13.56 MHz)','NFC / QR','Proximidad (125 KHz)','SEOS','UHF/ RFID'] },
+      { nombre:'Paneles de Control de Acceso', sub:['Accesorios','Controladores de Acceso','Licencias y Softwares'] },
+      { nombre:'Protección Contra Descargas', sub:['Coaxial','Corriente Alterna y Directa','Redes'] },
+      { nombre:'Sistemas de Emergencia', sub:['Barras y Accesorios para Puertas de Emergencia','Estaciones y Señalización de Emergencia','Puertas de Emergencia'] },
+      { nombre:'Software de Asistencia', sub:['Control de Acceso','Estacionamientos','Tiempo y Asistencia'] },
+      { nombre:'Torniquetes y Puertas de Cortesía', sub:['Puertas de Cortesía','Refacciones','Torniquetes (Cuerpo Completo y Medio)'] },
+      { nombre:'Videoporteros e Interfonos', sub:['Accesorios','Intercomunicadores e Interfonos','Intercomunicadores por Radio','Multiapartamentos','Videoporteros Analógicos','Videoporteros IP'] }
+    ]},
+    { id:'ai', nombre:'Automatización e Intrusión', subs:[
+      { nombre:'Accesorios', sub:['Botones de Pánico','Controles Remotos','Estaciones de Jalón','Sirenas y Estrobos'] },
+      { nombre:'Automatización - Casa Inteligente', sub:['Apagadores y Atenuadores Inteligentes','Cámaras Wi-Fi Inteligentes','Cerraduras Inteligentes','Climatización y Termostatos','Difusores y Aromatización Inteligente','Enchufes y Contactos Inteligentes','Focos y Tiras LED Inteligentes','Garage','Hubs, Gateways y Pantallas de Control','Persianas y Cortinas Inteligentes','Sensores y Relevadores','Videoporteros y Timbres Inteligentes','Z-Wave','Zigbee'] },
+      { nombre:'Cables', sub:[] },
+      { nombre:'Cercas Eléctricas', sub:['Accesorios','Aisladores','Energizadores','Postes'] },
+      { nombre:'Energía', sub:['Baterías','Fuentes de Poder','Protección Contra Sobretensiones','Transformadores'] },
+      { nombre:'Gabinetes y Carcasas', sub:['Carcasas','Gabinetes para Paneles','Gabinetes para Sirena'] },
+      { nombre:'Generadores de Niebla', sub:[] },
+      { nombre:'Protección Perimetral', sub:['Cámaras Térmicas','Cable Sensor Perimetral','Sensores de Movimiento para Exterior','Sensores de Rayo Láser y PIRs Inteligentes','Sensores Fotoeléctricos y Microondas','Transmisor RF Largo Alcance'] },
+      { nombre:'Señalamientos', sub:[] },
+      { nombre:'Sistemas de Emergencia', sub:['Accesorios para Puertas de Emergencia','Atención Sociosanitaria','Barras para Puertas de Emergencia','Estaciones Manuales de Emergencia','Puertas de Emergencia','Señalización'] }
+    ]},
+    { id:'ec', nombre:'Energía y Climatización', subs:[
+      { nombre:'Baterías y Cargadores', sub:['Baterías','Cargadores de Baterías','Cargadores de Vehículos (EV Chargers)','Terminales y Accesorios'] },
+      { nombre:'Bombeo', sub:['Bombas','Variadores y Accesorios'] },
+      { nombre:'Calidad de la Energía', sub:['Accesorios para Tierra Física','Banco de Capacitores','Pararrayos','Reguladores','Supresores de Picos','Tierras Físicas'] },
+      { nombre:'Climatización / Refrigeración', sub:['Accesorios / Herramientas','Aire de Precisión (Telecom)','Boilers / Refrigeradores / Congeladores','Minisplits y Aire Acondicionado','Refacciones','Termostatos y Control HVAC'] },
+      { nombre:'Energía Solar', sub:['Accesorios / Cables / Jumpers','Baterías Solares','Controladores de Carga MPPT/PWM','Inversores Aislados (Off Grid)','Inversores Híbridos / Cargadores','Inversores Interconexión (On Grid)','Kits de Montajes Solares','Kits Solares','Módulos Solares','Microinversores','Montajes para Módulos','Piezas Montajes Solares','Protecciones Vcc'] },
+      { nombre:'Fuentes de Poder', sub:['Accesorios / Divisores / Conectores','Convertidores (Vcc a Vcc)','Eliminadores y Transformadores de Pared','Fuente de Alimentación con Respaldo','Fuentes con Distribuidor','Fuentes de Salida Única','Fuentes de Uso Industrial / Riel DIN','Fuentes en Kit'] },
+      { nombre:'Gabinetes y Cajas', sub:['Cajas para Conexiones / Registros','Gabinetes para Exterior / Interior','Gabinetes y Accesorios Antiexplosión','Glándulas y Accesorios'] },
+      { nombre:'PDU', sub:['Básicos','Especializados'] },
+      { nombre:'Protectores Sobretensiones', sub:['Protección Térmica'] },
+      { nombre:'Respaldo de Energía', sub:['Accesorios','Estaciones de Energía Portables','Generadores de Diesel','Generadores de Gasolina','Remolques para Energía Solar','UPS / No Break'] }
+    ]},
+    { id:'ce', nombre:'Cableado Estructurado', subs:[
+      { nombre:'Cable - Bobinas', sub:['Categoría 5e','Categoría 6','Categoría 6A','Categoría 7A'] },
+      { nombre:'Cableado de Cobre', sub:['Cajas Superficiales','Faceplates','Herramientas','Jacks / Plugs','Patch Cords','Patch Panels'] },
+      { nombre:'Canalización', sub:['Accesorios para Canaletas','Canaletas','Cinchos / Corbatas','Ducto Cuadrado','Fijación','Tubería Metálica CONDUIT / Accesorios','Tubería PVC / Registros','PVC'] },
+      { nombre:'Charola', sub:['Accesorios','Charola Mallafil','Charola para Fibra Óptica','Charola Tubular','Charolas Tipo Escalerilla','Charolas Tipo Malla','Charolas Tipo Malla Bimetálica','Curvas Pre-Fabricadas','Montajes','Tapas para Charolas','Uniones'] },
+      { nombre:'Conectores', sub:['Para Redes RJ-45'] },
+      { nombre:'Fibra Óptica', sub:['Cable','Conectores','Distribuidores de Fibra Óptica','Herramientas','Jumpers y Pigtails'] },
+      { nombre:'PDU', sub:['Básicos','Fuente Redundante (ATS)','Medibles','Monitoreables','Switcheables'] },
+      { nombre:'Racks y Gabinetes', sub:['Accesorios para Rack/Gabinetes','Gabinetes para Exterior','Gabinetes para Montaje en Pared','Racks Abiertos','Racks Cerrados'] },
+      { nombre:'Transceptores de Fibra / (Mini-GBICs)', sub:['100G Duplex','10G Duplex','1G Duplex','200G Duplex','25G Duplex','400G Duplex','40G Duplex','BiDi (1G/10G)','Cables DAC & AOC','Industrial BiDi','Industrial Duplex','RJ45 SFP'] }
+    ]},
+    { id:'gp', nombre:'GPS, Telemática y Equipamiento Vehicular', subs:[
+      { nombre:'Video Móvil y Cámaras Vehiculares', sub:['Accesorios','Body Cams','Cámaras Móviles','Dash Cams','MDVR / MNVR'] }
+    ]}
+  ];
+
+  marcasData = ['Hikvision','Honeywell','Dahua','APC','EPCOM','Lutron','Axis','Otra'];
+
+  devolucionesData = [
+    { folio:'DEV-00034', fecha:'14 sep 26', cliente:'Jorge Cruz', pedido:'SGQ-9P2R7T', producto:'No-break 1500 VA con regulador', sku:'SGQ-EC-0003', condicion:'Sellado', pctSugerido:100, monto:3299, motivo:'Compré el modelo equivocado, no lo abrí.', estado:'pendiente', saldoActual:0 },
+    { folio:'DEV-00033', fecha:'12 sep 26', cliente:'Ana Salinas', pedido:'SGQ-3H8N5Q', producto:'Cámara domo 2 MP TurboHD', sku:'SGQ-VV-0052', condicion:'Abierto', pctSugerido:70, monto:489, motivo:'Ya no la necesito, la caja está abierta pero completa.', estado:'pendiente', saldoActual:450 },
+    { folio:'DEV-00032', fecha:'8 sep 26', cliente:'Roberto Vega', pedido:'SGQ-4B6K1L', producto:'Cerradura electromagnética', sku:'SGQ-CA-0019', condicion:'Sellado', pctSugerido:100, monto:1120, motivo:'No era compatible con mi puerta.', estado:'aprobada', saldoActual:0 }
+  ];
+
+  solicitudesData = [
+    { folio:'SRV-0112', fecha:'16 sep 26', nombre:'Laura Torres', tipoCliente:'Empresa', telefono:'442 000 0000', correo:'laura@empresa.mx', servicio:'Monitoreo de alarmas 24/7', ubicacion:'Querétaro, Qro.', inmueble:'Oficina', estado:'nueva' },
+    { folio:'SRV-0111', fecha:'15 sep 26', nombre:'Ana Salinas', tipoCliente:'Negocio', telefono:'442 111 2233', correo:'ana@correo.com', servicio:'Financiamiento y créditos', ubicacion:'El Marqués, Qro.', inmueble:'Local', monto:85000, plazo:'12 meses', estado:'seguimiento' },
+    { folio:'SRV-0110', fecha:'12 sep 26', nombre:'Diego Ponce', tipoCliente:'Particular', telefono:'442 555 8899', correo:'diego@correo.com', servicio:'Guardias de seguridad', ubicacion:'Corregidora, Qro.', inmueble:'Casa', estado:'seguimiento' }
+  ];
+
+  menosVendidosData = [
+    { nombre:'Torniquete trípode acero', sku:'SGQ-CA-0033', unidades:1, importe:24900 },
+    { nombre:'Generador de niebla', sku:'SGQ-AI-0014', unidades:1, importe:18500 },
+    { nombre:'Energizador cerca 10 km', sku:'SGQ-AI-0006', unidades:2, importe:4780 }
+  ];
+
+  navConfig = [
+    { id: 'tablero', label: 'Inicio', roles: ['admin'], contador: 0 },
+    { id: 'pedidos', label: 'Pedidos', roles: ['admin'], contador: 7, pulso: true },
+    { id: 'catalogo', label: 'Catálogo', roles: ['admin', 'inventario'], contador: 0 },
+    { id: 'devoluciones', label: 'Devoluciones', roles: ['admin'], contador: 2 },
+    { id: 'solicitudes', label: 'Solicitudes', roles: ['admin'], contador: 4 },
+    { id: 'analitica', label: 'Analítica', roles: ['admin'], contador: 0 },
+    { id: 'configuracion', label: 'Configuración', roles: ['admin'], contador: 0 }
+  ];
+
+  pedidosData = [
+    { folio:'SGQ-7K4M2X', fecha:'16 sep 26 · 10:42', cliente:'Mariana López', correo:'mariana@correo.com', prods:2, total:5879, saldo:0, estado:'comprobante_recibido' },
+    { folio:'SGQ-9P2R7T', fecha:'16 sep 26 · 09:15', cliente:'Jorge Cruz', correo:'jorge@correo.com', prods:1, total:3299, saldo:-450, estado:'comprobante_recibido' },
+    { folio:'SGQ-3H8N5Q', fecha:'15 sep 26 · 17:03', cliente:'Ana Salinas', correo:'ana@correo.com', prods:3, total:0, saldo:-2150, estado:'comprobante_recibido' },
+    { folio:'SGQ-4B6K1L', fecha:'15 sep 26', cliente:'Roberto Vega', correo:'roberto@correo.com', prods:1, total:1120, saldo:0, estado:'pendiente_pago' },
+    { folio:'SGQ-2X9W3M', fecha:'14 sep 26', cliente:'Laura Torres', correo:'laura@correo.com', prods:4, total:8940, saldo:0, estado:'listo_envio' },
+    { folio:'SGQ-8Q5T2N', fecha:'13 sep 26', cliente:'Carlos Mena', correo:'carlos@correo.com', prods:1, total:2690, saldo:0, estado:'enviado' },
+    { folio:'SGQ-1D7F4H', fecha:'10 sep 26', cliente:'Diana Ruiz', correo:'diana@correo.com', prods:2, total:4560, saldo:0, estado:'entregado' },
+    { folio:'SGQ-6M3P9J', fecha:'8 sep 26', cliente:'Pedro Ibarra', correo:'pedro@correo.com', prods:1, total:1890, saldo:0, estado:'cancelado' }
+  ];
+
+  productosData = [
+    { sku:'SGQ-VV-0012', nombre:'Cámara IP bala 4 MP con detección', marca:'Hikvision', precio:1289, stock:24, estado:'activo', usado:false },
+    { sku:'SGQ-VV-0012-U1', nombre:'Cámara IP bala 4 MP con detección', marca:'Hikvision', precio:899, stock:1, estado:'activo', usado:true, detalleCondicion:'Unidad de exhibición' },
+    { sku:'SGQ-VV-0031', nombre:'NVR 8 canales 4K con 8 puertos PoE', marca:'Hikvision', precio:4590, stock:7, estado:'activo', usado:false },
+    { sku:'SGQ-VV-0090', nombre:'Body cam con GPS y 64 GB', marca:'Hikvision', precio:3480, stock:0, estado:'agotado', usado:false },
+    { sku:'SGQ-CA-0019', nombre:'Cerradura electromagnética 600 lb', marca:'Honeywell', precio:1120, stock:18, estado:'activo', usado:false },
+    { sku:'SGQ-EC-0003', nombre:'No-break 1500 VA con regulador', marca:'APC', precio:3299, stock:15, estado:'activo', usado:false }
+  ];
+
+  filasImportData = [
+    { fila:14, sku:'SGQ-VV-0012', nombre:'Cámara IP bala 4 MP', precio:'"mil"', stock:24, motivo:'Precio: "mil" no es un número', ok:false },
+    { fila:27, sku:'(vacío)', nombre:'NVR 8 canales', precio:'4590', stock:7, motivo:'Falta el SKU. Es obligatorio', ok:false },
+    { fila:31, sku:'SGQ-VV-0031', nombre:'NVR 8 canales', precio:'4590', stock:7, motivo:'La subcategoría "Cámaras PTZ" no existe.', crear:true, ok:false },
+    { fila:32, sku:'SGQ-VV-0045', nombre:'Kit 4 cámaras 1080p', precio:'5899', stock:3, motivo:'Se actualiza', ok:true }
+  ];
+
+  money(n){ return '$' + Math.abs(n).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+  estadoInfo(e){
+    const m = {
+      pendiente_pago: { label:'Pendiente de pago', color:'var(--warning)', lleno:false },
+      comprobante_recibido: { label:'Comprobante recibido', color:'var(--accent)', lleno:true },
+      listo_envio: { label:'Listo para envío', color:'var(--accent)', lleno:false },
+      enviado: { label:'Enviado', color:'var(--accent)', lleno:false },
+      entregado: { label:'Entregado', color:'var(--success)', lleno:false },
+      cancelado: { label:'Cancelado', color:'var(--danger-text)', lleno:false }
+    };
+    return m[e];
+  }
+
+  buildPoints(data, w, h, max){
+    const step = w / (data.length - 1);
+    return data.map((v,i)=> (i*step).toFixed(1) + ',' + (h - (v/max)*h).toFixed(1)).join(' ');
+  }
+
+  irA(screen){ return () => this.setState({ screen, modalTipo: null }); }
+
+  renderVals() {
+    const s = this.state;
+
+    const nav = this.navConfig.filter(n => n.roles.includes(s.role)).map(n => ({
+      label: n.label,
+      clase: s.screen === n.id ? 'activo' : '',
+      contador: n.contador > 0,
+      contadorTxt: String(n.contador),
+      pulso: (n.pulso && n.contador > 0) ? 'sg-pulse' : '',
+      onClick: this.irA(n.id)
+    }));
+
+    const ventasActual = [12000,15500,11200,18300,22100,17400,14200,19600,25300,21100,16400,23800,29200,24600,20300,27900,33200,30400,26700,36100];
+    const ventasAnterior = [9000,11800,8600,14100,17200,13500,11000,15200,19700,16400,12800,18500,22700,19100,15800,21600,25800,23600,20700,28100];
+    const maxV = 40000;
+    const ventasPuntosActual = this.buildPoints(ventasActual, 560, 160, maxV);
+    const ventasPuntosAnterior = this.buildPoints(ventasAnterior, 560, 160, maxV);
+    const maxIdx = ventasActual.indexOf(Math.max(...ventasActual));
+    const stepX = 560/(ventasActual.length-1);
+    const ventasMaxX = (maxIdx*stepX).toFixed(1);
+    const ventasMaxY = (160 - (ventasActual[maxIdx]/maxV)*160).toFixed(1);
+
+    const tarjetasAtencionData = [
+      { cifra:'7', etiqueta:'COMPROBANTES POR VALIDAR', accion:'Revisar →', tipo:'urgente', target:'pedidos' },
+      { cifra:'3', etiqueta:'PEDIDOS POR ENVIAR', accion:'Ver →', tipo:'cian', target:'pedidos' },
+      { cifra:'2', etiqueta:'DEVOLUCIONES POR RESOLVER', accion:'Resolver →', tipo:'ambar', target:'devoluciones' },
+      { cifra:'4', etiqueta:'SOLICITUDES SIN CONTACTAR', accion:'Contactar →', tipo:'ambar', target:'solicitudes' },
+      { cifra:'2', etiqueta:'PEDIDOS POR VENCER', accion:'Ver →', tipo:'rojo', target:'pedidos' },
+      { cifra:'5', etiqueta:'PRODUCTOS AGOTADOS', accion:'Ver →', tipo:'ambar', target:'catalogo' }
+    ];
+    const estiloPorTipo = {
+      urgente: { tarjeta:'padding:16px;background:var(--accent);border-color:var(--accent)', cifra:'font-size:28px;font-weight:500;color:#07111C', etq:'#07111C', acc:'#07111C' },
+      cian:    { tarjeta:'padding:16px', cifra:'font-size:28px;font-weight:500;color:var(--accent)', etq:'var(--text-muted)', acc:'var(--accent)' },
+      ambar:   { tarjeta:'padding:16px;border-color:var(--warning)', cifra:'font-size:28px;font-weight:500;color:var(--warning)', etq:'var(--text-muted)', acc:'var(--warning)' },
+      rojo:    { tarjeta:'padding:16px;border-color:var(--danger)', cifra:'font-size:28px;font-weight:500;color:var(--danger-text)', etq:'var(--text-muted)', acc:'var(--danger-text)' }
+    };
+    const tarjetasAtencion = tarjetasAtencionData.map(t => {
+      const st = estiloPorTipo[t.tipo];
+      return {
+        cifra: t.cifra, etiqueta: t.etiqueta, accion: t.accion,
+        estiloTarjeta: st.tarjeta, estiloCifra: st.cifra, colorEtiqueta: st.etq, colorAccion: st.acc,
+        claseCorte: 'cut cut-10',
+        aria: t.cifra + ' ' + t.etiqueta.toLowerCase() + ', ir a ' + t.target,
+        onClick: this.irA(t.target)
+      };
+    });
+
+    const kpis = [
+      { valor:'$486,230.00', etiqueta:'Ventas', delta:'▲ 12%', colorDelta:'var(--success)', spark:'0,16 8,12 16,14 24,8 32,10 40,4 48,6 56,2' },
+      { valor:'47', etiqueta:'Pedidos', delta:'▲ 9%', colorDelta:'var(--success)', spark:'0,15 8,13 16,11 24,10 32,8 40,7 48,5 56,3' },
+      { valor:'$10,345.32', etiqueta:'Ticket promedio', delta:'▲ 3%', colorDelta:'var(--success)', spark:'0,10 8,11 16,9 24,10 32,8 40,9 48,7 56,6' },
+      { valor:'68%', etiqueta:'Se pagan', delta:'▼ 4%', colorDelta:'var(--danger-text)', spark:'0,6 8,7 16,8 24,7 32,9 40,10 48,11 56,13' }
+    ];
+
+    const embudo = [
+      { etapa:'Pendiente de pago', cifra:'12', pct:'55%', color:'#176F7B', onClick: () => this.setState({ screen:'pedidos', filtroPedidos:'pendiente_pago', vieneDelTablero:true }) },
+      { etapa:'Comprobante recibido', cifra:'7', pct:'32%', color:'#1E93A3', onClick: () => this.setState({ screen:'pedidos', filtroPedidos:'comprobante_recibido', vieneDelTablero:true }) },
+      { etapa:'Listo para envío', cifra:'3', pct:'14%', color:'#26B8CC', onClick: () => this.setState({ screen:'pedidos', filtroPedidos:'listo_envio', vieneDelTablero:true }) },
+      { etapa:'Enviado', cifra:'9', pct:'41%', color:'#3CE7FF', onClick: () => this.setState({ screen:'pedidos', filtroPedidos:'enviado', vieneDelTablero:true }) }
+    ];
+
+    const porVencerData = [
+      { etiqueta:'Hoy', valor:5, color:'#7E93A6', icono:'', h:40 },
+      { etiqueta:'1 día', valor:4, color:'#7E93A6', icono:'', h:32 },
+      { etiqueta:'2 días', valor:2, color:'#FFB547', icono:' ⚠', h:18 },
+      { etiqueta:'3+ días', valor:1, color:'#FF4D5E', icono:' ✕', h:10 }
+    ];
+    const porVencer = porVencerData.map((c,i) => ({
+      x: 20 + i*95, cx: 55 + i*95, y: 120 - c.h, h: c.h, textoY: 120 - c.h - 8,
+      color:c.color, valor:c.valor, icono:c.icono, etiqueta:c.etiqueta
+    }));
+
+    const masVendidosData = [
+      { nombre:'Cámara IP bala', sku:'SGQ-VV-0012', unidades:84 },
+      { nombre:'Batería 12 V', sku:'SGQ-EC-0027', unidades:52 },
+      { nombre:'Panel solar', sku:'SGQ-EC-0021', unidades:41 },
+      { nombre:'Cable UTP Cat 6', sku:'SGQ-CE-0002', unidades:33 },
+      { nombre:'No-break 1500', sku:'SGQ-EC-0003', unidades:28 }
+    ];
+    const masVendidos = masVendidosData.map(m => ({ ...m, pct: Math.round(m.unidades/84*100) + '%' }));
+
+    const porGrupoData = [
+      { nombre:'Videovigilancia', pct:42, color:'#3987E5' },
+      { nombre:'Control de Acceso', pct:21, color:'#D95926' },
+      { nombre:'Energía', pct:15, color:'#199E70' },
+      { nombre:'Cableado', pct:12, color:'#C98500' },
+      { nombre:'Automatización', pct:7, color:'#D55181' },
+      { nombre:'GPS', pct:3, color:'#008300' }
+    ];
+    const porGrupo = porGrupoData.map(g => ({ ...g, pct: g.pct + '%', pctTxt: g.pct + '%' }));
+
+    const stockCriticoData = [
+      { sku:'SGQ-VV-0045', nombre:'Kit 4 cám. 1080p', cantidad:3 },
+      { sku:'SGQ-CA-0033', nombre:'Torniquete trípode', cantidad:2 },
+      { sku:'SGQ-AI-0014', nombre:'Generador de niebla', cantidad:1 },
+      { sku:'SGQ-VV-0090', nombre:'Body cam con GPS', cantidad:0 }
+    ];
+    const stockCritico = stockCriticoData.map(p => ({
+      sku:p.sku, nombre:p.nombre,
+      etiqueta: p.cantidad === 0 ? 'Agotado' : ('Últimas ' + p.cantidad),
+      bg: p.cantidad === 0 ? 'transparent' : 'transparent',
+      color: p.cantidad === 0 ? 'var(--danger-text)' : 'var(--warning)'
+    }));
+
+    // Pedidos bandeja
+    const estados = ['todos','pendiente_pago','comprobante_recibido','listo_envio','enviado','entregado','cancelado'];
+    const cuentaPorEstado = { todos:84, pendiente_pago:12, comprobante_recibido:7, listo_envio:3, enviado:9, entregado:51, cancelado:2 };
+    const chipsPedidos = estados.map(e => ({
+      label: e === 'todos' ? 'Todos' : this.estadoInfo(e).label,
+      cuenta: cuentaPorEstado[e],
+      clase: s.filtroPedidos === e ? 'activo' : '',
+      pulso: e === 'comprobante_recibido' && s.filtroPedidos !== e,
+      onClick: () => this.setState({ filtroPedidos:e, vieneDelTablero:false })
+    }));
+    const pedidosFiltrados = this.pedidosData
+      .filter(p => s.filtroPedidos === 'todos' || p.estado === s.filtroPedidos)
+      .map(p => {
+        const info = this.estadoInfo(p.estado);
+        return {
+          folio:p.folio, fecha:p.fecha, cliente:p.cliente, correo:p.correo, prods:p.prods,
+          total: this.money(p.total),
+          saldo: p.saldo === 0 ? '—' : ('−' + this.money(p.saldo)),
+          colorSaldo: p.saldo === 0 ? 'var(--text-muted)' : 'var(--success)',
+          estadoLabel: info.label,
+          estiloBadge: info.lleno ? ('background:' + info.color + ';color:#07111C') : ('background:transparent;border:1px solid ' + info.color + ';color:' + info.color),
+          onClick: () => {
+            if (p.folio === 'SGQ-3H8N5Q') this.setState({ screen:'detalleRN11' });
+            else this.setState({ screen:'detalle', folioSeleccionado:p.folio });
+          }
+        };
+      });
+
+    // Catalogo
+    const productos = this.productosData.map(p => ({
+      sku:p.sku, nombre:p.nombre, marca:p.marca, usado:p.usado, detalleCondicion:p.detalleCondicion || '',
+      iniciales: p.sku.slice(-4),
+      precio: this.money(p.precio),
+      stockTxt: p.usado ? '1 (única)' : String(p.stock),
+      estadoLabel: p.estado === 'activo' ? 'Activo' : (p.estado === 'agotado' ? 'Agotado' : 'Baja'),
+      estiloEstado: p.estado === 'activo' ? 'background:transparent;border:1px solid var(--success);color:var(--success)' : 'background:transparent;border:1px solid var(--warning);color:var(--warning)',
+      editando: s.editandoSku === p.sku,
+      noEditando: s.editandoSku !== p.sku,
+      onEditar: () => this.setState({ editandoSku:p.sku, editValor:String(p.precio) })
+    }));
+
+    // Importador CSV
+    const filasImportacion = this.filasImportData
+      .filter(f => s.csvFiltro === 'todas' || (s.csvFiltro === 'error' && !f.ok) || (s.csvFiltro === 'correctas' && f.ok))
+      .map(f => ({
+        fila:f.fila, sku:f.sku, nombre:f.nombre, precio:f.precio, stock:f.stock, motivo:f.motivo, crear: !!f.crear,
+        icono: f.ok ? '✓' : '✕',
+        color: f.ok ? 'var(--success)' : 'var(--danger-text)'
+      }));
+
+    // Modal
+    const modalMap = {
+      validar: { titulo: '¿Validar el pago del pedido ' + s.folioSeleccionado + '?', cuerpo:'Se apartan las piezas y el pedido pasa a Listo para envío. El cliente recibe un correo.', boton:'Sí, validar el pago', claseBtn:'btn-primario' },
+      rechazar: { titulo: '¿Rechazar el comprobante de ' + s.folioSeleccionado + '?', cuerpo:'El pedido vuelve a Pendiente de pago, se libera el apartado y el cliente ve el motivo.', boton:'Rechazar comprobante', claseBtn:'btn-peligro-lleno' },
+      cancelar: { titulo: '¿Cancelar este pedido?', cuerpo:'No se puede deshacer. Se libera el inventario y, si usó saldo a favor, se le devuelve completo.', boton:'Sí, cancelar el pedido', claseBtn:'btn-peligro-lleno' }
+    };
+    const modalActivo = s.modalTipo ? modalMap[s.modalTipo] : null;
+
+    return {
+      isLogin: !s.loggedIn,
+      isApp: s.loggedIn,
+      loginEmail: s.loginEmail, loginPass: s.loginPass, loginError: s.loginError,
+      onLoginEmail: e => this.setState({ loginEmail:e.target.value }),
+      onLoginPass: e => this.setState({ loginPass:e.target.value }),
+      onLogin: () => {
+        if (s.loginEmail && s.loginPass) this.setState({ loggedIn:true, loginError:false });
+        else this.setState({ loginError:true });
+      },
+      onLogout: () => this.setState({ loggedIn:false, loginEmail:'', loginPass:'' }),
+
+      rolLabel: s.role === 'admin' ? 'Administrador' : 'Inventario',
+      adminChipClase: s.role === 'admin' ? 'activo' : '',
+      invChipClase: s.role === 'inventario' ? 'activo' : '',
+      verComoAdmin: () => this.setState({ role:'admin', screen:'tablero' }),
+      verComoInventario: () => this.setState({ role:'inventario', screen:'catalogo' }),
+
+      navItems: nav,
+
+      isAccesoDenegado: false,
+      irACatalogo: this.irA('catalogo'),
+      irATablero: this.irA('tablero'),
+      irAPedidos: this.irA('pedidos'),
+      irAAnalitica: this.irA('analitica'),
+      irAImportar: this.irA('importcsv1'),
+      irAImportarPaso1: () => this.setState({ screen:'importcsv1' }),
+      irAImportarPaso2: () => this.setState({ screen:'importcsv2' }),
+      irAPedidosPendientes: () => this.setState({ screen:'pedidos', filtroPedidos:'pendiente_pago', vieneDelTablero:true }),
+      noop: e => { if (e && e.preventDefault) e.preventDefault(); if (e && e.stopPropagation) e.stopPropagation(); },
+
+      isPlaceholder: !['tablero','pedidos','detalle','detalleRN11','catalogo','nuevoProducto','categorias','devoluciones','solicitudes','analitica','configuracion','importcsv1','importcsv2'].includes(s.screen),
+      placeholderTitulo: 'Pantalla no reconocida',
+      placeholderSeccion: '?',
+      irACategorias: () => this.setState({ screen:'categorias', catSeleccionado:null }),
+
+      // ---- Categorías (F3, árbol D7) ----
+      isCategorias: s.screen === 'categorias',
+      catNadaSeleccionado: !s.catSeleccionado,
+      catAlgoSeleccionado: !!s.catSeleccionado,
+      catSelTipo: s.catSeleccionado ? s.catSeleccionado.tipo : '',
+      catSelNombre: s.catSeleccionado ? s.catSeleccionado.nombre : '',
+      catSelSlug: s.catSeleccionado ? s.catSeleccionado.nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') : '',
+      catSelPadre: s.catSeleccionado ? s.catSeleccionado.padre : '',
+      arbolGrupos: this.categoriasData.map(g => {
+        const abierto = s.catGrupoAbierto === g.id;
+        const conteo = g.nombre.length * 9 + 40;
+        return {
+          nombre: g.nombre, codigo: 'CH-0' + (this.categoriasData.indexOf(g)+1), conteo,
+          flecha: abierto ? '▾' : '▸',
+          onClick: () => this.setState({ catGrupoAbierto: abierto ? null : g.id, catSubAbierto: null, catSeleccionado: { tipo:'grupo', nombre:g.nombre, padre:'(ninguna — primer nivel)' } }),
+          abierto,
+          subs: g.subs.map((sub, i) => {
+            const subAbierto = s.catSubAbierto === i;
+            const scount = sub.nombre.length * 3 + (sub.sub.length * 4) + 6;
+            const sel = s.catSeleccionado && s.catSeleccionado.tipo === 'subcategoría' && s.catSeleccionado.nombre === sub.nombre;
+            return {
+              nombre: sub.nombre, conteo: scount,
+              flecha: sub.sub.length ? (subAbierto ? '▾' : '▸') : '·',
+              bg: sel ? 'var(--bg-card)' : 'transparent', borde: sel ? 'var(--accent)' : 'transparent', color: sel ? 'var(--accent)' : 'var(--text-secondary)',
+              onClick: () => this.setState({ catSubAbierto: subAbierto ? null : i, catSeleccionado: { tipo:'subcategoría', nombre:sub.nombre, padre:g.nombre } }),
+              abierto: subAbierto,
+              subsubs: sub.sub.map(ssn => ({
+                nombre: ssn, conteo: ssn.length + 5,
+                bg: (s.catSeleccionado && s.catSeleccionado.tipo === 'sub-subcategoría' && s.catSeleccionado.nombre === ssn) ? 'var(--bg-card)' : 'transparent',
+                onClick: () => this.setState({ catSeleccionado: { tipo:'sub-subcategoría', nombre: ssn, padre: g.nombre + ' › ' + sub.nombre } })
+              }))
+            };
+          })
+        };
+      }),
+
+      // ---- Devoluciones (D2) ----
+      isDevoluciones: s.screen === 'devoluciones',
+      chipsDevoluciones: ['pendientes','revision','aprobadas','rechazadas','todas'].map(id => {
+        const labels = { pendientes:'Pendientes', revision:'En revisión', aprobadas:'Aprobadas', rechazadas:'Rechazadas', todas:'Todas' };
+        const cuentas = { pendientes:2, revision:1, aprobadas:13, rechazadas:2, todas:18 };
+        return { label:labels[id], cuenta:cuentas[id], clase: s.filtroDevoluciones===id ? 'activo':'', onClick: () => this.setState({ filtroDevoluciones:id }) };
+      }),
+      devolucionesFiltradas: this.devolucionesData
+        .filter(d => s.filtroDevoluciones === 'todas' || (s.filtroDevoluciones === 'pendientes' && d.estado === 'pendiente') || (s.filtroDevoluciones === 'aprobadas' && d.estado === 'aprobada'))
+        .map(d => ({
+          folio:d.folio, fecha:d.fecha, cliente:d.cliente, pedido:d.pedido, producto:d.producto, condicion:d.condicion, pctSugerido:d.pctSugerido,
+          monto: this.money(d.monto),
+          estadoLabel: d.estado === 'pendiente' ? 'Pendiente' : (d.estado === 'aprobada' ? 'Aprobada' : 'Rechazada'),
+          estiloBadge: d.estado === 'pendiente' ? 'background:var(--warning);color:#07111C' : (d.estado === 'aprobada' ? 'background:transparent;border:1px solid var(--success);color:var(--success)' : 'background:transparent;border:1px solid var(--danger);color:var(--danger-text)'),
+          onClick: () => this.setState({ drawerDevolucion: d.folio, devSaldoPct:'100', devDestinoPieza:'nueva' })
+        })),
+      drawerDevAbierto: !!s.drawerDevolucion,
+      devSel: (() => {
+        const d = this.devolucionesData.find(x => x.folio === s.drawerDevolucion) || this.devolucionesData[0];
+        return { folio:d.folio, cliente:d.cliente, pedido:d.pedido, producto:d.producto, sku:d.sku, monto:this.money(d.monto), motivo:d.motivo, condicion:d.condicion, saldoActual:this.money(d.saldoActual) };
+      })(),
+      cerrarDrawerDev: () => this.setState({ drawerDevolucion:null }),
+      pct100: s.devSaldoPct === '100', pct70: s.devSaldoPct === '70', pctOtro: s.devSaldoPct === 'otro',
+      onPct100: () => this.setState({ devSaldoPct:'100' }),
+      onPct70: () => this.setState({ devSaldoPct:'70' }),
+      onPctOtro: () => this.setState({ devSaldoPct:'otro' }),
+      montoAl100: (() => { const d = this.devolucionesData.find(x => x.folio === s.drawerDevolucion) || this.devolucionesData[0]; return this.money(d.monto); })(),
+      montoAl70: (() => { const d = this.devolucionesData.find(x => x.folio === s.drawerDevolucion) || this.devolucionesData[0]; return this.money(d.monto * 0.7); })(),
+      montoCalculado: (() => {
+        const d = this.devolucionesData.find(x => x.folio === s.drawerDevolucion) || this.devolucionesData[0];
+        const pct = s.devSaldoPct === '100' ? 1 : (s.devSaldoPct === '70' ? 0.7 : 0);
+        return this.money(d.monto * pct);
+      })(),
+      saldoResultante: (() => {
+        const d = this.devolucionesData.find(x => x.folio === s.drawerDevolucion) || this.devolucionesData[0];
+        const pct = s.devSaldoPct === '100' ? 1 : (s.devSaldoPct === '70' ? 0.7 : 0);
+        return this.money(d.saldoActual + d.monto * pct);
+      })(),
+      destNueva: s.devDestinoPieza === 'nueva', destUsado: s.devDestinoPieza === 'usado', destNo: s.devDestinoPieza === 'no',
+      onDestNueva: () => this.setState({ devDestinoPieza:'nueva' }),
+      onDestUsado: () => this.setState({ devDestinoPieza:'usado' }),
+      onDestNo: () => this.setState({ devDestinoPieza:'no' }),
+
+      // ---- Solicitudes de servicio (E2) ----
+      isSolicitudes: s.screen === 'solicitudes',
+      chipsSolicitudes: ['nuevas','seguimiento','cerradas','todas'].map(id => {
+        const labels = { nuevas:'Nuevas', seguimiento:'En seguimiento', cerradas:'Cerradas', todas:'Todas' };
+        const cuentas = { nuevas:4, seguimiento:8, cerradas:35, todas:47 };
+        return { label:labels[id], cuenta:cuentas[id], clase: s.filtroSolicitudes===id ? 'activo':'', onClick: () => this.setState({ filtroSolicitudes:id }) };
+      }),
+      solicitudesFiltradas: this.solicitudesData
+        .filter(x => s.filtroSolicitudes === 'todas' || (s.filtroSolicitudes === 'nuevas' && x.estado === 'nueva') || (s.filtroSolicitudes === 'seguimiento' && x.estado === 'seguimiento'))
+        .map(x => ({
+          folio:x.folio, fecha:x.fecha, nombre:x.nombre, tipoCliente:x.tipoCliente, servicio:x.servicio, ubicacion:x.ubicacion,
+          estadoLabel: x.estado === 'nueva' ? 'Nueva' : (x.estado === 'seguimiento' ? 'En seguimiento' : 'Cerrada'),
+          estiloBadge: x.estado === 'nueva' ? 'background:var(--warning);color:#07111C' : (x.estado === 'seguimiento' ? 'background:transparent;border:1px solid var(--accent);color:var(--accent)' : 'background:transparent;border:1px solid var(--text-muted);color:var(--text-muted)'),
+          onClick: () => this.setState({ drawerSolicitud: x.folio })
+        })),
+      drawerSolAbierto: !!s.drawerSolicitud,
+      solSel: (() => {
+        const x = this.solicitudesData.find(y => y.folio === s.drawerSolicitud) || this.solicitudesData[0];
+        return { folio:x.folio, nombre:x.nombre, tipoCliente:x.tipoCliente, telefono:x.telefono, correo:x.correo, servicio:x.servicio, ubicacion:x.ubicacion, inmueble:x.inmueble, tieneMonto: !!x.monto, montoTxt: x.monto ? this.money(x.monto) : '', plazo: x.plazo || '' };
+      })(),
+      cerrarDrawerSol: () => this.setState({ drawerSolicitud:null }),
+
+      // ---- Analítica (G1) ----
+      isAnalitica: s.screen === 'analitica',
+      masVendidosAnalitica: [
+        { nombre:'Cámara IP bala', sku:'SGQ-VV-0012', unidades:84, importe:'$108,276.00' },
+        { nombre:'Batería 12 V', sku:'SGQ-EC-0027', unidades:52, importe:'$15,028.00' },
+        { nombre:'Panel solar', sku:'SGQ-EC-0021', unidades:41, importe:'$110,290.00' },
+        { nombre:'Cable UTP Cat 6', sku:'SGQ-CE-0002', unidades:33, importe:'$98,340.00' },
+        { nombre:'No-break 1500', sku:'SGQ-EC-0003', unidades:28, importe:'$92,372.00' }
+      ].map(m => ({ ...m, pct: Math.round(m.unidades/84*100)+'%' })),
+      menosVendidosAnalitica: this.menosVendidosData.map(m => ({ ...m, importe: this.money(m.importe), pct: Math.round(m.unidades/3*100)+'%' })),
+
+      // ---- Configuración (H4) ----
+      isConfiguracion: s.screen === 'configuracion',
+      cfgBanco: s.cfgBanco || 'BBVA México',
+      onCfgBanco: e => this.setState({ cfgBanco: e.target.value }),
+      cfgClabe: s.cfgClabe || '012680012345678901',
+      onCfgClabe: e => this.setState({ cfgClabe: e.target.value }),
+      cfgClabeFormateada: (() => {
+        const c = (s.cfgClabe || '012680012345678901').replace(/\D/g,'');
+        return c.slice(0,3) + ' ' + c.slice(3,6) + ' ' + c.slice(6,17) + ' ' + c.slice(17,18);
+      })(),
+
+      isTablero: s.screen === 'tablero',
+      periodoActivoLabel: 'últimos 30 días',
+      periodos: ['7 días','30 días','Este mes','Personalizado'].map(p => ({
+        label:p, clase: (p==='30 días') ? 'activo' : '', onClick: () => {}
+      })),
+      tarjetasAtencion,
+      kpis,
+      gridLinesVentas: [40,80,120,160].map(y => ({ y })),
+      ventasPuntosActual, ventasPuntosAnterior,
+      ventasAreaActual: '0,160 ' + ventasPuntosActual + ' 560,160',
+      ventasMaxX, ventasMaxY, ventasMaxYTexto: (parseFloat(ventasMaxY) - 10).toFixed(1),
+      ventasTabla: [
+        {dia:'1 sep', actual:'$'+ventasActual[0].toLocaleString('es-MX'), anterior:'$'+ventasAnterior[0].toLocaleString('es-MX')},
+        {dia:'5 sep', actual:'$'+ventasActual[4].toLocaleString('es-MX'), anterior:'$'+ventasAnterior[4].toLocaleString('es-MX')},
+        {dia:'10 sep', actual:'$'+ventasActual[9].toLocaleString('es-MX'), anterior:'$'+ventasAnterior[9].toLocaleString('es-MX')},
+        {dia:'15 sep', actual:'$'+ventasActual[14].toLocaleString('es-MX'), anterior:'$'+ventasAnterior[14].toLocaleString('es-MX')},
+        {dia:'20 sep', actual:'$'+ventasActual[19].toLocaleString('es-MX'), anterior:'$'+ventasAnterior[19].toLocaleString('es-MX')}
+      ],
+      embudo,
+      porVencer,
+      masVendidos,
+      porGrupo,
+      stockCritico,
+
+      isPedidos: s.screen === 'pedidos',
+      vieneDelTablero: s.vieneDelTablero,
+      limpiarFiltroPedidos: () => this.setState({ filtroPedidos:'todos', vieneDelTablero:false }),
+      busquedaPedidos: s.busquedaPedidos,
+      onBuscarPedidos: e => this.setState({ busquedaPedidos:e.target.value }),
+      chipsPedidos,
+      pedidosFiltrados,
+      pedidosMostrando: '1–' + pedidosFiltrados.length,
+
+      isDetalleNormal: s.screen === 'detalle',
+      isDetalleRN11: s.screen === 'detalleRN11',
+      abrirModalValidar: () => this.setState({ modalTipo:'validar' }),
+      abrirModalRechazar: () => this.setState({ modalTipo:'rechazar' }),
+      abrirModalCancelar: () => this.setState({ modalTipo:'cancelar' }),
+
+      isCatalogo: s.screen === 'catalogo',
+      productos,
+      editValor: s.editValor,
+      onEditValor: e => this.setState({ editValor:e.target.value }),
+      onEditKeyDown: e => {
+        if (e.key === 'Enter') this.setState({ editandoSku:null });
+        if (e.key === 'Escape') this.setState({ editandoSku:null });
+      },
+
+      isNuevoProducto: s.screen === 'nuevoProducto',
+      irANuevoProducto: () => this.setState({ screen:'nuevoProducto', tabProducto:'general', formGrupoId:'', formSubId:'', formSubSubId:'' }),
+      tieneCambiosSinGuardar: !!(s.formSku || s.formNombre),
+      pestañasProducto: ['general','precio','fotos','specs','docs'].map(id => {
+        const labels = { general:'General', precio:'Precio y stock', fotos:'Fotos', specs:'Especificaciones', docs:'Documentos' };
+        const activo = s.tabProducto === id;
+        return { label: labels[id], color: activo ? 'var(--accent)' : 'var(--text-muted)', borde: activo ? 'var(--accent)' : 'transparent', onClick: () => this.setState({ tabProducto:id }) };
+      }),
+      tabActivaLabel: { general:'General', precio:'Precio y stock', fotos:'Fotos', specs:'Especificaciones', docs:'Documentos' }[s.tabProducto],
+      tabGeneral: s.tabProducto === 'general',
+      tabOtra: s.tabProducto !== 'general',
+
+      formSku: s.formSku,
+      onFormSku: e => this.setState({ formSku: e.target.value.toUpperCase() }),
+      skuValidoTexto: s.formSku ? (s.formSku === 'SGQ-VV-0012' ? '✕ Ya existe un producto con ese SKU' : '✓ SKU disponible') : '',
+      skuValidoColor: s.formSku === 'SGQ-VV-0012' ? 'var(--danger-text)' : 'var(--success)',
+      formNombre: s.formNombre,
+      onFormNombre: e => this.setState({ formNombre: e.target.value }),
+      formEstado: s.formEstado,
+      onFormEstado: e => this.setState({ formEstado: e.target.value }),
+      formMarca: s.formMarca,
+      onFormMarca: e => this.setState({ formMarca: e.target.value }),
+      marcasDisponibles: this.marcasData,
+
+      // ---- Cascada de categoría: grupo -> subcategoría -> sub-subcategoría (D7) ----
+      gruposDisponibles: this.categoriasData.map(g => ({ id:g.id, nombre:g.nombre })),
+      formGrupoId: s.formGrupoId,
+      onFormGrupo: e => this.setState({ formGrupoId: e.target.value, formSubId:'', formSubSubId:'' }),
+
+      subDeshabilitada: !s.formGrupoId,
+      subPlaceholder: s.formGrupoId ? 'Elige una subcategoría…' : 'Elige primero un grupo',
+      subsDisponibles: (() => {
+        const grupo = this.categoriasData.find(g => g.id === s.formGrupoId);
+        if (!grupo) return [];
+        return grupo.subs.map((sub, i) => ({ id: String(i), nombre: sub.nombre }));
+      })(),
+      formSubId: s.formSubId,
+      onFormSub: e => this.setState({ formSubId: e.target.value, formSubSubId:'' }),
+
+      haySubSub: (() => {
+        const grupo = this.categoriasData.find(g => g.id === s.formGrupoId);
+        if (!grupo || s.formSubId === '') return false;
+        const sub = grupo.subs[parseInt(s.formSubId, 10)];
+        return !!(sub && sub.sub && sub.sub.length > 0);
+      })(),
+      noHaySubSub: (() => {
+        const grupo = this.categoriasData.find(g => g.id === s.formGrupoId);
+        if (!grupo || s.formSubId === '') return true;
+        const sub = grupo.subs[parseInt(s.formSubId, 10)];
+        return !(sub && sub.sub && sub.sub.length > 0);
+      })(),
+      subSubVacioTexto: s.formSubId === '' ? 'Elige antes una subcategoría' : 'Esta subcategoría no tiene un tercer nivel',
+      subSubsDisponibles: (() => {
+        const grupo = this.categoriasData.find(g => g.id === s.formGrupoId);
+        if (!grupo || s.formSubId === '') return [];
+        const sub = grupo.subs[parseInt(s.formSubId, 10)];
+        return (sub && sub.sub) || [];
+      })(),
+      formSubSubId: s.formSubSubId,
+      onFormSubSub: e => this.setState({ formSubSubId: e.target.value }),
+
+      rutaCompleta: !!s.formGrupoId,
+      rutaCompletaTexto: (() => {
+        const grupo = this.categoriasData.find(g => g.id === s.formGrupoId);
+        if (!grupo) return '';
+        let txt = grupo.nombre;
+        if (s.formSubId !== '') {
+          const sub = grupo.subs[parseInt(s.formSubId, 10)];
+          if (sub) txt += ' › ' + sub.nombre;
+          if (s.formSubSubId) txt += ' › ' + s.formSubSubId;
+        }
+        return txt;
+      })(),
+
+      condicionNuevoChecked: s.condicion === 'nuevo',
+      condicionUsadoChecked: s.condicion === 'usado',
+      onCondicionNuevo: () => this.setState({ condicion:'nuevo' }),
+      onCondicionUsado: () => this.setState({ condicion:'usado', formSku: s.formSku ? (s.formSku + '-U1') : s.formSku }),
+      esUsado: s.condicion === 'usado',
+      formMotivoUsado: s.formMotivoUsado,
+      onFormMotivoUsado: e => this.setState({ formMotivoUsado: e.target.value }),
+
+      guardarProducto: () => this.setState({ screen:'catalogo' }),
+
+      isImportPaso1: s.screen === 'importcsv1',
+      isImportPaso2: s.screen === 'importcsv2',
+      filtroErrorClase: s.csvFiltro === 'error' ? 'activo' : '',
+      filtroCorrectaClase: s.csvFiltro === 'correctas' ? 'activo' : '',
+      filtroTodasClase: s.csvFiltro === 'todas' ? 'activo' : '',
+      filtrarSoloError: () => this.setState({ csvFiltro:'error' }),
+      filtrarSoloCorrecta: () => this.setState({ csvFiltro:'correctas' }),
+      filtrarTodas: () => this.setState({ csvFiltro:'todas' }),
+      filasImportacion,
+
+      modalOpen: !!s.modalTipo,
+      modalTitulo: modalActivo ? modalActivo.titulo : '',
+      modalCuerpo: modalActivo ? modalActivo.cuerpo : '',
+      modalBotonTexto: modalActivo ? modalActivo.boton : '',
+      modalBotonClase: modalActivo ? modalActivo.claseBtn : 'btn-primario',
+      cerrarModal: () => this.setState({ modalTipo:null }),
+      confirmarModal: () => this.setState({ modalTipo:null, screen:'pedidos', filtroPedidos:'todos', vieneDelTablero:false })
+    };
+  }
+}
+</script>
+</body>
+</html>

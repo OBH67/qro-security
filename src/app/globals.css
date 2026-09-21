@@ -1,0 +1,216 @@
+@import "tailwindcss";
+
+/*
+ * Tokens de diseño — SG Querétaro
+ * Fuente única de verdad: `.devsquad/diseno.md` §2 (extraídos de `index.html`,
+ * el demo visual protegido). No se improvisan colores, tipografías ni
+ * espaciados fuera de este archivo: los átomos de `src/components/atoms/`
+ * consumen estas variables, nunca valores sueltos.
+ *
+ * Modo de color: oscuro, único y declarado (diseno.md §4). No hay bloque
+ * `@media (prefers-color-scheme: dark)` a propósito — eso es exactamente lo
+ * que causó el bug real de texto ilegible que este proyecto debe evitar.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Superficies — diseno.md §2.1 */
+  --bg-base: #07111c;
+  --bg-surface: #0b1622;
+  --bg-card: #0f1d2b;
+  --bg-elevated: #122234;
+  --bg-hover: #16283a;
+  --bg-inset: #0b1622;
+
+  /* Texto — diseno.md §2.1 */
+  --text-primary: #eaf2f8;
+  --text-secondary: #c7d5e0;
+  --text-muted: #9fb2c3;
+  --text-dim: #7e93a6; /* Solo texto ≥ 16px, ver diseno.md §5.3 */
+
+  /* Acento y semánticos de estado — diseno.md §2.1 */
+  --accent: #3ce7ff;
+  --accent-hover: #6feeff;
+  --accent-bright: #9af1ff;
+  --accent-wash: rgba(60, 231, 255, 0.08);
+  --accent-tint: rgba(60, 231, 255, 0.05);
+  --warning: #ffb547;
+  --warning-tint: rgba(255, 181, 71, 0.06);
+  --success: #45e39a;
+  --success-tint: rgba(69, 227, 154, 0.05);
+  --danger: #ff4d5e;
+  --danger-text: #ff7a86;
+  --danger-tint: rgba(255, 77, 94, 0.07);
+
+  /* Bordes y separadores — diseno.md §2.1 */
+  --border-subtle: #16283a;
+  --border: #1f3244;
+  --border-strong: #2c4560;
+  --border-input: #52708f;
+  --track: #22344a;
+
+  /* Estado deshabilitado corregido — diseno.md §3.3 / §5.3 */
+  --text-disabled: #8da2b5;
+
+  /* Paleta de datos — categórica, diseno.md §2.8.2 (orden fijo, no reordenar) */
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+  --chart-6: #008300;
+  --chart-7: #9085e9;
+  --chart-8: #e66767;
+
+  /* Rampa secuencial/ordinal — cian de marca, diseno.md §2.8.3 */
+  --chart-seq-100: #0e3a41;
+  --chart-seq-200: #124f58;
+  --chart-seq-300: #176f7b;
+  --chart-seq-400: #1e93a3;
+  --chart-seq-500: #26b8cc;
+  --chart-seq-600: #3ce7ff;
+  --chart-seq-700: #9af1ff;
+
+  /* Tipografía — diseno.md §2.2 */
+  --font-display: var(--font-chakra-petch), sans-serif;
+  --font-body: var(--font-ibm-plex-sans), sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), monospace;
+
+  /* Radios y sombras — diseno.md §2.5 */
+  --radius-input: 4px;
+  --radius-card: 0px;
+  --radius-data-end: 4px;
+  --radius-pill: 50%;
+  --shadow-glow-primary: 0 0 18px rgba(60, 231, 255, 0.35);
+  --shadow-glow-soft: 0 0 16px rgba(60, 231, 255, 0.3);
+  --shadow-dropdown: 0 18px 40px rgba(0, 0, 0, 0.5);
+  --shadow-overlay: 0 26px 50px rgba(0, 0, 0, 0.55);
+  --shadow-float: 0 12px 30px rgba(0, 0, 0, 0.5);
+
+  /* Espaciado — escala de 4px, diseno.md §2.6 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --content-max-width: 1400px;
+}
+
+@theme inline {
+  --color-bg-base: var(--bg-base);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-card: var(--bg-card);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-hover: var(--bg-hover);
+  --color-bg-inset: var(--bg-inset);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-dim: var(--text-dim);
+  --color-text-disabled: var(--text-disabled);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-bright: var(--accent-bright);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-danger-text: var(--danger-text);
+
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-border-input: var(--border-input);
+  --color-track: var(--track);
+
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
+}
+
+/* Utilidades del corte diagonal (`clip-path`) — diseno.md §2.4.
+   Uso: botones de acción y tarjetas de resumen. Nunca en filas de tabla,
+   campos de formulario ni área de trazado de una gráfica. */
+.clip-corner-lg {
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+}
+.clip-corner-md {
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
+.clip-corner-sm {
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}
+.clip-corner-card {
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+}
+
+/* Foco de teclado — diseno.md §3.3. Con `clip-path` el `outline` se recorta,
+   así que los elementos cortados usan `box-shadow: inset` en su lugar
+   (ver clases `.clip-corner-*:focus-visible`). */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.clip-corner-lg:focus-visible,
+.clip-corner-md:focus-visible,
+.clip-corner-sm:focus-visible,
+.clip-corner-card:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Todo dato de identidad o dinero va en mono con cifras tabulares —
+   diseno.md §2.2, regla heredada sin excepción. */
+.font-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
