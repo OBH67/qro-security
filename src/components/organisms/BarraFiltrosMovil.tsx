@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { SelectOrden } from "@/components/molecules/SelectOrden";
+import type { OrdenCatalogo } from "@/lib/constantes";
 
 /**
  * index.html:596 ("Filtros y orden") + index.html:600/2402 (`filterPanelStyle`,
@@ -14,7 +16,17 @@ import { useState } from "react";
  * JS). Solo visible en móvil — ver `.filtros-barra-movil` en
  * `ListadoCatalogo.tsx`.
  */
-export function BarraFiltrosMovil({ children, resultados, className }: { children: React.ReactNode; resultados: number; className?: string }) {
+export function BarraFiltrosMovil({
+  children,
+  resultados,
+  ordenActual,
+  className,
+}: {
+  children: React.ReactNode;
+  resultados: number;
+  ordenActual: OrdenCatalogo;
+  className?: string;
+}) {
   const [abierto, setAbierto] = useState(false);
 
   return (
@@ -62,6 +74,9 @@ export function BarraFiltrosMovil({ children, resultados, className }: { childre
               <button type="button" onClick={() => setAbierto(false)} style={{ padding: "10px 16px", border: "1px solid var(--accent)", color: "var(--accent)", fontSize: 14 }}>
                 Ver {resultados} resultado{resultados === 1 ? "" : "s"}
               </button>
+            </div>
+            <div style={{ paddingBottom: 20, marginBottom: 20, borderBottom: "1px solid var(--border)" }}>
+              <SelectOrden ordenActual={ordenActual} />
             </div>
             {children}
           </div>

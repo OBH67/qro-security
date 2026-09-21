@@ -1828,3 +1828,29 @@ muestra sus propias hijas (4G, Bala, Cubo, etc.); entrar a "Bala"
 "Categorías" por completo y muestra el estado vacío correcto (sin
 productos en esa hoja). `npx tsc --noEmit`, `npm run build` y
 `npm run lint` limpios (mismos 14 warnings preexistentes).
+
+### Vigésimo incremento (2026-09-21): banner que persiste en todas las
+categorías + orden dentro del cajón de filtros móvil
+
+Dos correcciones puntuales que la dueña encontró al revisar el
+decimonoveno incremento:
+
+1. **Banner que desaparecía en categorías sin banner propio** —
+   `obtenerBannerDeGrupo()` solo mostraba algo si había un banner exacto
+   para ese grupo o uno genérico (`group_id` nulo); como no existe
+   ningún banner genérico en los datos de muestra, categorías como
+   "Control de Acceso" se quedaban sin franja promocional. Se agregó un
+   tercer nivel de reserva: si tampoco hay uno genérico, se usa el
+   primero activo — la franja debe persistir en todas las secciones del
+   catálogo, no solo en las que ya tienen un banner propio asignado.
+2. **"Ordenar por" ausente del cajón de filtros en móvil** — el
+   disparador dice "Filtros y orden" pero el selector de orden nunca se
+   metió adentro, solo quedó visible en la fila de resultados de
+   escritorio. Se agregó `<SelectOrden>` al inicio del cajón
+   (`BarraFiltrosMovil.tsx`), arriba de "Categorías"/"Promociones".
+
+Validado con capturas del servidor de desarrollo real: "Control de
+Acceso" ahora muestra el banner de reserva, y el cajón móvil de
+"Videovigilancia" muestra "Ordenar por" justo debajo de "Filtros".
+`npx tsc --noEmit`, `npm run build` y `npm run lint` limpios (mismos 14
+warnings preexistentes).

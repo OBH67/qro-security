@@ -823,13 +823,16 @@ export async function obtenerBannersActivos(): Promise<BannerRow[]> {
 }
 
 /** Banner promocional para una página de catálogo (grupo o listado):
- * primero uno propio del grupo, si no hay uno genérico (`group_id`
- * nulo) — nunca ambos a la vez, esto no es el carrusel de portada
- * (`BannerHero`), es una sola franja. `null` si no hay ninguno activo,
- * en vez de inventar contenido. */
+ * primero uno propio del grupo; si no hay, uno genérico (`group_id`
+ * nulo); si tampoco hay uno genérico, el primero activo — la franja
+ * debe persistir en todas las secciones del catálogo, no solo en las
+ * que ya tienen un banner propio asignado. `null` únicamente cuando no
+ * hay ningún banner activo en todo el catálogo, en vez de inventar
+ * contenido. */
 export async function obtenerBannerDeGrupo(groupId: string): Promise<BannerRow | null> {
   const banners = await obtenerBannersActivos();
-  return banners.find((b) => b.group_id === groupId) ?? banners.find((b) => b.group_id === null) ?? null;
+  if (banners.length === 0) return null;
+  return banners.find((b) => b.group_id === groupId) ?? banners.find((b) => b.group_id === null) ?? banners[0];
 }
 
 export async function obtenerFaqsPorAmbito(

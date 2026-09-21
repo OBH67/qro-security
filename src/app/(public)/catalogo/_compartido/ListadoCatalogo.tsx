@@ -97,7 +97,7 @@ export async function ListadoCatalogo({
           en un `<div>` envoltorio aparte que solo mide lo alto de la
           barra: si el contenedor termina ahí, no hay margen para que se
           quede pegada mientras se hace scroll por el resto de la página. */}
-      <BarraFiltrosMovil resultados={total} className="filtros-barra-movil-envoltura">
+      <BarraFiltrosMovil resultados={total} ordenActual={filtros.orden} className="filtros-barra-movil-envoltura">
         <PanelFiltros basePath={basePath} filtros={filtros} opcionesMarca={opcionesMarca} facetasAtributo={facetasAtributo} categorias={categorias} />
       </BarraFiltrosMovil>
 
