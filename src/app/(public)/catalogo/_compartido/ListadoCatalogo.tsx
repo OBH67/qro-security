@@ -85,10 +85,6 @@ export async function ListadoCatalogo({
         {total} {total === 1 ? "resultado" : "resultados"}
       </p>
 
-      <div style={{ marginTop: 20 }}>
-        <BannerCatalogo banner={banner} />
-      </div>
-
       {/* Móvil: disparador pegajoso ("Filtros y orden") que abre un cajón
           desde abajo (index.html:596/600) — oculto en escritorio.
           `position:sticky` "se pega" dentro de los límites de su
@@ -107,6 +103,12 @@ export async function ListadoCatalogo({
         </div>
 
         <div>
+          {/* El banner va SOLO sobre la columna de productos, nunca de
+              ancho completo por encima del panel de filtros (referencia
+              de la dueña: Syscom) — por eso vive adentro de esta columna,
+              no como franja aparte arriba de las dos columnas. */}
+          <BannerCatalogo banner={banner} />
+
           <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", paddingBottom: 16, borderBottom: "1px solid var(--border)" }}>
             <ChipsFiltrosActivos basePath={basePath} filtros={filtros} nombresMarca={nombresMarcaPorSlug} etiquetasAtributo={etiquetasAtributoPorClave} />
             <SelectOrden ordenActual={filtros.orden} />

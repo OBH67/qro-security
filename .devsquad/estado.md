@@ -1867,3 +1867,16 @@ recortes, y el color de fondo (`gradient_from`) rellena el espacio
 sobrante en vez de dejarlo en negro. Verificado por estilo computado
 (`objectFit: "contain"`) contra el servidor de desarrollo real.
 `npx tsc --noEmit`, `npm run build` y `npm run lint` limpios.
+
+### Corrección (2026-09-21): el banner tapaba la columna de filtros
+
+El banner se renderizaba como una franja de ancho completo por ENCIMA
+de las dos columnas (filtros + productos), así que visualmente se
+extendía sobre el espacio que le correspondía al panel de filtros. La
+referencia de la dueña (Syscom) deja claro que el banner va únicamente
+sobre la columna de productos, a la derecha del panel — nunca de ancho
+completo. Se movió `<BannerCatalogo>` de ser hermano de la rejilla de
+dos columnas a ser el primer elemento dentro de la columna derecha
+(arriba de "Ordenar por"). Verificado con captura del servidor de
+desarrollo real: el banner ahora empieza exactamente donde empieza la
+columna de productos, alineado con "Categorías" a su izquierda.
