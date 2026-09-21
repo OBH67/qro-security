@@ -5,9 +5,9 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 Última actualización: 2026-09-21
 
 ## Fase actual
-**Implementación en curso — decimoprimer incremento (panel admin, tercera
-tanda: F1 Catálogo — alta/edición de producto) terminado. Ver plan de
-incrementos restante al final de este documento.**
+**Implementación en curso — decimosegundo incremento (panel admin, cuarta
+tanda: F3 Categorías) terminado. Ver plan de incrementos restante al
+final de este documento.**
 
 ## Progreso por fases
 
@@ -1353,24 +1353,63 @@ producción:**
 **Lo que NO se pudo validar:** la UI con sesión de staff real (mismo
 límite de siempre en este entorno).
 
+### Decimosegundo incremento (2026-09-21): panel admin, cuarta tanda —
+Categorías (F3)
+
+**Qué se construyó:**
+
+1. **Nueva migración `0017_categorias_admin.sql`**:
+   - **`crear_grupo()`** — alta de un grupo de primer nivel, slug con
+     reintento (mismo patrón que `crear_producto()`).
+   - **`crear_subcategoria()`** — alta en cualquier nivel del árbol D7
+     (`p_parent_id` nulo = primer nivel); valida que el padre, si existe,
+     sea del mismo grupo (la FK no puede expresarlo, ya lo documentaba
+     0003).
+   - **`actualizar_categoria()`** — renombrar/ocultar, unificada para
+     grupo o subcategoría con un parámetro `p_tipo` (una sola función en
+     vez de dos casi idénticas).
+   - **`eliminar_subcategoria()`** — la pieza más delicada de F3: rechaza
+     el borrado si ELLA o CUALQUIER DESCENDIENTE (CTE recursiva, D7 no
+     tiene límite de profundidad) tiene productos activos. Probado con un
+     caso real de 2 niveles: producto en una sub-subcategoría, intento de
+     borrar la subcategoría raíz — rechazado correctamente citando el
+     conteo real de productos afectados.
+2. **UI** (`admin/catalogo/categorias`) — traducción literal de
+   `panel-admin-maqueta.html:711-774`: árbol expandible con conteo de
+   productos activos por nodo, panel de edición a la derecha
+   (nombre/slug/padre/visible-oculta/eliminar), botones "Nuevo grupo" y
+   "Nueva subcategoría" con formularios inline.
+
+**Validado contra Postgres real:**
+
+- `eliminar_subcategoria()`: caso simple (subcategoría con hijo, sin
+  productos) se elimina completa vía `on delete cascade`; caso con
+  productos en un descendiente anidado se rechaza citando el conteo
+  correcto — la recursión funciona de verdad, no solo en teoría.
+- Las 4 mutations de TypeScript (código de producción) probadas de punta
+  a punta contra Postgres/PostgREST reales: crear grupo, crear
+  subcategoría, renombrar + ocultar, eliminar.
+- `npm run build`/`lint` limpios (mismos 10 warnings preexistentes, sin
+  errores nuevos).
+
+**Lo que NO se pudo validar:** la UI con sesión de staff real (mismo
+límite de siempre).
+
 ### Plan de incrementos restante del panel admin
 
-El panel tiene 13 pantallas en la maqueta. Van tres tandas: base (acceso,
-roles, tablero), Pedidos, y Catálogo (alta/edición). Quedan, en el orden
-recomendado:
+El panel tiene 13 pantallas en la maqueta. Van cuatro tandas: base
+(acceso, roles, tablero), Pedidos, Catálogo (alta/edición), y Categorías.
+Quedan, en el orden recomendado:
 
-1. **Categorías (F3)** — árbol D7 (grupo → subcategoría → sub-
-   subcategoría), crear/renombrar/reordenar, sin eliminar una con
-   productos activos sin reasignarlos.
-2. **Importador CSV (F2)** — pasos 1 y 2 (paso 3, "Aplicar", es la
+1. **Importador CSV (F2)** — pasos 1 y 2 (paso 3, "Aplicar", es la
    pieza que de verdad escribe en la base; la maqueta y `diseño.md` lo
    dejan para después).
-3. **Devoluciones (D2)** — bandeja + cajón de resolución, conecta con
+2. **Devoluciones (D2)** — bandeja + cajón de resolución, conecta con
    `aplicar_saldo()` ya existente.
-4. **Solicitudes de servicio (E2)** — bandeja + cajón.
-5. **Analítica (G1) y Configuración (H4)** — Analítica reutiliza las
+3. **Solicitudes de servicio (E2)** — bandeja + cajón.
+4. **Analítica (G1) y Configuración (H4)** — Analítica reutiliza las
    queries de "más/menos vendidos" del tablero; Configuración escribe en
    `settings` (ya leído desde el lado del cliente en varios lugares —
    C1.6, D1.1, D3 — así que un cambio ahí ya se refleja del lado público
-   sin tocar ese código), usando la misma `admin_change_log` de este
-   incremento (H4.3).
+   sin tocar ese código), usando la misma `admin_change_log` del
+   decimoprimer incremento (H4.3).
