@@ -15,15 +15,18 @@ export function BannerCatalogo({ banner }: { banner: BannerRow | null }) {
       style={{
         position: "relative",
         width: "100%",
-        aspectRatio: "1400/280",
-        maxHeight: 280,
+        height: "clamp(140px, 22vw, 280px)",
         overflow: "hidden",
         marginBottom: 24,
         border: "1px solid var(--border)",
         background: banner.gradient_from ?? "var(--bg-card)",
       }}
     >
-      <Image src={urlImagenPublica(banner.image_url)} alt={banner.title} fill sizes="(max-width: 900px) 100vw, 1400px" style={{ objectFit: "cover" }} priority={false} />
+      {/* `object-fit: contain` — nunca recorta la imagen real que suba la
+          dueña, sin importar su proporción original; el color de fondo
+          (`gradient_from`) rellena el espacio sobrante en vez de dejarlo
+          en negro. */}
+      <Image src={urlImagenPublica(banner.image_url)} alt={banner.title} fill sizes="(max-width: 900px) 100vw, 1400px" style={{ objectFit: "contain" }} priority={false} />
       {banner.brand_label && (
         <span
           style={{

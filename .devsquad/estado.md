@@ -1854,3 +1854,16 @@ Acceso" ahora muestra el banner de reserva, y el cajón móvil de
 "Videovigilancia" muestra "Ordenar por" justo debajo de "Filtros".
 `npx tsc --noEmit`, `npm run build` y `npm run lint` limpios (mismos 14
 warnings preexistentes).
+
+### Corrección (2026-09-21): el banner del catálogo recortaba la imagen
+
+`BannerCatalogo.tsx` forzaba la imagen a una caja ultra-panorámica fija
+(1400×280, `object-fit: cover`) sin importar la proporción real de la
+imagen subida — cualquier foto que no fuera exactamente esa relación de
+aspecto se recortaba (perdía texto o contenido importante por arriba/
+abajo). Se cambió a `object-fit: contain` con una altura responsiva
+(`clamp(140px, 22vw, 280px)`): la imagen completa siempre se ve, sin
+recortes, y el color de fondo (`gradient_from`) rellena el espacio
+sobrante en vez de dejarlo en negro. Verificado por estilo computado
+(`objectFit: "contain"`) contra el servidor de desarrollo real.
+`npx tsc --noEmit`, `npm run build` y `npm run lint` limpios.
