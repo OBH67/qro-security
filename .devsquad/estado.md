@@ -5,8 +5,9 @@ Rama: `claude/sg-queretaro-sales-platform-6a7359`
 Última actualización: 2026-09-21
 
 ## Fase actual
-**Implementación en curso — tercer incremento (carrito, cuenta de cliente,
-pedido y comprobante — Épica B + C sin C3) completado.**
+**Implementación en curso — quinto incremento (corrección de la regla de
+traducción literal del frontend: chrome del sitio público + portada)
+completado.** Ver detalle al final de este documento.
 
 ## Progreso por fases
 
@@ -602,3 +603,173 @@ no se editó 0010 — instrucción explícita):
   o inserta bajo el candado de la fila del pedido), así que agregar una
   llave ahí habría sido protección redundante sin un riesgo real que
   cerrar — documentado en el punto 3 de arriba.
+
+### Quinto incremento (2026-09-21): corrección de la regla de traducción literal — chrome del sitio + portada
+
+**El problema que se corrigió:** la dueña reclamó, comparando capturas,
+que el frontend público no seguía `index.html` "tal cual" como pedía su
+instrucción explícita (`perfil.md` "Regla de traducción a código",
+`requerimientos.md` H1.5). El segundo incremento (catálogo público) se
+había auto-autorizado once "simplificaciones deliberadas" — logo
+sustituido por texto "SGQ", botones "Avisos"/"Ofertas" omitidos, colores
+vía `var(--token)` en vez del hex literal del HTML, secciones inventadas
+("Explora por categoría") en vez de las reales del demo ("Para Ti"), y
+varias piezas completas del HTML sin construir (franja de confianza,
+barra flotante, degradado del encabezado, mega-menú "DESTACADO",
+marquesina de marcas, botón flotante "Asesor"). Eso incumplía la regla:
+"si algo no está claro se pregunta, no se simplifica por decisión propia".
+
+**Qué se corrigió, componente por componente** (todo con valores hex
+literales del HTML, no tokens de `globals.css` — instrucción explícita de
+la dueña, verificada con estilos computados en el navegador: `#FF4D5E` y
+`#EAF2F8` exactos):
+
+1. **`EncabezadoSitio.tsx` — reescrito completo.** Logo real
+   (`uploads/ChatGPT Image Sep 18, 2026, 10_42_49 PM.png`, copiado a
+   `public/uploads/`), botones "Avisos" y "Ofertas" con sus SVG exactos y
+   el punto rojo de notificación, barra flotante que reaparece al subir
+   scroll y se oculta al bajar (`floatNavStyle`, index.html:39-60),
+   degradado del encabezado que cicla cada 5 s sobre los 3 colores fijos
+   del demo (`headerStyle`, index.html:2136 — nota de diseño: en el demo
+   ese arreglo de colores nunca fue dato editable, es contenido fijo del
+   componente, no de una tabla; aquí el encabezado cicla su propio estado
+   en vez de compartir el `state.heroSlide` global de la SPA, mismo
+   intervalo), mega-menú con el panel "DESTACADO" (producto más vendido
+   real por grupo, nueva función en `obtenerNavegacionGrupos()`), chips de
+   navegación en móvil, destello (`sgFlash`) del botón de carrito al
+   agregar algo.
+2. **`BannerHero.tsx` — reescrito completo.** Ahora es la sección
+   `index.html:276-338` entera (antes solo traducía el carrusel): capas de
+   degradado radial por banner, imagen real con crossfade, puntos,
+   `PanelResenas` al lado, y la franja de confianza (envío / factura /
+   asesoría) debajo. Los colores del degradado por banner
+   (`gradient_from`/`gradient_to`) ya existían como columnas en
+   `0006_servicios_y_contenido.sql` desde un incremento anterior — no se
+   inventó nada, solo se empezaron a usar.
+3. **`supabase/seed_dev.sql`** — se agregaron los 3 banners literales de
+   `heroSlidesData` (index.html:1955-1959) con sus colores exactos y las
+   imágenes reales `uploads/hero1.png`/`hero2.png`/`hero3.png` (antes
+   solo había un banner con una URL de Pexels y sin degradado).
+4. **`ParaTi.tsx`** (nuevo) — la sección "Para Ti" (index.html:340-372)
+   que el segundo incremento había sustituido por una "Explora por
+   categoría" inventada. Nueva consulta `obtenerParaTi()` en `catalogo.ts`:
+   arma las pestañas a partir de subcategorías reales con productos (no
+   hardcodeadas), con el mismo criterio de "las más surtidas primero" que
+   usaba el demo con datos dummy.
+5. **`BotonAsesorFlotante.tsx`** (nuevo) + **`ToastProvider.tsx`** (nuevo,
+   contexto de cliente) — botón flotante "Asesor" (index.html:1860-1863).
+   El número de WhatsApp real es H4/PA-5 (no construidos todavía), así que
+   reproduce el mismo aviso de juguete del demo (`say('Abriría WhatsApp
+   con un asesor')`) en vez de inventar un enlace a un número que no
+   existe — documentado en el propio componente, no omitido en silencio.
+   El `ToastProvider` también cerró huecos reales: "Agregado a tu pedido"
+   al usar el botón de las tarjetas (que no tenía `onClick` desde el
+   segundo incremento) y "Avísame cuando llegue" en agotados.
+6. **`PiePagina.tsx`, `CintaMarcas.tsx`, `PanelResenas.tsx`,
+   `AcordeonFaqs.tsx`** — mismos datos y estructura de antes, pasados a
+   hex literal; se agregó la marquesina infinita real (`sgMarquee`, antes
+   era un scroll horizontal simple) y el botón "Ver todas" de reseñas.
+7. **`globals.css`** — se agregaron los 7 `@keyframes` literales del
+   `<helmet>` de `index.html` (`sgPulse`, `sgRec`, `sgScan`, `sgFlash`,
+   `sgWake`, `sgIn`, `sgMarquee`) que faltaban.
+8. **`TarjetaProducto.tsx`** — chips de especificaciones cortas (nuevas,
+   derivadas de `products.attributes`, hasta 3 valores) que el demo
+   pintaba en "Más vendidos" (`p.specs`) y que no existían; se conectó de
+   verdad el botón "Agregar al pedido" (antes solo tenía el estilo final
+   sin `onClick`, hueco heredado del segundo incremento).
+9. **`page.tsx`** — reescrito con el orden y las secciones reales de
+   `index.html:275-515`: muro de video, "Para Ti", "Más vendidos", "Cómo
+   comprar", "Servicios" (nueva, no existía), "Sectores que atendemos",
+   marquesina de marcas, preguntas frecuentes. La sección "Arma tu sistema
+   completo" (kit con SKU inventado) sigue sin construirse: es PA-21,
+   **ya cerrada por la dueña el 2026-09-20** ("no existe un concepto real
+   de 'kit destacado'"), no una omisión nueva.
+10. **`next.config.ts`** — dos correcciones reales (no solo de esta
+    sesión de prueba): el protocolo de `NEXT_PUBLIC_R2_PUBLIC_URL` se
+    deriva de la URL en vez de asumir `https` fijo, y se agrega el puerto
+    al patrón cuando la URL lo trae — sin esto, cualquier CDN que use un
+    puerto no estándar habría fallado en producción igual que falló en
+    pruebas locales. `dangerouslyAllowLocalIP` solo se activa fuera de
+    producción (protección SSRF de Next 16 que bloqueaba imágenes locales
+    en desarrollo; en producción el CDN siempre es un dominio público real).
+
+**Verificación visual hecha (no solo "compila"):** se sirvió `index.html`
+por HTTP (`npx serve`) y se abrió con Playwright headless (Chromium ya
+instalado, `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`). El demo no
+renderizaba nada al principio (pantalla en blanco): `support.js` carga
+React/ReactDOM/Babel desde `unpkg.com`, bloqueado por la política de
+salida de este entorno (mismo tipo de bloqueo ya documentado para
+`supabase start`/Docker en incrementos anteriores) — se resolvió
+descargando esos mismos paquetes por versión exacta desde el registro de
+npm (sí permitido) y sirviéndolos en local, inyectados vía
+`window.__resources` (mecanismo de override que el propio `support.js` ya
+soporta, sin tocar `index.html`). Con eso el demo sí renderizó completo y
+se pudo comparar contra `localhost:3000` lado a lado.
+
+Para tener datos reales que comparar: se instaló Postgres 16 nativo (ya
+disponible), se aplicaron el mock de plataforma (`/tmp/0000_mock_supabase_platform.sql`,
+solo local, no se sube), las 11 migraciones y ambos seeds. A diferencia de
+incrementos anteriores, esta vez también se consiguió levantar **PostgREST
+real** (binario oficial descargado del release de GitHub, permitido por la
+política de salida) apuntando a ese Postgres, con roles `anon`/
+`authenticated`/`service_role` vía JWT HS256 generado localmente, detrás
+de un proxy Node mínimo (~40 líneas, sin dependencias) que emula las rutas
+`/rest/v1` de Supabase — así la app corrió contra datos reales de verdad
+(no solo SQL a mano), la limitación que los cuatro incrementos anteriores
+habían dejado documentada como bloqueo de red. Nada de esta infraestructura
+de prueba (PostgREST, el proxy, los JWT, `.env.local`) se sube al
+repositorio.
+
+**Comparación final:** capturas lado a lado en escritorio (1440×900) y
+móvil (390×844) de `index.html` vs `localhost:3000`, más un acercamiento
+al encabezado. Colores verificados con estilos computados del navegador,
+no solo a ojo (`rgb(255,77,94)` = `#FF4D5E`, `rgb(234,242,248)` = `#EAF2F8`,
+exactos). El resultado es una coincidencia estructural y visual muy
+cercana: mismo encabezado con logo real/Avisos/Ofertas/cuenta/carrito,
+misma navegación con mega-menú, mismo hero con capas e imagen real, mismo
+panel de reseñas, misma franja de confianza, mismo "Para Ti", mismos
+"Más vendidos" con specs y barras, misma franja de marquesina, mismo pie,
+mismo botón flotante de Asesor.
+
+**Lo que NO quedó perfecto — honesto, no maquillado:**
+
+- **Las fotos de servicio (Monitoreo/Guardias/Financiamiento) no se vieron
+  en la captura de este entorno**: son URLs de `images.pexels.com`,
+  bloqueadas por la misma política de salida que bloqueó `unpkg.com`. El
+  código es correcto (mismo patrón que ya usaba `seed_dev.sql` desde el
+  segundo incremento) — es una limitación de este entorno de prueba, no
+  del código. Se verá bien en cualquier entorno con salida a internet
+  normal.
+- **Sugerencias de búsqueda en vivo** (`showSuggest`, index.html:84-96,
+  lista bajo el campo mientras se escribe) **no se construyeron.** Es la
+  única pieza de `index.html` que se dejó fuera de este incremento a
+  propósito por presupuesto de tiempo, no por decisión de diseño — sigue
+  pendiente, no está resuelta como PA porque no depende de una decisión de
+  negocio, solo de tiempo de implementación.
+- **El degradado del encabezado no está perfectamente sincronizado en
+  color con el banner real que se ve en el hero en todo momento**: cada
+  uno cicla su propio índice cada 5 s de forma independiente (ver punto 1
+  arriba) — con los 3 banners de `seed_dev.sql` sembrados a propósito
+  iguales al demo arrancan sincronizados, pero pueden desalinearse con el
+  tiempo o si el admin agrega/quita banners reales. Es una limitación
+  conocida y documentada, no un error silencioso.
+- **No se tradujo el panel "DESTACADO" con la animación exacta de hover
+  del demo** (el demo lo cambia con `onMouseEnter` en cada fila del
+  mega-menú; aquí también, pero no se verificó el detalle de temporización
+  del `onMouseLeave` del contenedor completo pixel a pixel).
+- El resto de páginas del sitio (listado, ficha de producto, carrito,
+  cuenta) **no se tocaron** en este incremento — seguían usando `var()`
+  antes y lo siguen haciendo: quedan fuera del alcance explícito de este
+  encargo (chrome + portada), aunque tienen la misma desviación que
+  motivó el reclamo. Recomendado como próximo incremento si la dueña
+  quiere el sitio completo 100% literal, no solo portada + chrome.
+
+**Decisiones técnicas nuevas que vale la pena que el Arquitecto revise:**
+- `obtenerNavegacionGrupos()` ahora hace una consulta adicional por grupo
+  (destacado + su imagen) — 6 grupos, aceptable a esta escala, mismo
+  criterio que ya usaba la función.
+- `obtenerParaTi()` es una consulta más pesada (cuenta productos por cada
+  subcategoría raíz de los 6 grupos para elegir las pestañas) — también
+  aceptable a esta escala (~54 subcategorías), pero si el catálogo crece
+  mucho más podría valer la pena cachear el resultado en vez de calcularlo
+  en cada carga de portada (la portada ya es `force-dynamic`).

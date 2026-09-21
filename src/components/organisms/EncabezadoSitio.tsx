@@ -1,34 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { GrupoConNavegacion } from "@/server/db/queries/catalogo";
 import { useCarrito } from "@/components/providers/CarritoProvider";
 
 /**
- * index.html:39-271 — encabezado del sitio (logo, buscador, cuenta,
- * pedido, mega-menú de "Productos" y menú de pantalla completa en móvil).
- * Simplificaciones deliberadas frente al demo, documentadas en
- * `.devsquad/estado.md` porque son decorativas y no afectan A1-A4:
- * - Sin la barra flotante que reaparece al hacer scroll hacia arriba.
- * - Sin el fondo con degradado que en el demo cambia según el slide del
- *   hero de la portada (aquí el encabezado es el mismo en todas las
- *   páginas, incluida la portada).
- * - El mega-menú no incluye el panel "DESTACADO" con un producto del
- *   grupo en hover (requeriría datos adicionales por grupo sin ganancia
- *   funcional para A1-A4).
+ * Traducción literal de `index.html:39-271` (barra flotante + encabezado +
+ * mega-menú + menú de pantalla completa en móvil). Valores exactos del
+ * demo (colores, tamaños, `clip-path`) — no tokens de `globals.css`, por
+ * instrucción explícita de la dueña del proyecto (`.devsquad/perfil.md`,
+ * "Regla de traducción a código"): un token que vale lo mismo no sustituye
+ * al valor literal en este archivo.
  *
- * Épica B: "Mi pedido" ahora refleja la cantidad real del carrito
- * (`CarritoProvider`, sesión en base de datos o `localStorage` según
- * corresponda, §9.6) y "Mi cuenta"/"Iniciar sesión" cambia según haya
- * sesión iniciada (resuelta en el Server Component `layout.tsx`).
+ * Lo único que no es 1:1 con la SPA del demo: el degradado del encabezado
+ * (`headerStyle`, index.html:2136) ahí lee `this.state.heroSlide`, que es
+ * estado global de un solo componente. Aquí, con páginas reales por URL,
+ * el encabezado hace su propio ciclo sobre el mismo arreglo fijo de 3
+ * colores del demo (`heroSlidesData`, index.html:1955-1959 — ese arreglo
+ * nunca fue dato editable ni en el demo, es contenido fijo del componente,
+ * no de una tabla), con el mismo intervalo de 5 s. El carrusel real de
+ * banners de la portada (`BannerHero`) sí lee `banners` de la base de
+ * datos de forma independiente — con los banners de muestra de
+ * `supabase/seed_dev.sql` ambos ciclan con los mismos 3 colores porque se
+ * sembraron a propósito iguales al demo.
  */
 
-const SERVICIOS = [
-  { tipo: "monitoreo", nombre: "Monitoreo de alarmas 24/7", linea: "Conectamos tu sistema a central de monitoreo y atendemos eventos." },
-  { tipo: "guardias", nombre: "Guardias de seguridad", linea: "Guardias intramuros, control de acceso y rondines." },
-  { tipo: "financiamiento", nombre: "Financiamiento y créditos", linea: "Compra tu equipo a plazos de 3, 6 o 12 meses." },
+const HERO_SLIDES = [
+  { a: "#2E9E5B", b: "#0B2A17", grupoCodigo: "vv" },
+  { a: "#1D5C9E", b: "#0A2038", grupoCodigo: "ec" },
+  { a: "#1E8A4F", b: "#082A19", grupoCodigo: "ec" },
 ] as const;
+
+const SERVICIOS = [
+  { tipo: "monitoreo", nombre: "Monitoreo de alarmas 24/7", linea: "Conectamos tu sistema a central de monitoreo, atendemos eventos y te enviamos reportes." },
+  { tipo: "guardias", nombre: "Guardias de seguridad", linea: "Guardias intramuros, control de acceso en recepción y rondines en turnos 12×12 y 24×24." },
+  { tipo: "financiamiento", nombre: "Financiamiento y créditos", linea: "Compra tu equipo a plazos de 3, 6 o 12 meses. Sujeto a aprobación." },
+] as const;
+
+const LOGO_SRC = "/uploads/ChatGPT Image Sep 18, 2026, 10_42_49 PM.png";
 
 export function EncabezadoSitio({
   grupos,
@@ -41,262 +52,456 @@ export function EncabezadoSitio({
   const [grupoMovil, setGrupoMovil] = useState<GrupoConNavegacion | null>(null);
   const [megaAbierto, setMegaAbierto] = useState(false);
   const [servAbierto, setServAbierto] = useState(false);
-  const [grupoMega, setGrupoMega] = useState(grupos[0]?.id ?? "");
+  const [grupoMegaId, setGrupoMegaId] = useState(grupos[0]?.id ?? "");
+  const [esMovil, setEsMovil] = useState(false);
+  const [flotanteVisible, setFlotanteVisible] = useState(false);
+  const [heroSlideIdx, setHeroSlideIdx] = useState(0);
+  const [flash, setFlash] = useState(false);
   const carrito = useCarrito();
+  const cantidadPrevia = useRef(carrito.cantidadTotal);
 
-  const grupoActivoMega = grupos.find((g) => g.id === grupoMega) ?? grupos[0];
+  const grupoActivoMega = grupos.find((g) => g.id === grupoMegaId) ?? grupos[0];
+  const hs = HERO_SLIDES[heroSlideIdx];
+
+  // Ciclo del degradado del encabezado — index.html:1987 (`this.cycle`, 5 s).
+  useEffect(() => {
+    const id = setInterval(() => setHeroSlideIdx((i) => (i + 1) % HERO_SLIDES.length), 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Ancho de pantalla (index.html:1988, `mobile: window.innerWidth < 760`).
+  useEffect(() => {
+    const onResize = () => setEsMovil(window.innerWidth < 760);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // Barra flotante que reaparece al subir y se oculta al bajar — index.html:1991-2004.
+  useEffect(() => {
+    let ultimaY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const subiendo = y < ultimaY;
+      const bajando = y > ultimaY;
+      ultimaY = y;
+      if (y < 80) setFlotanteVisible(false);
+      else if (bajando) setFlotanteVisible(false);
+      else if (subiendo) setFlotanteVisible(true);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Destello del botón de carrito al agregar algo — index.html:2189 (`s.flash`).
+  useEffect(() => {
+    if (carrito.cantidadTotal > cantidadPrevia.current) {
+      setFlash(true);
+      const t = setTimeout(() => setFlash(false), 700);
+      cantidadPrevia.current = carrito.cantidadTotal;
+      return () => clearTimeout(t);
+    }
+    cantidadPrevia.current = carrito.cantidadTotal;
+  }, [carrito.cantidadTotal]);
 
   return (
-    <header
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 40,
-        background: "var(--bg-base)",
-        borderBottom: "1px solid var(--border)",
-        backdropFilter: "blur(8px)",
-      }}
-    >
+    <>
+      {/* Barra flotante — index.html:39-60 */}
       <div
         style={{
-          maxWidth: "var(--content-max-width)",
-          margin: "0 auto",
-          padding: "12px 20px",
-          display: "flex",
-          gap: 18,
-          alignItems: "center",
-          flexWrap: "wrap",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 80,
+          transition: "transform 260ms ease,opacity 260ms ease",
+          transform: `translateY(${flotanteVisible ? "0" : "-100%"})`,
+          opacity: flotanteVisible ? 1 : 0,
+          background: "#07111CF2",
+          backdropFilter: "blur(8px)",
+          borderBottom: "1px solid #1F3244",
         }}
       >
-        <button
-          type="button"
-          aria-label="Abrir menú"
-          onClick={() => {
-            setMenuMovilAbierto(true);
-            setGrupoMovil(null);
-          }}
-          style={{
-            width: 44,
-            height: 44,
-            display: "none",
-            placeItems: "center",
-            border: "1px solid var(--border)",
-            flex: "0 0 auto",
-          }}
-          className="header-menu-boton-movil"
-        >
-          <IconoMenu />
-        </button>
-
-        <Link href="/" style={{ display: "flex", gap: 12, alignItems: "center", flex: "0 0 auto" }}>
-          <span
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              display: "grid",
-              placeItems: "center",
-              background: "var(--bg-card)",
-              border: "1px solid var(--border)",
-              fontFamily: "var(--font-display)",
-              fontWeight: 600,
-              color: "var(--accent)",
-            }}
-          >
-            SGQ
-          </span>
-          <span style={{ textAlign: "left", lineHeight: 1.05 }}>
-            <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 17 }}>
-              Seguridad General
-            </span>
-            <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: 2, color: "var(--text-muted)" }}>
-              QUERÉTARO
-            </span>
-          </span>
-        </Link>
-
-        <form action="/buscar" method="GET" style={{ position: "relative", flex: "1 1 240px", minWidth: 160 }}>
-          <input
-            type="search"
-            name="q"
-            placeholder="Busca por producto, marca o SKU"
-            aria-label="Buscar"
-            style={{
-              width: "100%",
-              padding: "11px 14px",
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-input)",
-              borderRadius: "var(--radius-input)",
-              color: "var(--text-primary)",
-              fontSize: 15,
-            }}
-          />
-        </form>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginLeft: "auto", flex: "0 0 auto" }}>
-          <Link
-            href={sesion ? "/mi-cuenta/pedidos" : "/ingresar"}
-            style={{ display: "flex", gap: 8, alignItems: "center", minHeight: 44, fontFamily: "var(--font-display)", fontWeight: 500, fontSize: 15, color: "var(--text-primary)" }}
-          >
-            <IconoCuenta />
-            <span className="header-texto-desktop">{sesion ? `Hola, ${sesion.nombre}` : "Iniciar sesión"}</span>
+        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "10px 16px", display: "flex", gap: 12, alignItems: "center" }}>
+          {esMovil && (
+            <button
+              type="button"
+              aria-label="Abrir menú"
+              onClick={() => {
+                setMenuMovilAbierto(true);
+                setGrupoMovil(null);
+              }}
+              style={{ width: 40, height: 40, display: "grid", placeItems: "center", border: "1px solid #1F3244", flex: "0 0 auto" }}
+            >
+              <IconoMenu tamano={18} />
+            </button>
+          )}
+          <Link href="/" aria-label="Inicio" style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flex: "0 0 auto" }}>
+            <Image src={LOGO_SRC} alt="SGQ" width={36} height={36} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          </Link>
+          <form action="/buscar" method="GET" style={{ flex: 1, minWidth: 0 }}>
+            <input
+              type="search"
+              name="q"
+              placeholder="Busca por producto, marca o SKU"
+              aria-label="Buscar"
+              style={{ width: "100%", padding: "9px 12px", background: "#0F1D2B", border: "1px solid #1F3244", borderRadius: 4, color: "#EAF2F8", fontSize: 14 }}
+            />
+          </form>
+          <Link href={sesion ? "/mi-cuenta/pedidos" : "/ingresar"} aria-label="Mi cuenta" style={{ width: 40, height: 40, display: "grid", placeItems: "center", color: "#EAF2F8", flex: "0 0 auto" }}>
+            <IconoCuenta tamano={20} />
           </Link>
           <Link
             href="/carrito"
-            aria-label={`Mi pedido, ${carrito.cantidadTotal} productos`}
-            style={{
-              display: "flex",
-              gap: 9,
-              alignItems: "center",
-              padding: "9px 14px",
-              border: "1px solid var(--border)",
-              color: "var(--text-primary)",
-            }}
+            aria-label="Mi pedido"
+            style={{ display: "flex", gap: 6, alignItems: "center", padding: "9px 12px", background: "#3CE7FF", color: "#07111C", flex: "0 0 auto" }}
             className="clip-corner-sm"
           >
-            <IconoCarrito />
-            <span className="font-data" style={{ fontSize: 13 }}>
-              {carrito.cantidadTotal}
-            </span>
+            <IconoCarrito tamano={19} />
+            <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 13, fontWeight: 500 }}>{carrito.cantidadTotal}</span>
           </Link>
         </div>
       </div>
 
-      <nav
-        aria-label="Categorías"
-        className="header-nav-desktop"
-        style={{ borderTop: "1px solid var(--border-subtle)" }}
+      {/* Encabezado principal — index.html:62-225 */}
+      <header
+        style={{
+          position: "relative",
+          zIndex: 5,
+          backdropFilter: "blur(8px)",
+          borderBottom: "1px solid #FFFFFF1A",
+          background: `linear-gradient(100deg,${hs.a}E6 0%,${hs.b}E6 65%,#07111CE6 100%)`,
+        }}
       >
         <div
           style={{
-            maxWidth: "var(--content-max-width)",
+            maxWidth: 1400,
             margin: "0 auto",
-            padding: "0 20px",
+            padding: "clamp(9px,1.1vw,12px) clamp(12px,1.6vw,20px)",
             display: "flex",
+            gap: "clamp(10px,1.3vw,18px)",
             alignItems: "center",
-            gap: 2,
-            overflowX: "auto",
+            flexWrap: "wrap",
           }}
         >
-          <button
-            type="button"
-            onClick={() => setMegaAbierto((v) => !v)}
-            onMouseEnter={() => setMegaAbierto(true)}
-            style={{
-              display: "flex",
-              gap: 8,
-              alignItems: "center",
-              padding: "13px 13px",
-              fontFamily: "var(--font-display)",
-              fontWeight: 500,
-              fontSize: 15,
-              color: megaAbierto ? "var(--accent)" : "var(--text-primary)",
-              borderBottom: `2px solid ${megaAbierto ? "var(--accent)" : "transparent"}`,
-              whiteSpace: "nowrap",
-            }}
-          >
-            <IconoMenu chico />
-            Productos
-          </button>
-          <EnlaceNav href="/como-comprar">Cómo comprar</EnlaceNav>
-          <button
-            type="button"
-            onClick={() => setServAbierto((v) => !v)}
-            style={{
-              display: "flex",
-              gap: 8,
-              alignItems: "center",
-              padding: "13px 13px",
-              fontFamily: "var(--font-display)",
-              fontWeight: 500,
-              fontSize: 15,
-              color: servAbierto ? "var(--accent)" : "var(--text-muted)",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Servicios
-          </button>
-          <EnlaceNav href="/devoluciones">Devoluciones</EnlaceNav>
-          <EnlaceNav href="/contacto">Soporte</EnlaceNav>
-        </div>
-      </nav>
+          {esMovil && (
+            <button
+              type="button"
+              aria-label="Abrir menú"
+              onClick={() => {
+                setMenuMovilAbierto(true);
+                setGrupoMovil(null);
+              }}
+              style={{ width: 44, height: 44, display: "grid", placeItems: "center", border: "1px solid #1F3244", flex: "0 0 auto" }}
+            >
+              <IconoMenu tamano={20} />
+            </button>
+          )}
 
-      {servAbierto && (
-        <div style={{ borderTop: "1px solid var(--border)", background: "var(--bg-surface)" }}>
-          <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "18px 32px", display: "flex", gap: 14, flexWrap: "wrap" }}>
-            {SERVICIOS.map((sv) => (
+          <Link href="/" style={{ display: "flex", gap: 12, alignItems: "center", flex: "0 0 auto" }}>
+            <span style={{ position: "relative", width: 40, height: 40, flex: "0 0 auto", borderRadius: "50%", overflow: "hidden", boxShadow: "0 0 14px rgba(60,231,255,.28)", display: "block" }}>
+              <Image src={LOGO_SRC} alt="SGQ" width={40} height={40} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </span>
+            {!esMovil && (
+              <span style={{ textAlign: "left", lineHeight: 1.05 }}>
+                <span style={{ display: "block", fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 17, color: "#EAF2F8" }}>
+                  Seguridad General
+                </span>
+                <span style={{ display: "block", fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, letterSpacing: 2, color: "#9FB2C3" }}>
+                  QUERÉTARO
+                </span>
+              </span>
+            )}
+          </Link>
+
+          <form
+            action="/buscar"
+            method="GET"
+            style={{ position: "relative", ...(esMovil ? { order: 9, flex: "1 1 100%", minWidth: 0 } : { flex: "1 1 240px", minWidth: 160 }) }}
+          >
+            <input
+              type="search"
+              name="q"
+              placeholder="Busca por producto, marca o SKU"
+              aria-label="Buscar"
+              style={{
+                width: "100%",
+                padding: "11px 14px 11px 40px",
+                background: "#0F1D2B",
+                border: "1px solid #1F3244",
+                borderRadius: 4,
+                color: "#EAF2F8",
+                fontSize: 15,
+              }}
+            />
+            <svg viewBox="0 0 24 24" fill="none" stroke="#9FB2C3" strokeWidth={1.5} style={{ position: "absolute", left: 13, top: 12, width: 18, height: 18, pointerEvents: "none" }}>
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+          </form>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "clamp(8px,1.1vw,16px)", marginLeft: "auto", flex: "0 0 auto" }}>
+            <BotonAvisos mostrarTexto={!esMovil} />
+            {!esMovil && <BotonOfertas />}
+
+            <Link
+              href={sesion ? "/mi-cuenta/pedidos" : "/ingresar"}
+              aria-label="Mi cuenta"
+              style={{ display: "flex", gap: 8, alignItems: "center", minHeight: 44, fontFamily: "'Chakra Petch',sans-serif", fontWeight: 500, fontSize: 15, color: "#EAF2F8", whiteSpace: "nowrap" }}
+            >
+              <IconoCuenta tamano={20} />
+              {!esMovil && <span>{sesion ? `Hola, ${sesion.nombre}` : "Iniciar sesión"}</span>}
+            </Link>
+
+            <Link
+              href="/carrito"
+              aria-label={`Mi pedido, ${carrito.cantidadTotal} productos`}
+              style={
+                esMovil
+                  ? {
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      minHeight: 44,
+                      padding: "9px 13px",
+                      background: "#3CE7FF",
+                      color: "#07111C",
+                      ...(flash ? { animation: "sgFlash .7s both" } : {}),
+                    }
+                  : {
+                      display: "flex",
+                      gap: 9,
+                      alignItems: "center",
+                      padding: "9px 14px",
+                      border: `1px solid ${flash ? "#3CE7FF" : "#1F3244"}`,
+                      color: flash ? "#3CE7FF" : "#EAF2F8",
+                      ...(flash ? { animation: "sgFlash .7s both" } : {}),
+                    }
+              }
+              className="clip-corner-sm"
+            >
+              <IconoCarrito tamano={21} />
+              <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 13, fontWeight: 500 }}>{carrito.cantidadTotal}</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Chips de navegación en móvil — index.html:125-133 */}
+        {esMovil && (
+          <div style={{ display: "flex", gap: 9, alignItems: "center", padding: "0 14px 13px", overflowX: "auto" }}>
+            {CHIPS_NAV.map((chip, i) => (
               <Link
-                key={sv.tipo}
-                href={`/servicios/${sv.tipo}`}
-                className="clip-corner-md"
-                style={{ flex: "1 1 260px", textAlign: "left", padding: "16px 18px", background: "var(--bg-elevated)", border: "1px solid var(--border)" }}
+                key={chip.nombre}
+                href={chip.href}
+                style={{
+                  flex: "0 0 auto",
+                  minHeight: 40,
+                  padding: "9px 15px",
+                  borderRadius: 9,
+                  background: i === 0 ? "rgba(60,231,255,.14)" : "#16283A",
+                  border: `1px solid ${i === 0 ? "#3CE7FF" : "#1F3244"}`,
+                  fontFamily: "'Chakra Petch',sans-serif",
+                  fontWeight: 500,
+                  fontSize: 14.5,
+                  whiteSpace: "nowrap",
+                  color: i === 0 ? "#3CE7FF" : "#EAF2F8",
+                  display: "flex",
+                  alignItems: "center",
+                }}
               >
-                <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 17 }}>{sv.nombre}</span>
-                <span style={{ display: "block", marginTop: 5, fontSize: 14, color: "var(--text-muted)", lineHeight: 1.5 }}>{sv.linea}</span>
+                {chip.nombre}
               </Link>
             ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {megaAbierto && grupoActivoMega && (
-        <div onMouseLeave={() => setMegaAbierto(false)} style={{ borderTop: "1px solid var(--border)", background: "var(--bg-surface)", boxShadow: "var(--shadow-overlay)" }}>
-          <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 32px", display: "grid", gridTemplateColumns: "minmax(230px,280px) 1fr" }}>
-            <div style={{ borderRight: "1px solid var(--border)", padding: "16px 0" }}>
-              {grupos.map((g) => (
+        {/* Navegación de escritorio — index.html:135-175 */}
+        {!esMovil && (
+          <div style={{ borderTop: "1px solid #16283A" }}>
+            <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 clamp(12px,1.6vw,20px)", display: "flex", alignItems: "center", gap: 2, overflowX: "auto" }}>
+              <button
+                type="button"
+                onClick={() => setMegaAbierto((v) => !v)}
+                onMouseEnter={() => setMegaAbierto(true)}
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "center",
+                  fontFamily: "'Chakra Petch',sans-serif",
+                  fontWeight: 500,
+                  fontSize: 16,
+                  whiteSpace: "nowrap",
+                  padding: "6px 0",
+                  borderBottom: `2px solid ${megaAbierto ? "#3CE7FF" : "transparent"}`,
+                  color: megaAbierto ? "#3CE7FF" : "#EAF2F8",
+                  marginRight: 11,
+                }}
+              >
+                <IconoMenu tamano={18} />
+                Productos
+              </button>
+              <EnlaceNav href="/como-comprar">
+                <IconoRayo />
+                Novedades
+              </EnlaceNav>
+              <button
+                type="button"
+                onClick={() => setServAbierto((v) => !v)}
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "center",
+                  padding: "13px 13px",
+                  fontFamily: "'Chakra Petch',sans-serif",
+                  fontWeight: 500,
+                  fontSize: 15,
+                  color: servAbierto ? "#3CE7FF" : "#9FB2C3",
+                  whiteSpace: "nowrap",
+                  borderBottom: `2px solid ${servAbierto ? "#3CE7FF" : "transparent"}`,
+                }}
+              >
+                <IconoServicios />
+                Servicios
+                <IconoChevronAbajo />
+              </button>
+              <EnlaceNav href="/marcas">
+                <IconoEstrella />
+                Marcas
+              </EnlaceNav>
+              <EnlaceNav href={grupos[1] ? `/catalogo/${grupos[1].slug}/todos` : "/catalogo"}>
+                <IconoPromociones />
+                Promociones
+              </EnlaceNav>
+              <EnlaceNav href="/como-comprar">
+                <IconoComoComprar />
+                Cómo comprar
+              </EnlaceNav>
+              <EnlaceNav href="/devoluciones">
+                <IconoDevoluciones />
+                Devoluciones
+              </EnlaceNav>
+              <EnlaceNav href="/contacto">
+                <IconoSoporte />
+                Soporte
+              </EnlaceNav>
+            </div>
+          </div>
+        )}
+
+        {/* Panel de servicios — index.html:177-188 */}
+        {servAbierto && (
+          <div style={{ borderTop: "1px solid #1F3244", background: "#0F1D2B" }}>
+            <div style={{ maxWidth: 1400, margin: "0 auto", padding: "18px 32px", display: "flex", gap: 14, flexWrap: "wrap" }}>
+              {SERVICIOS.map((sv) => (
                 <Link
-                  key={g.id}
-                  href={`/catalogo/${g.slug}`}
-                  onMouseEnter={() => setGrupoMega(g.id)}
-                  onClick={() => setMegaAbierto(false)}
-                  style={{
-                    display: "flex",
-                    gap: 12,
-                    alignItems: "center",
-                    width: "100%",
-                    textAlign: "left",
-                    padding: "11px 20px",
-                    fontFamily: "var(--font-display)",
-                    fontWeight: 500,
-                    fontSize: 15,
-                    color: grupoMega === g.id ? "var(--accent)" : "var(--text-primary)",
-                    background: grupoMega === g.id ? "var(--bg-card)" : "transparent",
-                  }}
+                  key={sv.tipo}
+                  href={`/servicios/${sv.tipo}`}
+                  className="clip-corner-md"
+                  style={{ flex: "1 1 260px", textAlign: "left", padding: "16px 18px", background: "#122234", border: "1px solid #1F3244" }}
                 >
-                  {g.name}
+                  <span style={{ display: "block", fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 17, color: "#EAF2F8" }}>{sv.nombre}</span>
+                  <span style={{ display: "block", marginTop: 5, fontSize: 14, color: "#9FB2C3", lineHeight: 1.5 }}>{sv.linea}</span>
                 </Link>
               ))}
             </div>
-            <div style={{ padding: "22px 28px" }}>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 20, marginBottom: 16 }}>
-                <h3 style={{ margin: 0, fontSize: 22 }}>{grupoActivoMega.name}</h3>
-                <Link href={`/catalogo/${grupoActivoMega.slug}`} style={{ fontSize: 14, color: "var(--accent)" }} onClick={() => setMegaAbierto(false)}>
-                  Ver todo en {grupoActivoMega.name}
-                </Link>
-              </div>
-              <div style={{ columns: 3, columnGap: 24 }}>
-                {grupoActivoMega.subcategoriasRaiz.map((s) => (
+          </div>
+        )}
+
+        {/* Mega-menú — index.html:190-224 */}
+        {megaAbierto && grupoActivoMega && (
+          <div
+            onMouseLeave={() => setMegaAbierto(false)}
+            style={{ borderTop: "1px solid #1F3244", background: "#0B1622", boxShadow: "0 26px 50px rgba(0,0,0,.55)" }}
+          >
+            <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 32px", display: "grid", gridTemplateColumns: "minmax(230px,280px) 1fr minmax(0,260px)", gap: 0 }}>
+              <div style={{ borderRight: "1px solid #1F3244", padding: "16px 0" }}>
+                {grupos.map((g) => (
                   <Link
-                    key={s.slug}
-                    href={`/catalogo/${grupoActivoMega.slug}/${s.slug}`}
+                    key={g.id}
+                    href={`/catalogo/${g.slug}`}
+                    onMouseEnter={() => setGrupoMegaId(g.id)}
                     onClick={() => setMegaAbierto(false)}
-                    style={{ display: "block", width: "100%", textAlign: "left", padding: "6px 0", fontSize: 14, color: "var(--text-muted)", lineHeight: 1.45, breakInside: "avoid" }}
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      alignItems: "center",
+                      width: "100%",
+                      textAlign: "left",
+                      padding: "13px 20px",
+                      background: grupoMegaId === g.id ? "#122234" : "transparent",
+                    }}
                   >
-                    {s.name}
+                    <span style={{ flex: 1, fontFamily: "'Chakra Petch',sans-serif", fontWeight: 500, fontSize: 15, color: "#EAF2F8" }}>{g.name}</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#EAF2F8" strokeWidth={1.5} style={{ width: 16, height: 16, opacity: 0.6 }}>
+                      <path d="m9 6 6 6-6 6" />
+                    </svg>
                   </Link>
                 ))}
               </div>
+              <div style={{ padding: "22px 28px" }}>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 20, marginBottom: 16 }}>
+                  <h3 style={{ margin: 0, fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 22, color: "#EAF2F8" }}>{grupoActivoMega.name}</h3>
+                  <Link href={`/catalogo/${grupoActivoMega.slug}`} onClick={() => setMegaAbierto(false)} style={{ fontSize: 14, color: "#3CE7FF" }}>
+                    Ver todo en {grupoActivoMega.name}
+                  </Link>
+                </div>
+                <div style={{ columns: 3, columnGap: 24 }}>
+                  {grupoActivoMega.subcategoriasRaiz.map((s) => (
+                    <Link
+                      key={s.slug}
+                      href={`/catalogo/${grupoActivoMega.slug}/${s.slug}`}
+                      onClick={() => setMegaAbierto(false)}
+                      style={{ display: "block", width: "100%", textAlign: "left", padding: "6px 0", fontSize: 14, color: "#9FB2C3", lineHeight: 1.45, breakInside: "avoid" }}
+                    >
+                      {s.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+              <div style={{ padding: "22px 28px 22px 0", borderLeft: "1px solid #1F3244", paddingLeft: 24 }}>
+                <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: "#9FB2C3" }}>DESTACADO</span>
+                {grupoActivoMega.destacado ? (
+                  <Link
+                    href={`/producto/${grupoActivoMega.destacado.slug}`}
+                    onClick={() => setMegaAbierto(false)}
+                    style={{ display: "block", width: "100%", textAlign: "left", marginTop: 10 }}
+                  >
+                    <span style={{ display: "block", position: "relative", height: 130, background: "#E7EDF2", overflow: "hidden" }}>
+                      {grupoActivoMega.destacado.imagenUrl && (
+                        <Image
+                          src={grupoActivoMega.destacado.imagenUrl}
+                          alt=""
+                          fill
+                          sizes="260px"
+                          style={{ objectFit: "cover", opacity: 0.85 }}
+                        />
+                      )}
+                    </span>
+                    <span style={{ display: "block", marginTop: 10, fontSize: 14, lineHeight: 1.4, color: "#EAF2F8" }}>{grupoActivoMega.destacado.name}</span>
+                    <span style={{ display: "block", marginTop: 6, fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 18, color: "#3CE7FF" }}>
+                      {grupoActivoMega.destacado.priceFmt}
+                    </span>
+                  </Link>
+                ) : (
+                  <p style={{ marginTop: 10, fontSize: 13, color: "#9FB2C3" }}>Este grupo todavía no tiene productos activos.</p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </header>
 
+      {/* Menú de pantalla completa en móvil — index.html:227-271 */}
       {menuMovilAbierto && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "var(--bg-base)", display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", gap: 14, alignItems: "center", padding: "16px 18px", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#07111C", display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", gap: 14, alignItems: "center", padding: "16px 18px", borderBottom: "1px solid #1F3244" }}>
             {grupoMovil && (
-              <button type="button" onClick={() => setGrupoMovil(null)} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 15, color: "var(--accent)", minHeight: 44 }}>
-                ‹ Volver
+              <button type="button" onClick={() => setGrupoMovil(null)} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 15, color: "#3CE7FF", minHeight: 44 }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 18, height: 18 }}>
+                  <path d="m15 6-6 6 6 6" />
+                </svg>
+                Volver
               </button>
             )}
             <span style={{ flex: 1 }} />
@@ -304,36 +509,46 @@ export function EncabezadoSitio({
               type="button"
               aria-label="Cerrar menú"
               onClick={() => setMenuMovilAbierto(false)}
-              style={{ width: 44, height: 44, display: "grid", placeItems: "center", border: "1px solid var(--border)" }}
+              style={{ width: 44, height: 44, display: "grid", placeItems: "center", border: "1px solid #1F3244" }}
             >
-              ✕
+              <svg viewBox="0 0 24 24" fill="none" stroke="#EAF2F8" strokeWidth={1.5} style={{ width: 18, height: 18 }}>
+                <path d="M6 6l12 12M18 6 6 18" />
+              </svg>
             </button>
           </div>
 
           {!grupoMovil ? (
             <div style={{ flex: 1, overflow: "auto" }}>
+              <div style={{ padding: 18 }}>
+                <input
+                  placeholder="Busca una categoría"
+                  style={{ width: "100%", padding: "13px 14px", background: "#0F1D2B", border: "1px solid #1F3244", borderRadius: 4, fontSize: 15, color: "#EAF2F8" }}
+                />
+              </div>
               {grupos.map((g) => (
                 <button
                   key={g.id}
                   type="button"
                   onClick={() => setGrupoMovil(g)}
-                  style={{ display: "flex", gap: 14, alignItems: "center", width: "100%", textAlign: "left", padding: 18, borderBottom: "1px solid var(--border)", minHeight: 60 }}
+                  style={{ display: "flex", gap: 14, alignItems: "center", width: "100%", textAlign: "left", padding: 18, borderBottom: "1px solid #1F3244", minHeight: 60 }}
                 >
-                  <span style={{ flex: 1 }}>
-                    <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 500, fontSize: 16 }}>{g.name}</span>
-                    <span style={{ display: "block", marginTop: 2, fontSize: 12.5, color: "var(--text-muted)" }}>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: "block", fontFamily: "'Chakra Petch',sans-serif", fontWeight: 500, fontSize: 16, color: "#EAF2F8" }}>{g.name}</span>
+                    <span style={{ display: "block", marginTop: 2, fontSize: 12.5, color: "#9FB2C3" }}>
                       {g.subcategoriasRaiz.length} subcategorías
                     </span>
                   </span>
-                  ›
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#9FB2C3" strokeWidth={1.5} style={{ width: 18, height: 18, flex: "0 0 auto" }}>
+                    <path d="m9 6 6 6-6 6" />
+                  </svg>
                 </button>
               ))}
             </div>
           ) : (
             <div style={{ flex: 1, overflow: "auto" }}>
-              <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "space-between", padding: 18, borderBottom: "1px solid var(--border)", flexWrap: "wrap" }}>
-                <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 20 }}>{grupoMovil.name}</span>
-                <Link href={`/catalogo/${grupoMovil.slug}`} onClick={() => setMenuMovilAbierto(false)} style={{ fontSize: 14, color: "var(--accent)", minHeight: 44 }}>
+              <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "space-between", padding: 18, borderBottom: "1px solid #1F3244", flexWrap: "wrap" }}>
+                <span style={{ fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 20, color: "#EAF2F8" }}>{grupoMovil.name}</span>
+                <Link href={`/catalogo/${grupoMovil.slug}`} onClick={() => setMenuMovilAbierto(false)} style={{ fontSize: 14, color: "#3CE7FF", minHeight: 44 }}>
                   Ver todas
                 </Link>
               </div>
@@ -342,7 +557,7 @@ export function EncabezadoSitio({
                   key={s.slug}
                   href={`/catalogo/${grupoMovil.slug}/${s.slug}`}
                   onClick={() => setMenuMovilAbierto(false)}
-                  style={{ display: "block", width: "100%", textAlign: "left", padding: "17px 18px", borderBottom: "1px solid var(--border)", fontSize: 15.5, minHeight: 56 }}
+                  style={{ display: "block", width: "100%", textAlign: "left", padding: "17px 18px", borderBottom: "1px solid #1F3244", fontSize: 15.5, color: "#EAF2F8", minHeight: 56 }}
                 >
                   {s.name}
                 </Link>
@@ -351,17 +566,19 @@ export function EncabezadoSitio({
           )}
         </div>
       )}
-
-      <style>{`
-        @media (max-width: 759px) {
-          .header-menu-boton-movil { display: grid !important; }
-          .header-nav-desktop { display: none !important; }
-          .header-texto-desktop { display: none; }
-        }
-      `}</style>
-    </header>
+    </>
   );
 }
+
+const CHIPS_NAV = [
+  { nombre: "Para Ti", href: "/" },
+  { nombre: "Novedades", href: "/como-comprar" },
+  { nombre: "Servicios", href: "/servicios/monitoreo" },
+  { nombre: "Marcas", href: "/marcas" },
+  { nombre: "Promociones", href: "/catalogo" },
+  { nombre: "Cómo comprar", href: "/como-comprar" },
+  { nombre: "Devoluciones", href: "/devoluciones" },
+] as const;
 
 function EnlaceNav({ href, children }: { href: string; children: React.ReactNode }) {
   return (
@@ -372,11 +589,12 @@ function EnlaceNav({ href, children }: { href: string; children: React.ReactNode
         gap: 8,
         alignItems: "center",
         padding: "13px 13px",
-        fontFamily: "var(--font-display)",
+        fontFamily: "'Chakra Petch',sans-serif",
         fontWeight: 500,
         fontSize: 15,
-        color: "var(--text-muted)",
+        color: "#9FB2C3",
         whiteSpace: "nowrap",
+        borderBottom: "2px solid transparent",
       }}
     >
       {children}
@@ -384,30 +602,132 @@ function EnlaceNav({ href, children }: { href: string; children: React.ReactNode
   );
 }
 
-function IconoMenu({ chico }: { chico?: boolean }) {
-  const s = chico ? 18 : 20;
+function BotonAvisos({ mostrarTexto }: { mostrarTexto: boolean }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: s, height: s, flex: "0 0 auto" }}>
+    <Link
+      href="/mi-cuenta/pedidos"
+      aria-label="Avisos"
+      style={{ display: "flex", gap: 8, alignItems: "center", minHeight: 44, fontFamily: "'Chakra Petch',sans-serif", fontWeight: 500, fontSize: 15, color: "#EAF2F8", whiteSpace: "nowrap" }}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 20, height: 20, flex: "0 0 auto" }}>
+        <path d="M5 19a1 1 0 1 0 0-.01" />
+        <path d="M5 12a7 7 0 0 1 7 7" />
+        <path d="M5 5a14 14 0 0 1 14 14" />
+      </svg>
+      {mostrarTexto && <span>Avisos</span>}
+    </Link>
+  );
+}
+
+function BotonOfertas() {
+  return (
+    <Link
+      href="/catalogo"
+      aria-label="Ofertas"
+      style={{ position: "relative", display: "flex", gap: 8, alignItems: "center", minHeight: 44, fontFamily: "'Chakra Petch',sans-serif", fontWeight: 500, fontSize: 15, color: "#EAF2F8", whiteSpace: "nowrap" }}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 20, height: 20, flex: "0 0 auto" }}>
+        <path d="m12 4 2.3 4.9 5.2.7-3.8 3.7 1 5.2-4.7-2.6-4.7 2.6 1-5.2L4.5 9.6l5.2-.7z" />
+      </svg>
+      <span>Ofertas</span>
+      <span style={{ position: "absolute", top: 4, right: -4, width: 7, height: 7, borderRadius: "50%", background: "#FF4D5E" }} />
+    </Link>
+  );
+}
+
+function IconoMenu({ tamano }: { tamano: number }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="#EAF2F8" strokeWidth={1.5} style={{ width: tamano, height: tamano }}>
       <path d="M4 7h16M4 12h16M4 17h16" />
     </svg>
   );
 }
 
-function IconoCuenta() {
+function IconoCuenta({ tamano }: { tamano: number }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 20, height: 20, flex: "0 0 auto" }}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: tamano, height: tamano, flex: "0 0 auto" }}>
       <circle cx="12" cy="8" r="3.5" />
       <path d="M5 20c0-3.5 3.1-5.5 7-5.5s7 2 7 5.5" />
     </svg>
   );
 }
 
-function IconoCarrito() {
+function IconoCarrito({ tamano }: { tamano: number }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 19, height: 19 }}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: tamano, height: tamano }}>
       <path d="M4 5h2.2l2.3 10.2h9.1L20 8H7" />
       <circle cx="10" cy="19" r="1.4" />
       <circle cx="17.5" cy="19" r="1.4" />
+    </svg>
+  );
+}
+
+function IconoRayo() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 18, height: 18, flex: "0 0 auto" }}>
+      <path d="M13 3 5 14h6l-1 7 8-11h-6z" />
+    </svg>
+  );
+}
+
+function IconoServicios() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 18, height: 18, flex: "0 0 auto" }}>
+      <rect x="3" y="5" width="18" height="11" rx="1.5" />
+      <path d="M9 20h6" />
+    </svg>
+  );
+}
+
+function IconoChevronAbajo() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 14, height: 14, opacity: 0.7 }}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+function IconoEstrella() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 18, height: 18, flex: "0 0 auto" }}>
+      <path d="M12 4l1.6 4.4L18 10l-4.4 1.6L12 16l-1.6-4.4L6 10l4.4-1.6z" />
+    </svg>
+  );
+}
+
+function IconoPromociones() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 18, height: 18, flex: "0 0 auto" }}>
+      <path d="M20 12.5 12.5 20 4 11.5V4h7.5z" />
+      <circle cx="8.5" cy="8.5" r="1.3" />
+    </svg>
+  );
+}
+
+function IconoComoComprar() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 18, height: 18, flex: "0 0 auto" }}>
+      <rect x="3" y="5" width="18" height="4" />
+      <path d="M5 9v10h14V9M10 13h4" />
+    </svg>
+  );
+}
+
+function IconoDevoluciones() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 18, height: 18, flex: "0 0 auto" }}>
+      <path d="M4 9h11a4 4 0 1 1 0 8H9" />
+      <path d="m8 5-4 4 4 4" />
+    </svg>
+  );
+}
+
+function IconoSoporte() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 18, height: 18, flex: "0 0 auto" }}>
+      <circle cx="12" cy="12" r="8" />
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="m6.4 6.4 3.3 3.3M17.6 6.4l-3.3 3.3M17.6 17.6l-3.3-3.3M6.4 17.6l3.3-3.3" />
     </svg>
   );
 }

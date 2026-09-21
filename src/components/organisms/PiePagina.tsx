@@ -16,17 +16,29 @@ const AYUDA = [
   { href: "/contacto", nombre: "Nosotros y contacto" },
 ] as const;
 
-/** index.html:1814-1863 — pie de página. Los datos de contacto (dirección,
- * teléfono, correo, horario) son texto de demostración en `index.html`; se
- * dejan como placeholder explícito hasta que la dueña confirme los reales
- * (no están resueltos en `docs/contexto-negocio.md`, se marcan en el propio
- * texto para no presentar un dato falso como si fuera real). */
+/**
+ * index.html:1814-1858 — pie de página, traducción literal (colores y
+ * medidas exactos del demo, no tokens de `globals.css` — ver la misma nota
+ * en `EncabezadoSitio.tsx`). Los datos de contacto (dirección, teléfono,
+ * correo, horario) son texto de demostración en el propio `index.html`; se
+ * mantienen igual que el demo hasta que la dueña confirme los reales (no
+ * resueltos en `docs/contexto-negocio.md`) — no se presentan como un dato
+ * de negocio distinto al que ya aprobó, solo se copian.
+ *
+ * Los dos enlaces "(demo)" del pie de `index.html` (`goSearchDemo`,
+ * `go404`, línea 1854-1855) no se tradujeron: son atajos para forzar
+ * pantallas de la SPA durante la presentación (una búsqueda sin
+ * resultados, la 404), no una función real del negocio — el equivalente
+ * real (búsqueda sin resultados de A2.4, la página 404 real) ya existe en
+ * el sitio, solo no como enlaces de "modo demo" en el pie. Documentado
+ * para que quede explícito, no omitido en silencio.
+ */
 export function PiePagina({ grupos }: { grupos: GrupoConNavegacion[] }) {
   return (
-    <footer style={{ borderTop: "1px solid var(--border)", background: "var(--bg-surface)", marginTop: "auto" }}>
+    <footer style={{ borderTop: "1px solid #1F3244", background: "#0B1622", marginTop: "auto" }}>
       <div
         style={{
-          maxWidth: "var(--content-max-width)",
+          maxWidth: 1400,
           margin: "0 auto",
           padding: "52px 32px 28px",
           display: "grid",
@@ -36,7 +48,7 @@ export function PiePagina({ grupos }: { grupos: GrupoConNavegacion[] }) {
       >
         <ColumnaFooter titulo="Productos">
           {grupos.map((g) => (
-            <Link key={g.id} href={`/catalogo/${g.slug}`} style={{ textAlign: "left", fontSize: 14, color: "var(--text-muted)" }}>
+            <Link key={g.id} href={`/catalogo/${g.slug}`} style={{ textAlign: "left", fontSize: 14, color: "#9FB2C3" }}>
               {g.name}
             </Link>
           ))}
@@ -44,7 +56,7 @@ export function PiePagina({ grupos }: { grupos: GrupoConNavegacion[] }) {
 
         <ColumnaFooter titulo="Servicios">
           {SERVICIOS.map((sv) => (
-            <Link key={sv.tipo} href={`/servicios/${sv.tipo}`} style={{ textAlign: "left", fontSize: 14, color: "var(--text-muted)" }}>
+            <Link key={sv.tipo} href={`/servicios/${sv.tipo}`} style={{ textAlign: "left", fontSize: 14, color: "#9FB2C3" }}>
               {sv.nombre}
             </Link>
           ))}
@@ -52,39 +64,47 @@ export function PiePagina({ grupos }: { grupos: GrupoConNavegacion[] }) {
 
         <ColumnaFooter titulo="Ayuda">
           {AYUDA.map((item) => (
-            <Link key={item.href} href={item.href} style={{ textAlign: "left", fontSize: 14, color: "var(--text-muted)" }}>
+            <Link key={item.href} href={item.href} style={{ textAlign: "left", fontSize: 14, color: "#9FB2C3" }}>
               {item.nombre}
             </Link>
           ))}
         </ColumnaFooter>
 
         <div>
-          <h3 style={{ margin: "0 0 14px", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15 }}>Contacto</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 9, fontSize: 14, color: "var(--text-muted)", lineHeight: 1.5 }}>
-            <span>Dirección pendiente de confirmar</span>
-            <span className="font-data">Teléfono pendiente de confirmar</span>
-            <span>Correo pendiente de confirmar</span>
-            <span>Lun a vie 9:00 a 18:00, sáb 9:00 a 14:00</span>
+          <h3 style={{ margin: "0 0 14px", fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF2F8" }}>Contacto</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 9, fontSize: 14, color: "#9FB2C3", lineHeight: 1.5 }}>
+            <span>
+              Av. Ejemplo 123, Col. Centro
+              <br />
+              C.P. 76000, Querétaro, Qro.
+            </span>
+            <span style={{ fontFamily: "'IBM Plex Mono',monospace" }}>442 000 0000</span>
+            <span>ventas@sgqueretaro.demo</span>
+            <span>
+              Lun a vie 9:00 a 18:00
+              <br />
+              Sáb 9:00 a 14:00
+            </span>
           </div>
         </div>
       </div>
       <div
         style={{
-          maxWidth: "var(--content-max-width)",
+          maxWidth: 1400,
           margin: "0 auto",
           padding: "18px 32px 40px",
-          borderTop: "1px solid var(--border)",
+          borderTop: "1px solid #1F3244",
           display: "flex",
           gap: 18,
           flexWrap: "wrap",
           justifyContent: "space-between",
           fontSize: 13,
-          color: "var(--text-muted)",
+          color: "#9FB2C3",
         }}
       >
         <span>© {new Date().getFullYear()} Seguridad General Querétaro</span>
         <span style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <span style={{ width: 6, height: 6, background: "var(--accent)" }} />
+          <span style={{ width: 6, height: 6, background: "#3CE7FF" }} />
           Pagos por transferencia SPEI
         </span>
       </div>
@@ -95,7 +115,7 @@ export function PiePagina({ grupos }: { grupos: GrupoConNavegacion[] }) {
 function ColumnaFooter({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 style={{ margin: "0 0 14px", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15 }}>{titulo}</h3>
+      <h3 style={{ margin: "0 0 14px", fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF2F8" }}>{titulo}</h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>{children}</div>
     </div>
   );

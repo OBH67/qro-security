@@ -1,6 +1,7 @@
 import type { GrupoConNavegacion } from "@/server/db/queries/catalogo";
 import { EncabezadoSitio } from "@/components/organisms/EncabezadoSitio";
 import { PiePagina } from "@/components/organisms/PiePagina";
+import { BotonAsesorFlotante } from "@/components/organisms/BotonAsesorFlotante";
 
 /** Esqueleto del sitio público: encabezado + contenido + pie
  * (arquitectura.md §4.1, `templates/` "el esqueleto de una pantalla, sin
@@ -19,6 +20,7 @@ export function LayoutTienda({
       <EncabezadoSitio grupos={grupos} sesion={sesion} />
       <main style={{ flex: 1 }}>{children}</main>
       <PiePagina grupos={grupos} />
+      <BotonAsesorFlotante />
     </div>
   );
 }
