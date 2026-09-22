@@ -185,6 +185,16 @@ export function EncabezadoSitio({
     cantidadPrevia.current = carrito.cantidadTotal;
   }, [carrito.cantidadTotal]);
 
+  // "Mi cuenta" en móvil trae su propio encabezado dedicado (botón volver +
+  // título + acceso a pedidos, ver `EncabezadoCuentaMovil` en
+  // `mi-cuenta/layout.tsx`) — a pedido explícito de la dueña, esta barra
+  // completa (buscador, chips "Para Ti/Novedades/...", logo) desaparece por
+  // completo ahí, no solo el buscador/chips. En escritorio no cambia nada:
+  // `esMovil` es siempre `false` ahí. Después de todos los hooks (Reglas de
+  // los Hooks: un `return` condicional antes de un hook cambiaría cuántos
+  // se llaman entre renders al entrar/salir de /mi-cuenta en móvil).
+  if (esMovil && pathname.startsWith("/mi-cuenta")) return null;
+
   return (
     <>
       {/* Barra flotante compacta — index.html:39-60. Oculta por default,

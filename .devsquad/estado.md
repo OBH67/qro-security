@@ -2483,3 +2483,79 @@ Validado por lectura del código y `npx tsc --noEmit` limpio; la lógica
 de `formatearMontoInput()` se probó aparte con casos de borde (entero
 solo, con punto final, con decimales, vacío) fuera de React. No se pudo
 probar la vista previa ni la subida real contra R2 en este entorno.
+
+### Corrección (2026-09-22): rediseño completo de "Mi cuenta" en móvil, a partir de mockup provisto por la dueña
+
+**Contexto**: la dueña reportó que el panel de "Mi cuenta" en móvil no se
+veía adaptable — `mi-cuenta/layout.tsx` usaba un grid fijo de
+`220px 1fr` sin ningún `@media`, y encima la navbar completa del sitio
+(buscador + chips "Para Ti/Novedades/Servicios/...") seguía ocupando
+espacio arriba. Primero se construyó un mockup en Artifacts (Design
+canvas) para acordar el enfoque; luego la dueña compartió un archivo
+`.dc.html` (`Panel_Usuario_Movil.dc.html`) con el diseño final a seguir
+"al pie de la letra" — este incremento lo traduce a código real.
+
+**Alcance**: solo la versión móvil (`max-width: 760px`, mismo punto de
+quiebre que ya usa `EncabezadoSitio.tsx` para `esMovil`). Escritorio no
+cambió una sola línea de estilo visible — cada bloque nuevo va en un
+`<div>`/`<h1>`/etc. hermano con `className="cuenta-movil-solo"`, oculto
+por default y mostrado solo bajo el `@media` que vive en
+`mi-cuenta/layout.tsx`; lo inverso (`cuenta-escritorio-solo`) oculta el
+contenido de escritorio en móvil. Mismo patrón que ya usaban
+`ListadoCatalogo`/`BarraFiltrosMovil` para el catálogo, aplicado aquí a
+toda la sección de cuenta.
+
+**Cambios**:
+1. `EncabezadoSitio.tsx` — ahora `return null` cuando `esMovil &&
+   pathname.startsWith("/mi-cuenta")`: la navbar del sitio (buscador,
+   chips, logo) desaparece por completo en móvil dentro de "Mi cuenta",
+   no solo el buscador. El `return` temprano va DESPUÉS de todos los
+   hooks del componente (`barraFlotanteVisible`, `flash`) — ponerlo
+   antes rompía las Reglas de los Hooks al entrar/salir de la sección
+   en móvil (distinto número de hooks entre renders).
+2. `EncabezadoCuentaMovil.tsx` (nuevo) — header sticky con botón
+   volver, título dinámico por ruta (mapa de `pathname` → título +
+   href de vuelta, incluye el caso `pedidos/[folio]` y
+   `pedidos/[folio]/comprobante`) y acceso rápido a "Mis pedidos" con
+   contador real de pedidos `pendiente_pago` (no el `2` fijo del mock).
+3. `TabsCuentaMovil.tsx` (nuevo) — reemplaza al `<aside>` de escritorio
+   en móvil: mismas 6 secciones como fila horizontal con scroll,
+   estado activo por `pathname`.
+4. `mi-cuenta/layout.tsx` — agrega el `<style>` con las reglas
+   `@media (max-width: 760px)` que gobiernan `cuenta-movil-solo` /
+   `cuenta-escritorio-solo` / `cuenta-grid` / `cuenta-contenido` para
+   toda la sección; fila de usuario (iniciales, nombre, correo, saldo)
+   igual al mock; botón "Cerrar sesión" al final del contenido en
+   móvil (en escritorio sigue solo en el `<aside>`).
+5. Cada página de la sección gana su bloque móvil siguiendo el mockup:
+   `pedidos` (tarjetas + chips de filtro — el filtro es un
+   `searchParams` real, `?estado=`, no `state` de React, para que cada
+   chip sea un link normal sin duplicar la consulta a la base de
+   datos), `pedidos/[folio]` (solo se ocultan el título y el link
+   "Volver" duplicados — el mock no diseña esta pantalla, así que el
+   resto de escritorio se deja tal cual), `pedidos/[folio]/comprobante`
+   + `FormularioComprobante.tsx` (dropzone con "Elegir archivo" y
+   "Tomar foto" — este último con `capture="environment"` real, no
+   decorativo — la vista previa REAL ya existente en vez del texto
+   genérico del mock, que ahí es un dato inventado por no tener
+   archivos reales en una maqueta estática), `datos`, `direcciones`,
+   `datos-fiscales`, `saldo` y `devoluciones` (tarjetas de política +
+   la lista real de "Tus solicitudes", que no está en el mock, se deja
+   visible en ambas versiones).
+6. **Acciones del mock sin equivalente real** (confirmado con la
+   dueña antes de implementar): el mock muestra "Editar" por tarjeta de
+   dirección/dato fiscal y "Usar por defecto" — la app real solo tenía
+   Agregar y Eliminar, nunca edición in situ (tampoco en escritorio).
+   Se implementó "Usar por defecto" de verdad (`marcarDireccionPredeterminada`/
+   `marcarDatosFiscalesPredeterminados` en `mutations/cuenta.ts` +
+   acciones `marcarComoPredeterminada`/`marcarDatosFiscalesComoPredeterminados`,
+   mismo patrón "una sola por defecto a la vez" que ya usaba
+   `crearDireccion`/`crearDatosFiscales` al guardar) y se omitió
+   "Editar" en vez de simularlo con un botón que no hace nada.
+
+**Validación**: `npx tsc --noEmit` limpio. `npm run build` compila
+TypeScript sin errores y falla después, al recolectar datos de página,
+por falta de variables de entorno reales (Supabase/R2/Resend/etc.) —
+limitación ya conocida de este entorno (sin conexión a un proyecto real),
+no relacionada con este cambio. No se pudo probar visualmente contra la
+app corriendo ni contra un viewport real de teléfono en este entorno.

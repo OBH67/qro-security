@@ -13,7 +13,7 @@ export default async function PaginaDirecciones() {
 
   return (
     <div>
-      <h1 style={{ margin: "0 0 24px", fontSize: "clamp(26px,2.6vw,34px)" }}>Direcciones</h1>
+      <h1 className="cuenta-escritorio-solo" style={{ margin: "0 0 24px", fontSize: "clamp(26px,2.6vw,34px)" }}>Direcciones</h1>
       <DireccionesCliente direcciones={direcciones} />
     </div>
   );

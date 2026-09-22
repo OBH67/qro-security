@@ -114,11 +114,29 @@ export function FormularioComprobante({ orderId, folio, total }: { orderId: stri
 
   return (
     <form onSubmit={enviar}>
-      <h1 style={{ margin: 0, fontSize: "clamp(26px,2.8vw,36px)" }}>Subir comprobante</h1>
-      <p style={{ margin: "10px 0 0", fontSize: 15, color: "var(--text-muted)" }}>
+      <h1 className="cuenta-escritorio-solo" style={{ margin: 0, fontSize: "clamp(26px,2.8vw,36px)" }}>Subir comprobante</h1>
+      <p className="cuenta-escritorio-solo" style={{ margin: "10px 0 0", fontSize: 15, color: "var(--text-muted)" }}>
         Pedido <span className="font-data" style={{ color: "var(--text-primary)" }}>{folio}</span> · Importe {formatearPrecio(total)}
       </p>
 
+      {/* Tarjeta de resumen del pedido — mockup `Panel_Usuario_Movil.dc.html`
+          (`showUpload`, tarjeta superior). El título "Subir comprobante" ya
+          lo da el encabezado móvil; aquí solo va el resumen del pedido. */}
+      <div
+        className="cuenta-movil-solo"
+        style={{ padding: "13px 15px", border: "1px solid #1F3244", background: "#0F1D2B", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}
+      >
+        <span>
+          <span style={{ display: "block", fontSize: 12, color: "#9FB2C3" }}>Pedido</span>
+          <span style={{ display: "block", marginTop: 2, fontFamily: "'IBM Plex Mono',monospace", fontSize: 15, color: "#EAF2F8" }}>{folio}</span>
+        </span>
+        <span style={{ textAlign: "right" }}>
+          <span style={{ display: "block", fontSize: 12, color: "#9FB2C3" }}>Importe</span>
+          <span style={{ display: "block", marginTop: 2, fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 18, color: "#3CE7FF" }}>{formatearPrecio(total)}</span>
+        </span>
+      </div>
+
+      <div className="cuenta-escritorio-solo">
       {!archivo ? (
         <div style={{ marginTop: 26, padding: "44px 24px", border: "1px dashed var(--border-subtle)", background: "var(--bg-surface)", textAlign: "center" }}>
           <p style={{ margin: "14px 0 0", fontSize: 16, color: "var(--text-primary)" }}>Elige tu comprobante</p>
@@ -181,14 +199,119 @@ export function FormularioComprobante({ orderId, folio, total }: { orderId: stri
         <CampoConError label="Banco de origen (opcional)" placeholder="Banco Demo" value={datos.originBank} onChange={(e) => setDatos((d) => ({ ...d, originBank: e.target.value }))} />
         <CampoConError label="Clave de rastreo SPEI (opcional)" placeholder="2026091640044200000000" value={datos.speiTrackingKey} onChange={(e) => setDatos((d) => ({ ...d, speiTrackingKey: e.target.value }))} />
       </div>
+      </div>
 
       {errorGeneral && <p style={{ margin: "18px 0 0", fontSize: 14, color: "var(--danger-text)" }}>{errorGeneral}</p>}
 
-      <div style={{ marginTop: 28 }}>
+      <div className="cuenta-escritorio-solo" style={{ marginTop: 28 }}>
         <Boton type="submit" tamano="lg" disabled={estado === "subiendo"}>
           {estado === "subiendo" ? "Enviando…" : "Enviar comprobante"}
         </Boton>
       </div>
+
+      {/* Bloque móvil — traducción literal de `showUpload` en
+          `Panel_Usuario_Movil.dc.html`: dropzone con "Elegir archivo" /
+          "Tomar foto" (real `capture="environment"`, no un botón decorativo),
+          la vista previa REAL ya existente (no el texto genérico del mock,
+          que ahí es un dato inventado por no tener archivos reales), los
+          mismos 4 campos, y el botón de enviar fijo abajo. */}
+      <div className="cuenta-movil-solo">
+        {!archivo ? (
+          <div style={{ marginTop: 14, padding: "32px 18px", border: "1px dashed #2A3B4D", background: "#0B1622", textAlign: "center" }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#3CE7FF" strokeWidth={1.5} style={{ width: 28, height: 28 }}>
+              <path d="M12 16V5m0 0-4 4m4-4 4 4" />
+              <path d="M5 19h14" />
+            </svg>
+            <p style={{ margin: "12px 0 0", fontSize: 15.5, color: "#EAF2F8" }}>Elige tu comprobante</p>
+            <p style={{ margin: "5px 0 0", fontSize: 13, color: "#9FB2C3" }}>JPG, PNG, HEIC o PDF · máx. {TAMANO_MAXIMO_MB} MB</p>
+            <label
+              className="clip-corner-md"
+              style={{ display: "block", width: "100%", marginTop: 18, padding: 13, border: "1px solid #3CE7FF", color: "#3CE7FF", fontFamily: "'Chakra Petch',sans-serif", fontWeight: 500, fontSize: 14.5, cursor: "pointer", textAlign: "center" }}
+            >
+              Elegir archivo
+              <input type="file" accept={TIPOS_ACEPTADOS} onChange={elegirArchivo} style={{ display: "none" }} />
+            </label>
+            <label style={{ display: "block", width: "100%", marginTop: 9, padding: 13, border: "1px solid #1F3244", color: "#EAF2F8", fontSize: 14.5, cursor: "pointer", textAlign: "center" }}>
+              Tomar foto
+              <input type="file" accept="image/*" capture="environment" onChange={elegirArchivo} style={{ display: "none" }} />
+            </label>
+          </div>
+        ) : (
+          <div style={{ marginTop: 14 }}>
+            {previewUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- vista previa de un archivo local (blob:), next/image no sabe optimizar eso
+              <img
+                src={previewUrl}
+                alt="Vista previa del comprobante que vas a enviar"
+                style={{ display: "block", width: "100%", height: 210, objectFit: "cover", border: "1px solid #1F3244", background: "#16283A" }}
+              />
+            ) : (
+              <div style={{ border: "1px solid #1F3244", background: "#16283A", height: 210, display: "grid", placeItems: "center", textAlign: "center", padding: 16 }}>
+                <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: "#7E93A6", lineHeight: 1.7 }}>
+                  Sin vista previa para este tipo de archivo
+                  <br />
+                  {archivo.name} · {(archivo.size / (1024 * 1024)).toFixed(1)} MB
+                </span>
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
+              <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: "#9FB2C3" }}>{archivo.name}</span>
+              <button type="button" onClick={() => setArchivo(null)} style={{ fontSize: 13.5, color: "#3CE7FF" }}>Cambiar</button>
+            </div>
+          </div>
+        )}
+
+        {errorArchivo && (
+          <div style={{ marginTop: 14, padding: "14px 18px", border: "1px solid var(--danger-text)", background: "rgba(255,77,94,.07)" }}>
+            <p style={{ margin: 0, fontSize: 14.5, color: "var(--text-primary)" }}>{errorArchivo}</p>
+          </div>
+        )}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 20 }}>
+          <CampoMovil label="Fecha de la transferencia" type="date" value={datos.transferDate} onChange={(e) => setDatos((d) => ({ ...d, transferDate: e.target.value }))} />
+          <CampoMovil
+            label="Monto transferido"
+            inputMode="decimal"
+            placeholder="1,289.00"
+            value={montoConFoco ? datos.amount : formatearMontoInput(datos.amount)}
+            onFocus={() => setMontoConFoco(true)}
+            onBlur={() => setMontoConFoco(false)}
+            onChange={(e) => setDatos((d) => ({ ...d, amount: e.target.value.replace(/[^\d.]/g, "") }))}
+          />
+          <CampoMovil label="Banco de origen (opcional)" placeholder="Banco Demo" value={datos.originBank} onChange={(e) => setDatos((d) => ({ ...d, originBank: e.target.value }))} />
+          <CampoMovil label="Clave de rastreo SPEI (opcional)" placeholder="2026091640044200000000" value={datos.speiTrackingKey} onChange={(e) => setDatos((d) => ({ ...d, speiTrackingKey: e.target.value }))} />
+        </div>
+
+        <div style={{ position: "sticky", bottom: 0, marginTop: 20, padding: "12px 0 calc(12px + env(safe-area-inset-bottom))", background: "#07111CF5", backdropFilter: "blur(8px)", borderTop: "1px solid #16283A" }}>
+          <button
+            type="submit"
+            disabled={estado === "subiendo"}
+            className="clip-corner-lg"
+            style={{
+              width: "100%",
+              padding: 16,
+              background: "#3CE7FF",
+              color: "#07111C",
+              fontFamily: "'Chakra Petch',sans-serif",
+              fontWeight: 600,
+              fontSize: 16,
+              boxShadow: "0 0 18px rgba(60,231,255,.3)",
+              opacity: estado === "subiendo" ? 0.6 : 1,
+            }}
+          >
+            {estado === "subiendo" ? "Enviando…" : "Enviar comprobante"}
+          </button>
+        </div>
+      </div>
     </form>
+  );
+}
+
+function CampoMovil({ label, ...resto }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div>
+      <label style={{ display: "block", fontSize: 12.5, color: "#9FB2C3", marginBottom: 6 }}>{label}</label>
+      <input {...resto} style={{ width: "100%", minHeight: 48, padding: "13px 14px", background: "#0B1622", border: "1px solid #1F3244", color: "#EAF2F8", fontSize: 15.5 }} />
+    </div>
   );
 }

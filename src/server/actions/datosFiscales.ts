@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { esquemaDatosFiscales } from "@/lib/esquemas/datosFiscales";
-import { crearDatosFiscales, eliminarDatosFiscales } from "@/server/db/mutations/cuenta";
+import { crearDatosFiscales, eliminarDatosFiscales, marcarDatosFiscalesPredeterminados } from "@/server/db/mutations/cuenta";
 import { conSesion, type ResultadoAction } from "@/server/actions/_guard";
 import type { BillingProfileRow } from "@/types/database";
 
@@ -23,6 +23,15 @@ export async function borrarDatosFiscales(billingProfileId: string): Promise<Res
     await eliminarDatosFiscales(sesion.userId, billingProfileId);
     revalidatePath("/mi-cuenta/datos-fiscales");
     revalidatePath("/pagar");
+    return { ok: true as const };
+  });
+}
+
+/** "Usar por defecto" — mockup `Panel_Usuario_Movil.dc.html`. */
+export async function marcarDatosFiscalesComoPredeterminados(billingProfileId: string): Promise<ResultadoAction<{ ok: true }>> {
+  return conSesion(async (sesion) => {
+    await marcarDatosFiscalesPredeterminados(sesion.userId, billingProfileId);
+    revalidatePath("/mi-cuenta/datos-fiscales");
     return { ok: true as const };
   });
 }

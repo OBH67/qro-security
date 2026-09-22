@@ -49,6 +49,16 @@ export async function eliminarDireccion(userId: string, addressId: string): Prom
   if (error) throw new Error(`No se pudo eliminar la dirección: ${error.message}`);
 }
 
+/** "Usar por defecto" (mockup `Panel_Usuario_Movil.dc.html`, `secDirecciones`)
+ * — mismo patrón de "una sola por defecto a la vez" que ya usa
+ * `crearDireccion` al guardar. */
+export async function marcarDireccionPredeterminada(userId: string, addressId: string): Promise<void> {
+  const supabase = await crearClienteServidor();
+  await supabase.from("addresses").update({ is_default: false }).eq("user_id", userId);
+  const { error } = await supabase.from("addresses").update({ is_default: true }).eq("id", addressId).eq("user_id", userId);
+  if (error) throw new Error(`No se pudo marcar la dirección como predeterminada: ${error.message}`);
+}
+
 export async function crearDatosFiscales(userId: string, datos: DatosFiscales): Promise<BillingProfileRow> {
   const supabase = await crearClienteServidor();
 
@@ -72,6 +82,15 @@ export async function crearDatosFiscales(userId: string, datos: DatosFiscales): 
 
   if (error) throw new Error(`No se pudieron guardar tus datos fiscales: ${error.message}`);
   return data;
+}
+
+/** "Usar por defecto" (mockup `Panel_Usuario_Movil.dc.html`,
+ * `secFacturacion`) — mismo patrón que `marcarDireccionPredeterminada`. */
+export async function marcarDatosFiscalesPredeterminados(userId: string, billingProfileId: string): Promise<void> {
+  const supabase = await crearClienteServidor();
+  await supabase.from("billing_profiles").update({ is_default: false }).eq("user_id", userId);
+  const { error } = await supabase.from("billing_profiles").update({ is_default: true }).eq("id", billingProfileId).eq("user_id", userId);
+  if (error) throw new Error(`No se pudieron marcar los datos fiscales como predeterminados: ${error.message}`);
 }
 
 export async function eliminarDatosFiscales(userId: string, billingProfileId: string): Promise<void> {

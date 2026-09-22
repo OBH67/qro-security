@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { esquemaDireccion } from "@/lib/esquemas/direccion";
-import { crearDireccion, eliminarDireccion } from "@/server/db/mutations/cuenta";
+import { crearDireccion, eliminarDireccion, marcarDireccionPredeterminada } from "@/server/db/mutations/cuenta";
 import { conSesion, type ResultadoAction } from "@/server/actions/_guard";
 import type { AddressRow } from "@/types/database";
 
@@ -22,6 +22,15 @@ export async function borrarDireccion(addressId: string): Promise<ResultadoActio
     await eliminarDireccion(sesion.userId, addressId);
     revalidatePath("/mi-cuenta/direcciones");
     revalidatePath("/pagar");
+    return { ok: true as const };
+  });
+}
+
+/** "Usar por defecto" — mockup `Panel_Usuario_Movil.dc.html`. */
+export async function marcarComoPredeterminada(addressId: string): Promise<ResultadoAction<{ ok: true }>> {
+  return conSesion(async (sesion) => {
+    await marcarDireccionPredeterminada(sesion.userId, addressId);
+    revalidatePath("/mi-cuenta/direcciones");
     return { ok: true as const };
   });
 }

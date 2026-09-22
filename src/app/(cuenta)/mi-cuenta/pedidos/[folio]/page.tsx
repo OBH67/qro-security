@@ -38,10 +38,15 @@ export default async function PaginaDetallePedido({ params }: { params: Promise<
 
   return (
     <section>
-      <Link href="/mi-cuenta/pedidos" style={{ fontSize: 13.5, color: "var(--text-muted)", marginBottom: 18, display: "inline-block" }}>
+      {/* El bloque móvil no tiene un diseño propio en el mockup (ahí "Ver
+          detalle" solo dispara un toast, index.html no modela esta
+          pantalla) — se deja el contenido de escritorio tal cual, solo se
+          ocultan el link "Volver" y el título "Pedido X" porque ya los da
+          el encabezado móvil (`EncabezadoCuentaMovil`: flecha + título). */}
+      <Link href="/mi-cuenta/pedidos" className="cuenta-escritorio-solo" style={{ fontSize: 13.5, color: "var(--text-muted)", marginBottom: 18, display: "inline-block" }}>
         Volver a Mis pedidos
       </Link>
-      <h1 style={{ margin: 0, fontSize: "clamp(26px,2.8vw,36px)" }}>
+      <h1 className="cuenta-escritorio-solo" style={{ margin: 0, fontSize: "clamp(26px,2.8vw,36px)" }}>
         Pedido <span className="font-data" style={{ fontSize: "0.85em" }}>{pedido.folio}</span>
       </h1>
       <p style={{ margin: "8px 0 0", fontSize: 14, color: "var(--text-muted)" }}>

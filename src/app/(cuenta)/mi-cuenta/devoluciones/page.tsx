@@ -30,9 +30,9 @@ export default async function PaginaDevolucionesCliente() {
 
   return (
     <div>
-      <h1 style={{ margin: "0 0 24px", fontSize: "clamp(26px,2.6vw,34px)" }}>Devoluciones</h1>
+      <h1 className="cuenta-escritorio-solo" style={{ margin: "0 0 24px", fontSize: "clamp(26px,2.6vw,34px)" }}>Devoluciones</h1>
 
-      <div style={{ maxWidth: 680 }}>
+      <div className="cuenta-escritorio-solo" style={{ maxWidth: 680 }}>
         <p style={{ margin: 0, fontSize: 15.5, lineHeight: 1.65, color: "var(--text-muted)" }}>
           Las devoluciones se abonan como saldo a favor para comprar productos: 100% del valor si el producto está sellado de fábrica y 70% si está
           abierto o sin empaque.
@@ -48,6 +48,32 @@ export default async function PaginaDevolucionesCliente() {
             Ver la política completa
           </Link>
         </div>
+      </div>
+
+      {/* Mockup `Panel_Usuario_Movil.dc.html` (`secDevoluciones`,
+          `devCards`) — traducción literal: 2 tarjetas de política +
+          disclaimer + los mismos 2 botones. */}
+      <div className="cuenta-movil-solo">
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <TarjetaPoliticaMovil pct="100%" titulo="Producto sellado" detalle="Se abona el valor completo como saldo a favor." color="#45E39A" />
+          <TarjetaPoliticaMovil pct="70%" titulo="Abierto o sin empaque" detalle="Se abona el 70% de su valor como saldo a favor." color="#FFB547" />
+        </div>
+        <p style={{ margin: "16px 0 0", fontSize: 13.5, lineHeight: 1.6, color: "#7E93A6" }}>
+          El valor se abona como saldo a favor para comprar productos; no hay reembolso en efectivo.
+        </p>
+        <Link
+          href="/mi-cuenta/devoluciones/nueva"
+          className="clip-corner-lg"
+          style={{ display: "block", width: "100%", marginTop: 18, padding: 15, background: "#3CE7FF", color: "#07111C", fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 15.5, textAlign: "center" }}
+        >
+          Solicitar devolución
+        </Link>
+        <Link
+          href="/devoluciones"
+          style={{ display: "block", width: "100%", marginTop: 10, padding: 14, border: "1px solid #1F3244", color: "#EAF2F8", fontSize: 14.5, textAlign: "center" }}
+        >
+          Ver la política completa
+        </Link>
       </div>
 
       {devoluciones.length > 0 && (
@@ -91,6 +117,18 @@ export default async function PaginaDevolucionesCliente() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function TarjetaPoliticaMovil({ pct, titulo, detalle, color }: { pct: string; titulo: string; detalle: string; color: string }) {
+  return (
+    <div style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: 15, border: `1px solid ${color}55`, background: "#0F1D2B" }}>
+      <span style={{ flex: "0 0 auto", fontFamily: "'Chakra Petch',sans-serif", fontWeight: 700, fontSize: 22, color }}>{pct}</span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "block", fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 15.5, color: "#EAF2F8" }}>{titulo}</span>
+        <span style={{ display: "block", marginTop: 3, fontSize: 13, lineHeight: 1.5, color: "#9FB2C3" }}>{detalle}</span>
+      </span>
     </div>
   );
 }
