@@ -671,8 +671,11 @@ Se suman a las 11 que ya están en `.devsquad/requerimientos.md`.
   `docs/contexto-negocio.md` §3. Con esto el catálogo completo de SG
   Querétaro ya tiene su taxonomía definitiva — no quedan grupos ni
   subcategorías pendientes de estructura de navegación.
-- **PA-13 · Marcas reales:** el demo usa "Marca Demo A/B/C". ¿Cuál es el catálogo
-  real de marcas que distribuye SG Querétaro? Sigue abierta.
+- ~~**PA-13 · Marcas reales**~~ — **cerrada (2026-09-22)**: la dueña
+  compartió el catálogo real de 30 marcas que distribuye SG Querétaro
+  (nombre + URL del logo), tomado de la página de marcas de su
+  proveedor (Syscom). Ver `supabase/seed.sql` (§ Marcas reales) y
+  `.devsquad/estado.md`.
 - **PA-14 · Reseñas:** ¿se van a habilitar reseñas reales de clientes (requiere
   moderación) o son testimonios curados que el dueño edita?
 - **PA-15 · Banners:** ¿el dueño los va a cambiar por su cuenta (tabla y pantalla

@@ -14,15 +14,20 @@
 begin;
 
 -- ── Marcas de muestra ────────────────────────────────────────────────────
--- PA-13 (`modelo-datos.md` §7) sigue abierta: el catálogo real de marcas
--- que distribuye SG Querétaro todavía no está confirmado.
+-- PA-13 (`modelo-datos.md` §7) cerrada (2026-09-22): el catálogo real de
+-- marcas ya vive en `seed.sql`. Estas siguen existiendo solo para que los
+-- productos de muestra de abajo tengan a qué apuntar (`brand_id`) —
+-- `active: false` a propósito, para que NO aparezcan mezcladas con las
+-- reales en la franja "Marcas que distribuimos" (`CintaMarcas.tsx`) ni en
+-- el filtro de marca del catálogo, ambos filtran por `active = true`
+-- (`obtenerMarcasActivas()`).
 insert into public.brands (name, slug, active) values
-  ('Nortvision', 'nortvision', true),
-  ('Axelock', 'axelock', true),
-  ('Perimetra', 'perimetra', true),
-  ('Voltara', 'voltara', true),
-  ('Fibranet', 'fibranet', true),
-  ('Rutaviva', 'rutaviva', true);
+  ('Nortvision', 'nortvision', false),
+  ('Axelock', 'axelock', false),
+  ('Perimetra', 'perimetra', false),
+  ('Voltara', 'voltara', false),
+  ('Fibranet', 'fibranet', false),
+  ('Rutaviva', 'rutaviva', false);
 
 -- ── Atributos filtrables de muestra (solo cámaras, D1) ──────────────────
 -- PA-17 sigue abierta para el resto de los grupos.

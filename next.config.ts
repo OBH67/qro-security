@@ -20,6 +20,12 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       ...(dominioR2 ? [patronDeDominio(dominioR2)] : []),
       { protocol: "https", hostname: "images.pexels.com" },
+      // Logos reales de marcas (`brands.logo_url`, 2026-09-22) — hotlink
+      // directo al CDN del proveedor, a pedido de la dueña (trajo las
+      // URLs ya armadas). Igual que Pexels arriba: mientras no se
+      // reemplacen por una copia propia en R2, hay que permitir el
+      // dominio aquí para que `next/image` pueda optimizarlas.
+      { protocol: "https", hostname: "ftp3.syscom.mx" },
     ],
     // Solo fuera de producción: permite que `NEXT_PUBLIC_R2_PUBLIC_URL`
     // apunte al propio `localhost` en desarrollo (sin cuenta de R2 real,

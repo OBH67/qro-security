@@ -1,7 +1,10 @@
 -- seed.sql — generado a partir de docs/contexto-negocio.md §3 (taxonomía real
--- confirmada por la dueña del proyecto, 2026-09-20). NO es data dummy: es el
--- contenido de producción de grupos y subcategorías. Ver `supabase/seed_dev.sql`
--- para datos de muestra (marcas/productos) de solo desarrollo.
+-- confirmada por la dueña del proyecto, 2026-09-20) y de la lista de marcas
+-- reales confirmada el 2026-09-22 (PA-13, `modelo-datos.md`). NO es data
+-- dummy: es contenido de producción (grupos, subcategorías y marcas). Ver
+-- `supabase/seed_dev.sql` para datos de muestra (productos) de solo
+-- desarrollo — esos SÍ siguen usando marcas de relleno (Nortvision,
+-- Axelock, etc.), inactivas a propósito para no mezclarse con las reales.
 
 begin;
 
@@ -433,6 +436,45 @@ insert into public.faqs (scope, question, answer, position, active) values
   ('devoluciones', '¿Me devuelven el dinero en efectivo?', 'No. El valor de la devolución se abona como saldo a favor para comprar productos en la tienda.', 0, true),
   ('devoluciones', '¿Qué pasa si el producto llegó con falla?', 'Otros casos los revisa un asesor. Escríbenos con fotos y el folio del pedido.', 1, true),
   ('devoluciones', '¿El saldo a favor vence?', 'Por ahora no tiene fecha de vencimiento. Cualquier cambio se avisará con anticipación y se reflejará en el historial de movimientos de tu cuenta.', 2, true);
+
+-- ── Marcas reales (PA-13, cerrada 2026-09-22) ───────────────────────────
+-- Catálogo real de marcas que distribuye SG Querétaro, compartido por la
+-- dueña (nombre + URL del logo, tomado de la página de marcas de su
+-- proveedor Syscom). `logo_url` es una URL absoluta externa —
+-- `urlImagenPublica()` (`src/lib/imagenes.ts`) la respeta tal cual, mismo
+-- criterio que las fotos de muestra de `seed_dev.sql`. El dominio
+-- `ftp3.syscom.mx` está permitido en `next.config.ts` (`images.remotePatterns`).
+insert into public.brands (name, slug, logo_url, active) values
+  ('RUIJIE', 'ruijie', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_ruijie.png', true),
+  ('FAAC', 'faac', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_faac.png', true),
+  ('CYBERPOWER', 'cyberpower', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_cyberpower.png', true),
+  ('GROWATT', 'growatt', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_growatt.png', true),
+  ('ECOFLOW', 'ecoflow', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_ecoflow.png', true),
+  ('HOYMILES', 'hoymiles', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/fotos/logotipos/hoymiles.png', true),
+  ('ALLIED TELESIS', 'allied-telesis', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_allied.png', true),
+  ('ALTAI TECHNOLOGIES', 'altai-technologies', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_altai.png', true),
+  ('CAMBIUM NETWORKS', 'cambium-networks', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_cambium.png', true),
+  ('CAME', 'came', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_came.png', true),
+  ('HUAWEI', 'huawei', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_huawei.png', true),
+  ('FANVIL', 'fanvil', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_fanvil.png', true),
+  ('FIBERHOME', 'fiberhome', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_fiberhome.png', true),
+  ('GRANDSTREAM', 'grandstream', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_grandstream.png', true),
+  ('DJI', 'dji', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_dji.png', true),
+  ('HID', 'hid', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_hid.png', true),
+  ('HIKVISION', 'hikvision', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_hikvision.png', true),
+  ('IDEMIA', 'idemia', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_idemia.png', true),
+  ('KENWOOD', 'kenwood', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_kenwood.png', true),
+  ('LUTRON', 'lutron', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_lutron.png', true),
+  ('SIMON', 'simon', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_simon.png', true),
+  ('PANDUIT', 'panduit', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_panduit.png', true),
+  ('PLANET', 'planet', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_planet.png', true),
+  ('HONEYWELL / RESIDEO', 'honeywell-resideo', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_resideo.png', true),
+  ('SYNOLOGY', 'synology', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/fotos/logotipos/synology.png', true),
+  ('SUPREMA', 'suprema', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_suprema.png', true),
+  ('TP-LINK', 'tp-link', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_tplink.png', true),
+  ('UBIQUITI', 'ubiquiti', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_ubiquiti.png', true),
+  ('LINKEDPRO', 'linkedpro', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_linkedpro.png', true),
+  ('AUFIT', 'aufit', 'https://ftp3.syscom.mx/cdn-cgi/image/format=webp,width=240,height=120/usuarios/ftp/single_page/topbrands/log2_aufit.png', true);
 
 commit;
 

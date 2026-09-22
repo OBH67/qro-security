@@ -1,4 +1,6 @@
+import Image from "next/image";
 import type { BrandRow } from "@/types/database";
+import { urlImagenPublica } from "@/lib/imagenes";
 
 /**
  * index.html:485-497 — franja de marcas con marquesina infinita
@@ -7,6 +9,13 @@ import type { BrandRow } from "@/types/database";
  * de `translateX(-50%)` no deje un hueco — es la misma técnica que usa
  * cualquier marquesina CSS con contenido dinámico; `prefers-reduced-motion`
  * ya la congela por la regla global de `globals.css`.
+ *
+ * Logos reales (2026-09-22): antes esta franja siempre mostraba una caja
+ * con el NOMBRE de la marca en texto — nunca hubo logos (PA-13,
+ * `modelo-datos.md` §7, seguía abierta: no había catálogo de marcas
+ * confirmado). Ahora que `brands.logo_url` trae la URL real del logo, se
+ * muestra la imagen; el texto queda solo como respaldo para una marca sin
+ * logo cargado (o mientras la imagen no ha cargado, vía `alt`).
  */
 export function CintaMarcas({ marcas }: { marcas: BrandRow[] }) {
   if (marcas.length === 0) return null;
@@ -33,6 +42,7 @@ export function CintaMarcas({ marcas }: { marcas: BrandRow[] }) {
             key={`${marca.id}-${i}`}
             className="clip-corner-md"
             style={{
+              position: "relative",
               width: 190,
               height: 78,
               flex: "0 0 auto",
@@ -45,9 +55,19 @@ export function CintaMarcas({ marcas }: { marcas: BrandRow[] }) {
               background: "#0F1D2B",
             }}
           >
-            <span style={{ fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 17, letterSpacing: "0.06em", color: "#EAF2F8" }}>
-              {marca.name}
-            </span>
+            {marca.logo_url ? (
+              <Image
+                src={urlImagenPublica(marca.logo_url)}
+                alt={marca.name}
+                fill
+                sizes="190px"
+                style={{ objectFit: "contain", padding: "14px 18px" }}
+              />
+            ) : (
+              <span style={{ fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 17, letterSpacing: "0.06em", color: "#EAF2F8" }}>
+                {marca.name}
+              </span>
+            )}
           </span>
         ))}
       </div>

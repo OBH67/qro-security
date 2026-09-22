@@ -2627,3 +2627,64 @@ aplicar ni probar contra la base real desde este entorno). Verificado
 por lectura: 36 productos (6 × 6 subcategorías), sin SKU ni slug
 duplicados contra los ya existentes en `seed_dev.sql` y
 `seed_dev_bulk_43_productos.sql`.
+
+Nota aparte sobre ese mismo script: la dueña reportó
+`ERROR: 42P01: missing FROM-clause entry for table "g"` al correrlo, y
+después `ERROR: 42601: syntax error at or near "from"` en el mismo
+punto al reintentar. Se validó el archivo dos veces con un parser real
+de Postgres (`pglast`, instalado en este entorno) — parsea sin errores,
+43 sentencias — y el segundo mensaje de error (una consulta que
+EMPIEZA en `from`, sin su `select`) confirma que la causa era el
+copiado incompleto hacia el SQL Editor de Supabase Studio (un archivo
+de ~200 líneas es fácil de cortar a medias al seleccionar/pegar a
+mano), no un bug del script.
+
+### Corrección (2026-09-22): marcas reales con logo, PA-13 cerrada
+
+**Contexto**: la dueña compartió `marcas_syscom.xlsx` (30 marcas, nombre
++ URL de logo, tomadas de la página de marcas de su proveedor Syscom) y
+pidió reemplazar la franja "Marcas que distribuimos" de la portada, que
+hoy solo mostraba el NOMBRE de la marca en una caja de texto — nunca
+hubo logos reales (PA-13, `modelo-datos.md` §7, seguía abierta). Con
+esta lista, PA-13 queda cerrada.
+
+**Cambios**:
+1. `CintaMarcas.tsx` — cuando `brands.logo_url` existe, se pinta la
+   imagen (`next/image`, vía `urlImagenPublica()` para respetar URLs
+   externas absolutas tal cual, mismo criterio que las fotos de muestra
+   de productos); si una marca no tiene logo cargado, se conserva el
+   texto de respaldo que ya existía (nunca una caja vacía).
+2. `next.config.ts` — se agrega `ftp3.syscom.mx` a `images.remotePatterns`;
+   sin esto `next/image` rechaza la imagen en tiempo de ejecución. Es un
+   hotlink directo al CDN del proveedor (a pedido explícito de la
+   dueña, que compartió las URLs ya armadas) — igual que Pexels para las
+   fotos de muestra, mientras no se copien a R2 propio.
+3. `supabase/seed.sql` — las 30 marcas reales se agregan aquí (no a
+   `seed_dev.sql`): dejaron de ser un dato pendiente/dummy (PA-13), son
+   contenido real de producción, igual que grupos y subcategorías.
+4. `supabase/seed_dev.sql` — las 6 marcas de relleno (Nortvision,
+   Axelock, etc., que los productos de muestra usan como `brand_id`)
+   pasan a `active: false`: siguen existiendo para no romper esas
+   referencias, pero ya no se mezclan con las reales en la franja ni en
+   el filtro de marca del catálogo (ambos leen `obtenerMarcasActivas()`,
+   que filtra `active = true`).
+5. `supabase/seed_marcas_reales.sql` (nuevo) — script standalone para
+   aplicar HOY sobre la base hosteada ya sembrada, sin resetear nada:
+   apaga las 6 marcas de relleno e inserta/actualiza las 30 reales.
+   A diferencia de los scripts de bulk anteriores, este SÍ usa
+   `on conflict (slug) do update` — es seguro correrlo más de una vez
+   (relevante después de la confusión de copiado del script de "Para
+   Ti" de arriba).
+
+**Decisión no consultada explícitamente, documentada por transparencia**:
+se interpretó "vamos a cambiar la sección de marcas" como reemplazo
+completo (apagar las de relleno), no como agregar las 30 reales
+encima de las 6 de mentira. Si la dueña prefiere verlas combinadas,
+basta con volver a poner `active = true` en esas 6 filas.
+
+**Validación**: `npx tsc --noEmit` limpio. Los 3 archivos `.sql`
+tocados se validaron con `pglast` (parser real de Postgres) sin
+errores. No se pudo probar contra la base real ni ver el resultado
+visual (logos de terceros, tamaño/proporción real en la marquesina)
+desde este entorno — pendiente que la dueña corra
+`seed_marcas_reales.sql` y confirme cómo se ven.
