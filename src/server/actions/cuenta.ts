@@ -32,6 +32,15 @@ export async function registrarCliente(datosCrudos: unknown): Promise<ResultadoA
       if (error.message.toLowerCase().includes("already registered") || error.code === "user_already_exists") {
         throw new Error("Ya existe una cuenta con ese correo. Intenta iniciar sesión.");
       }
+      // `over_email_send_rate_limit`: el proveedor de correo del proyecto
+      // (el mailer compartido por defecto de Supabase, sin SMTP propio
+      // configurado) tiene un límite muy bajo de correos por hora — se
+      // alcanza rápido al probar el registro varias veces seguidas. Sin
+      // este caso, `error.message` ("email rate limit exceeded") se le
+      // mostraba a la persona tal cual, en inglés y sin explicar qué hacer.
+      if (error.code === "over_email_send_rate_limit") {
+        throw new Error("Se alcanzó el límite de correos del proyecto por probar el registro varias veces seguidas. Espera unos minutos e intenta de nuevo, o configura un proveedor SMTP propio para el envío de correos de Auth.");
+      }
       throw new Error(error.message);
     }
 
