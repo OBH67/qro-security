@@ -23,7 +23,14 @@ export function CintaMarcas({ marcas }: { marcas: BrandRow[] }) {
   const dobles = [...marcas, ...marcas];
 
   return (
-    <div style={{ padding: "26px 0", border: "1px solid #1F3244", background: "#0B1622", overflow: "hidden" }}>
+    <div
+      style={{
+        padding: "26px 0",
+        border: "1px solid #1F3244",
+        background: "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%), #0B1622",
+        overflow: "hidden",
+      }}
+    >
       <span
         style={{
           display: "block",
@@ -51,8 +58,9 @@ export function CintaMarcas({ marcas }: { marcas: BrandRow[] }) {
               alignItems: "center",
               justifyContent: "center",
               gap: 5,
-              border: "1px solid #1F3244",
-              background: "#0F1D2B",
+              border: "1px solid rgba(255,255,255,0.42)",
+              background: "linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(244,248,252,0.96) 52%, rgba(231,239,247,0.92) 100%)",
+              boxShadow: "0 14px 28px rgba(3,10,18,0.18)",
             }}
           >
             {marca.logo_url ? (
@@ -64,7 +72,7 @@ export function CintaMarcas({ marcas }: { marcas: BrandRow[] }) {
                 style={{ objectFit: "contain", padding: "14px 18px" }}
               />
             ) : (
-              <span style={{ fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 17, letterSpacing: "0.06em", color: "#EAF2F8" }}>
+              <span style={{ fontFamily: "'Chakra Petch',sans-serif", fontWeight: 600, fontSize: 17, letterSpacing: "0.06em", color: "#102133" }}>
                 {marca.name}
               </span>
             )}
