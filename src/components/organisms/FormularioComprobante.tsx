@@ -129,22 +129,27 @@ export function FormularioComprobante({ orderId, folio, total }: { orderId: stri
           </label>
         </div>
       ) : (
-        <div style={{ marginTop: 26, display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ marginTop: 26, display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start" }}>
           {previewUrl ? (
+            // Bastante grande a propósito — el objetivo es que la persona
+            // pueda confirmar que el texto del comprobante (banco,
+            // importe, fecha, clave de rastreo) se alcanza a LEER antes
+            // de mandarlo, no solo que reconozca la miniatura. `contain`
+            // (no `cover`) para no recortar ningún borde con datos.
             // eslint-disable-next-line @next/next/no-img-element -- vista previa de un archivo local (blob:), next/image no sabe optimizar eso
             <img
               src={previewUrl}
               alt="Vista previa del comprobante que vas a enviar"
-              style={{ width: 110, height: 110, objectFit: "cover", border: "1px solid var(--border)", background: "var(--bg-surface)" }}
+              style={{ display: "block", width: "100%", maxWidth: 420, maxHeight: 560, objectFit: "contain", border: "1px solid var(--border)", background: "var(--bg-surface)" }}
             />
           ) : (
-            <span style={{ width: 110, height: 110, display: "grid", placeItems: "center", border: "1px solid var(--border)", background: "var(--bg-surface)", fontSize: 11.5, lineHeight: 1.4, color: "var(--text-muted)", textAlign: "center", padding: 8 }}>
+            <span style={{ display: "grid", placeItems: "center", width: "100%", maxWidth: 420, minHeight: 140, border: "1px solid var(--border)", background: "var(--bg-surface)", fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: 16 }}>
               Sin vista previa para este tipo de archivo
             </span>
           )}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
             <span className="font-data" style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{archivo.name}</span>
-            <button type="button" onClick={() => setArchivo(null)} style={{ alignSelf: "flex-start", fontSize: 13.5, color: "var(--accent)" }}>Cambiar archivo</button>
+            <button type="button" onClick={() => setArchivo(null)} style={{ fontSize: 13.5, color: "var(--accent)" }}>Cambiar archivo</button>
           </div>
         </div>
       )}
