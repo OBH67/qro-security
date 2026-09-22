@@ -2306,3 +2306,49 @@ correr el flujo de compra real contra Supabase en este entorno) y
 `npx tsc --noEmit` limpio. **Pendiente**: confirmar en el servidor real,
 una vez que `npm install` esté al corriente, que completar una compra ya
 no muestra error aunque el canal de correo falle.
+
+### Corrección (2026-09-22): botón deshabilitado se seguía viendo activo
+(color sólido) en vez de gris — bug del átomo `Boton`, no de una sola
+pantalla
+
+La dueña reportó que "Generar pedido" (en `/pagar`) se veía con el color
+cian sólido de siempre aunque debiera estar deshabilitado sin dirección,
+y por separado que el botón no reaccionaba a pesar de ya tener una
+dirección guardada — sospechando que el toggle "Quiero factura" fuera
+obligatorio.
+
+**Causa real** (`Boton.tsx`, el átomo compartido de todo el sitio):
+`estiloVariante(variante)` decidía el color SOLO a partir de la prop
+`variante` (con default `"primaria"`, el cian sólido) — nunca miraba si
+el botón estaba realmente deshabilitado vía la prop nativa `disabled`.
+El atributo HTML `disabled` sí se calculaba bien (`variante ===
+"deshabilitada" || boton.disabled`, así que el clic sí quedaba
+bloqueado), pero el ESTILO seguía siendo el de `variante="primaria"`
+mientras quien llamaba no pasara TAMBIÉN `variante="deshabilitada"` a
+mano — cosa que `CheckoutForm.tsx` (y otras ~20 pantallas que usan
+`Boton` con `disabled`: login, formularios de dirección/datos
+fiscales/comprobante, "Agregar al carrito", etc., confirmado por
+`grep`) nunca hacía. El botón se veía activo mientras estaba
+funcionalmente apagado, en todo el sitio, no solo en pago.
+
+**"Quiero factura" no es obligatorio** (confirmado leyendo
+`CheckoutForm.tsx`): arranca en `false` y no forma parte de la condición
+que deshabilita el botón (`disabled={!agree || enviando ||
+!addressId}`). Lo que sí es obligatorio, y fácil de pasar por alto
+porque es un checkbox chico junto al total, es "Entiendo que mi pedido
+se confirma al subir mi comprobante de pago." (`agree`) — sin verlo gris
+cuando falta, no había forma de saber que ESE era el paso pendiente.
+
+**Corrección**: `Boton.tsx` ahora calcula `estaDeshabilitado =
+variante === "deshabilitada" || disabled` una sola vez, y usa ese valor
+tanto para el atributo HTML `disabled` como para elegir el estilo visual
+(`estiloVariante(estaDeshabilitado ? "deshabilitada" : variante)`) — así
+cualquier botón del sitio que use `disabled={condicion}` se ve gris
+automáticamente en cuanto la condición es verdadera, sin que cada
+pantalla tenga que acordarse de sincronizar las dos props a mano.
+
+Validado por lectura del código (mismo estilo `"deshabilitada"` ya
+existente y probado — `background: var(--bg-hover)`, `color:
+var(--text-disabled)`, `cursor: not-allowed` — solo cambia CUÁNDO se
+aplica) y `npx tsc --noEmit` limpio. No se pudo confirmar visualmente
+contra el servidor real en este entorno.

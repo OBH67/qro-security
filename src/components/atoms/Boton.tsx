@@ -77,6 +77,19 @@ export function Boton(props: PropsBoton | PropsEnlace) {
     ...resto
   } = props;
 
+  // El HTML `disabled` y el estilo visual eran dos cosas independientes:
+  // un `<Boton disabled={condicion} onClick={...}>` (patrón usado en ~20
+  // pantallas — formularios, "Generar pedido", "Agregar al carrito", el
+  // login) sí quedaba sin poder darle clic, pero seguía pintado con el
+  // color sólido de `variante="primaria"` (el default) porque
+  // `estiloVariante` solo miraba la prop `variante`, nunca si el botón
+  // en realidad estaba deshabilitado — parecía activo aunque no lo
+  // estuviera. Ahora cualquier botón deshabilitado (por `disabled` o por
+  // `variante="deshabilitada"` explícito) siempre se ve con el estilo
+  // gris/apagado, sin que cada pantalla tenga que acordarse de pasar las
+  // dos props a la vez.
+  const estaDeshabilitado = variante === "deshabilitada" || Boolean(("disabled" in resto && resto.disabled));
+
   const estiloBase: CSSProperties = {
     display: "inline-flex",
     gap: 8,
@@ -88,7 +101,7 @@ export function Boton(props: PropsBoton | PropsEnlace) {
     fontWeight: 600,
     fontSize: tamano === "sm" ? 14 : tamano === "lg" ? 16 : 14.5,
     width: anchoCompleto ? "100%" : undefined,
-    ...estiloVariante(variante),
+    ...estiloVariante(estaDeshabilitado ? "deshabilitada" : variante),
     ...style,
   };
 
@@ -112,7 +125,7 @@ export function Boton(props: PropsBoton | PropsEnlace) {
       type={boton.type ?? "button"}
       className={clases}
       style={estiloBase}
-      disabled={variante === "deshabilitada" || boton.disabled}
+      disabled={estaDeshabilitado}
       {...boton}
     >
       {children}
