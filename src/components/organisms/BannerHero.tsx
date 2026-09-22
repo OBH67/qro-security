@@ -36,11 +36,23 @@ export function BannerHero({
   grupoSlugPorId: Map<string, string>;
   reseñas: ReviewRow[];
 }) {
+  // Arranca en 0 (igual en servidor y cliente, sin riesgo de mismatch de
+  // hidratación) y se resincroniza con el reloj de pared (`Date.now()`) en
+  // el efecto de abajo, que solo corre en el cliente. Sin esto, `indice`
+  // siempre arrancaba en 0 al montar — y este componente vive dentro del
+  // árbol de la portada, así que se desmonta al salir de `/` y se vuelve a
+  // montar al regresar. El color de fondo de `EncabezadoSitio` (que vive en
+  // el layout raíz, nunca se desmonta, y calcula su propio índice también
+  // desde `Date.now()` con el mismo período) casi nunca coincidía con el
+  // slide que se veía aquí al volver a la portada.
   const [indice, setIndice] = useState(0);
 
   useEffect(() => {
+    if (banners.length === 0) return;
+    const sincronizar = () => setIndice(Math.floor(Date.now() / CICLO_MS) % banners.length);
+    sincronizar();
     if (banners.length < 2) return;
-    const id = setInterval(() => setIndice((i) => (i + 1) % banners.length), CICLO_MS);
+    const id = setInterval(sincronizar, CICLO_MS);
     return () => clearInterval(id);
   }, [banners.length]);
 

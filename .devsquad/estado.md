@@ -2054,3 +2054,56 @@ la corrección anterior — este entorno sigue sin Supabase real) tanto con
 panel de filtros alto (con "Categorías") como corto (sin ella, como en
 "Cámaras IP y NVRs"): en ambos casos "Ordenar por" y la cuadrícula
 arrancan justo debajo del banner, sin hueco. `npx tsc --noEmit` limpio.
+
+### Corrección (2026-09-22): el degradado del encabezado no coincidía con
+el slide del hero al volver a la portada (bug preexistente, no de los
+incrementos anteriores)
+
+La dueña notó que, navegando al catálogo y regresando a la portada, a
+veces el color de fondo del encabezado (el degradado que imita el color
+del slide activo del hero, punto 1 del comentario de cabecera de
+`EncabezadoSitio.tsx`) no coincidía con el banner que realmente se veía
+debajo. Pasaba "a veces" porque depende de cuánto tiempo estuvo fuera de
+la portada.
+
+**Causa raíz**: dos relojes independientes que debían quedar
+sincronizados por casualidad, no por diseño:
+1. `BannerHero.tsx` (dentro del árbol de la página de inicio, se
+   desmonta al salir de `/` y se vuelve a montar al volver) reiniciaba
+   su `indice` en `0` cada vez que se montaba.
+2. `EncabezadoSitio.tsx` (vive en el layout raíz, nunca se desmonta)
+   apaga su intervalo de 5 s mientras `!esHome` — su `heroSlideIdx` se
+   quedaba **congelado** en lo que fuera que hubiera alcanzado antes de
+   salir de la portada, en vez de seguir avanzando o resincronizarse al
+   volver.
+
+Con eso, al regresar a `/`: el hero siempre arrancaba en el slide 0
+(verde, Videovigilancia), mientras el encabezado mostraba el color en
+el que se congeló (podía ser cualquiera de los 3) — coincidían solo si
+la persona pasó un múltiplo exacto de 5 s fuera de la portada.
+**Aprendizaje permanente**: dos componentes que se desmontan en momentos
+distintos (uno vive en el layout raíz, el otro dentro del árbol de una
+página) nunca deben sincronizar un ciclo con temporizador incrementando
+desde un estado local (`setInterval(() => setX((i) => i+1))`) — ese
+patrón solo se mantiene sincronizado mientras ninguno de los dos se
+desmonta jamás. Para que dos relojes independientes muestren siempre lo
+mismo hay que calcular el índice desde una fuente de verdad compartida
+que no dependa de cuándo se montó cada uno — aquí, `Date.now()`.
+
+**Corrección**: en ambos componentes, el índice del slide se calcula
+como `Math.floor(Date.now() / CICLO_MS) % N` (mismo período de 5000 ms
+en los dos) en vez de incrementar desde el estado anterior. Para no
+arriesgar un mismatch de hidratación (`Date.now()` corre distinto en
+servidor y cliente), el `useState` inicial se queda en `0` — igual en
+servidor y cliente — y la sincronización real ocurre en el `useEffect`
+(cliente only), que llama a `sincronizar()` inmediatamente al montar/
+entrar a la portada y luego cada `CICLO_MS` con `setInterval`.
+
+Validado por lectura del código y la matemática (ambos calculan el
+mismo `Math.floor(t/5000) % 3` para el mismo instante `t`, así que
+coinciden sin importar cuál se montó primero o hace cuánto) — no se
+pudo probar contra el servidor de desarrollo real en este entorno (sin
+Supabase). `npx tsc --noEmit` limpio. **Pendiente**: confirmar
+navegando catálogo → portada varias veces con distintos tiempos de
+espera contra el servidor real antes de darlo por cerrado con la misma
+certeza que las correcciones anteriores.

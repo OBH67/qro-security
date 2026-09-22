@@ -47,6 +47,8 @@ const HERO_SLIDES = [
   { a: "#1E8A4F", b: "#082A19", grupoCodigo: "ec" },
 ] as const;
 
+const CICLO_DEGRADADO_MS = 5000;
+
 const SERVICIOS = [
   { tipo: "monitoreo", nombre: "Monitoreo de alarmas 24/7", linea: "Conectamos tu sistema a central de monitoreo, atendemos eventos y te enviamos reportes." },
   { tipo: "guardias", nombre: "Guardias de seguridad", linea: "Guardias intramuros, control de acceso en recepción y rondines en turnos 12×12 y 24×24." },
@@ -135,10 +137,22 @@ export function EncabezadoSitio({
 
   // Ciclo del degradado del encabezado — index.html:1987 (`this.cycle`, 5 s).
   // Solo corre fuera de la portada, el fondo es sólido (ver comentario de
-  // cabecera, punto 1).
+  // cabecera, punto 1). El índice se calcula desde `Date.now()` (reloj de
+  // pared), no incrementando desde donde se quedó: `EncabezadoSitio` vive
+  // en el layout raíz y nunca se desmonta al navegar, pero este efecto sí
+  // apaga el intervalo mientras `!esHome` — sin resincronizar aquí, al
+  // volver a la portada el índice se quedaba congelado en lo que fuera que
+  // alcanzó antes de salir, mientras `BannerHero` (que sí se desmonta y
+  // vuelve a montarse cada vez que se entra a `/`) reinicia su propio
+  // carrusel — dos relojes independientes que solo coincidían por
+  // casualidad. Calculándolo desde `Date.now()` con el mismo período
+  // (`CICLO_DEGRADADO_MS`) en los dos componentes, ambos quedan
+  // sincronizados sin importar cuánto tiempo se estuvo fuera de la portada.
   useEffect(() => {
     if (!esHome) return;
-    const id = setInterval(() => setHeroSlideIdx((i) => (i + 1) % HERO_SLIDES.length), 5000);
+    const sincronizar = () => setHeroSlideIdx(Math.floor(Date.now() / CICLO_DEGRADADO_MS) % HERO_SLIDES.length);
+    sincronizar();
+    const id = setInterval(sincronizar, CICLO_DEGRADADO_MS);
     return () => clearInterval(id);
   }, [esHome]);
 
