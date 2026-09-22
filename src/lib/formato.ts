@@ -23,6 +23,20 @@ export function formatearPrecio(valor: number | string): string {
   );
 }
 
+/** Separador de miles mientras se escribe un monto (ej. "Monto
+ * transferido" del comprobante) — a diferencia de `formatearPrecio`, no
+ * agrega "$" ni fuerza 2 decimales, porque el valor puede estar a medio
+ * escribir (un "." final, un decimal incompleto). Recibe y regresa texto
+ * plano sin comas (`datos.amount` en el estado del formulario sigue
+ * siendo el string limpio que espera `z.coerce.number()`); esto solo
+ * decide qué se le muestra a la persona mientras no tiene el foco. */
+export function formatearMontoInput(valorCrudo: string): string {
+  if (!valorCrudo) return "";
+  const [entero, decimal] = valorCrudo.split(".");
+  const enteroFormateado = entero === "" ? "" : Number(entero).toLocaleString("es-MX");
+  return decimal === undefined ? enteroFormateado : `${enteroFormateado}.${decimal}`;
+}
+
 /** Piezas disponibles = stock físico − piezas apartadas (modelo-datos.md §1). */
 export function stockDisponible(stock: number, reserved: number): number {
   return Math.max(0, stock - reserved);

@@ -2432,3 +2432,54 @@ db push` con la CLI apuntando al proyecto remoto, o pegar el contenido
 de `0022_generar_folio_search_path.sql` directo en Supabase Studio → SQL
 Editor → Run). No se pudo aplicar ni probar en este entorno (sin acceso
 al proyecto real).
+
+### Incremento (2026-09-22): vista previa del comprobante, monto con
+separador de miles, y el `NetworkError` al subir es CORS de R2 sin
+configurar (no es bug de código)
+
+La dueña, ya con un pedido de prueba generado, pidió tres cosas sobre
+`FormularioComprobante.tsx` ("Subir comprobante"):
+
+1. **Vista previa del archivo elegido** — antes solo se mostraba el
+   nombre del archivo, sin forma de confirmar que la foto/captura
+   subida se ve legible antes de mandarla. Se agregó una miniatura real
+   (`URL.createObjectURL`, con su `revokeObjectURL` en cada cambio para
+   no acumular memoria) para JPG/PNG — HEIC y PDF no los renderiza un
+   `<img>` en el navegador, así que esos se quedan con un ícono
+   genérico "Sin vista previa para este tipo de archivo" en vez de
+   fingir una miniatura que no existe.
+2. **"Monto transferido" sin separador de miles** — el campo era
+   `type="number"` nativo, que ningún navegador formatea con comas.
+   Nueva utilidad compartida `formatearMontoInput()` (`src/lib/
+   formato.ts`) que solo cambia lo que se VE: el estado
+   (`datos.amount`) se queda siempre como texto plano sin comas (lo que
+   espera `z.coerce.number()` al enviar), y el separador de miles
+   (mismo criterio que `formatearPrecio`, `toLocaleString('es-MX')`)
+   solo se aplica mientras el campo NO tiene el foco — reformatear en
+   cada tecleo movería el cursor de lugar mientras la persona todavía
+   está escribiendo, así que se muestra sin formato mientras se edita y
+   con comas en cuanto se sale del campo.
+3. **`NetworkError when attempting to fetch resource` al subir** — el
+   `PUT` del paso 2 (arquitectura §7.1: el navegador sube directo a R2
+   con una URL firmada, el archivo nunca pasa por el servidor de
+   Next.js) es una petición **cross-origin real** desde el dominio del
+   sitio hacia `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com` — y R2
+   no trae ninguna política CORS configurada por defecto. Sin ella, el
+   navegador bloquea el `PUT` (y el preflight `OPTIONS` que dispara por
+   llevar `Content-Type`) antes de que llegue ninguna respuesta —
+   exactamente el mensaje genérico y poco útil que muestran los
+   navegadores para un bloqueo CORS, nunca un error específico de R2/S3.
+   No es un bug de la aplicación: es una configuración pendiente del
+   bucket, que no vivía documentada en ningún lado de este repo (ni
+   `.env.example`, ni `arquitectura.md` §7.1 la mencionan). **Pendiente,
+   acción de la dueña**: configurar la política CORS del bucket
+   `R2_BUCKET_PRIVATE` (Cloudflare dashboard → R2 → el bucket → Settings
+   → CORS Policy) permitiendo el origen del sitio (`http://localhost:3000`
+   en desarrollo + el dominio real de producción), método `PUT`, y el
+   header `Content-Type`. No se pudo aplicar ni probar contra el bucket
+   real en este entorno (sin acceso a la cuenta de Cloudflare).
+
+Validado por lectura del código y `npx tsc --noEmit` limpio; la lógica
+de `formatearMontoInput()` se probó aparte con casos de borde (entero
+solo, con punto final, con decimales, vacío) fuera de React. No se pudo
+probar la vista previa ni la subida real contra R2 en este entorno.

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { esquemaComprobante } from "@/lib/esquemas/checkout";
 import { solicitarSubidaComprobanteAction, confirmarComprobanteAction } from "@/server/actions/comprobantes";
-import { formatearPrecio } from "@/lib/formato";
+import { formatearPrecio, formatearMontoInput } from "@/lib/formato";
 import { CampoConError } from "@/components/molecules/CampoConError";
 import { Boton } from "@/components/atoms/Boton";
 
@@ -17,11 +17,29 @@ const TAMANO_MAXIMO_MB = 5;
 export function FormularioComprobante({ orderId, folio, total }: { orderId: string; folio: string; total: string }) {
   const router = useRouter();
   const [archivo, setArchivo] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [errorArchivo, setErrorArchivo] = useState<string | null>(null);
   const [datos, setDatos] = useState({ transferDate: "", amount: "", originBank: "", speiTrackingKey: "" });
+  const [montoConFoco, setMontoConFoco] = useState(false);
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [estado, setEstado] = useState<"form" | "subiendo" | "hecho">("form");
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
+
+  // Vista previa del archivo elegido, para que la persona confirme que se
+  // ve legible antes de mandarlo — antes solo se mostraba el nombre del
+  // archivo, a ciegas. `createObjectURL` funciona para jpg/png (no para
+  // HEIC/PDF, que el navegador no renderiza directo dentro de un <img>;
+  // esos se quedan con el ícono genérico de abajo). Se revoca la URL
+  // anterior en cada cambio para no ir acumulando memoria.
+  useEffect(() => {
+    if (!archivo || !/^image\/(jpeg|png)$/.test(archivo.type)) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(archivo);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [archivo]);
 
   function elegirArchivo(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -111,9 +129,23 @@ export function FormularioComprobante({ orderId, folio, total }: { orderId: stri
           </label>
         </div>
       ) : (
-        <div style={{ marginTop: 26, display: "flex", gap: 16, alignItems: "center" }}>
-          <span className="font-data" style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{archivo.name}</span>
-          <button type="button" onClick={() => setArchivo(null)} style={{ fontSize: 13.5, color: "var(--accent)" }}>Cambiar archivo</button>
+        <div style={{ marginTop: 26, display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+          {previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- vista previa de un archivo local (blob:), next/image no sabe optimizar eso
+            <img
+              src={previewUrl}
+              alt="Vista previa del comprobante que vas a enviar"
+              style={{ width: 110, height: 110, objectFit: "cover", border: "1px solid var(--border)", background: "var(--bg-surface)" }}
+            />
+          ) : (
+            <span style={{ width: 110, height: 110, display: "grid", placeItems: "center", border: "1px solid var(--border)", background: "var(--bg-surface)", fontSize: 11.5, lineHeight: 1.4, color: "var(--text-muted)", textAlign: "center", padding: 8 }}>
+              Sin vista previa para este tipo de archivo
+            </span>
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <span className="font-data" style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{archivo.name}</span>
+            <button type="button" onClick={() => setArchivo(null)} style={{ alignSelf: "flex-start", fontSize: 13.5, color: "var(--accent)" }}>Cambiar archivo</button>
+          </div>
         </div>
       )}
 
@@ -125,7 +157,22 @@ export function FormularioComprobante({ orderId, folio, total }: { orderId: stri
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px,1fr))", gap: 18, marginTop: 28 }}>
         <CampoConError label="Fecha de la transferencia" type="date" value={datos.transferDate} onChange={(e) => setDatos((d) => ({ ...d, transferDate: e.target.value }))} error={errores.transferDate} />
-        <CampoConError label="Monto transferido" type="number" step="0.01" placeholder="5879.00" value={datos.amount} onChange={(e) => setDatos((d) => ({ ...d, amount: e.target.value }))} error={errores.amount} />
+        <CampoConError
+          label="Monto transferido"
+          inputMode="decimal"
+          placeholder="5,879.00"
+          // El estado (`datos.amount`) siempre se queda como texto plano
+          // sin comas — es lo que espera `z.coerce.number()` al enviar.
+          // El separador de miles (como el resto de los precios del
+          // sitio, `formatearPrecio`) solo se aplica a lo que se VE, y
+          // nada más mientras el campo no tiene el foco — reformatear en
+          // cada tecleo movería el cursor de lugar mientras se escribe.
+          value={montoConFoco ? datos.amount : formatearMontoInput(datos.amount)}
+          onFocus={() => setMontoConFoco(true)}
+          onBlur={() => setMontoConFoco(false)}
+          onChange={(e) => setDatos((d) => ({ ...d, amount: e.target.value.replace(/[^\d.]/g, "") }))}
+          error={errores.amount}
+        />
         <CampoConError label="Banco de origen (opcional)" placeholder="Banco Demo" value={datos.originBank} onChange={(e) => setDatos((d) => ({ ...d, originBank: e.target.value }))} />
         <CampoConError label="Clave de rastreo SPEI (opcional)" placeholder="2026091640044200000000" value={datos.speiTrackingKey} onChange={(e) => setDatos((d) => ({ ...d, speiTrackingKey: e.target.value }))} />
       </div>
