@@ -1880,3 +1880,42 @@ dos columnas a ser el primer elemento dentro de la columna derecha
 (arriba de "Ordenar por"). Verificado con captura del servidor de
 desarrollo real: el banner ahora empieza exactamente donde empieza la
 columna de productos, alineado con "Categorías" a su izquierda.
+
+### Corrección (2026-09-22): banners reales por categoría + causa raíz de
+por qué ninguna imagen se veía en desarrollo
+
+La dueña compartió 3 imágenes reales (Videovigilancia, Control de
+Acceso, Automatización e Intrusión) para los banners de esas
+categorías. Al agregarlas se encontró la causa raíz de por qué
+**ninguna** imagen se había visto correctamente en todo este entorno de
+desarrollo, ni banners ni fotos de producto: `.env.local` tenía
+`NEXT_PUBLIC_R2_PUBLIC_URL=https://cdn.example.com`, un dominio de
+ejemplo que nunca resuelve. El propio `server/config/env.ts` exige
+`z.url()` para esa variable (no puede quedar vacía), así que la
+corrección real es apuntarla al propio servidor de desarrollo
+(`http://localhost:3000`, donde Next.js ya sirve `public/` tal cual) —
+`.env.local` es local y no se sube al repo, así que este arreglo no
+afecta producción (ahí sí debe ser el dominio real de R2).
+
+**Qué se hizo:**
+1. Las 3 imágenes se guardaron en `public/uploads/banners/` (mismo
+   patrón que las imágenes del demo — no hay todavía un proyecto R2 real
+   ni una pantalla de administración de banners).
+2. `supabase/seed_dev.sql`: el banner de Videovigilancia (antes apuntaba
+   a `hero1.png`, la imagen genérica del demo) se actualizó con la
+   imagen real; se agregaron banners nuevos para Control de Acceso y
+   Automatización e Intrusión. `brand_label` queda en `null` en los 3 —
+   las imágenes ya traen su propio texto integrado, pintar una etiqueta
+   encima sería redundante. Energía y Climatización sigue con las
+   imágenes del demo (`hero2.png`/`hero3.png`) porque todavía no hay
+   banners reales para ese grupo.
+3. Aplicado también directo a la base de datos local para verlo de
+   inmediato, no solo dejado en el script de semilla.
+
+**Validado con el servidor de desarrollo real**: los 3 banners se ven
+completos (sin recortar, gracias al `object-fit: contain` de la
+corrección anterior), dentro de la columna de productos. Se confirmó
+además que el carrusel de la portada (`BannerHero`, que lee la misma
+tabla `banners`) sigue funcionando con la imagen real de Videovigilancia
+sin romperse. `npx tsc --noEmit`, `npm run build` y `npm run lint`
+limpios (mismos 14 warnings preexistentes).

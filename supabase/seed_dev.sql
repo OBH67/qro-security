@@ -227,23 +227,37 @@ insert into public.faqs (scope, question, answer, position, active) values
   ('general', '¿Puedo pedir factura?', 'Sí. Activa "Quiero factura" al crear tu cuenta o al confirmar el pedido y captura tu RFC, régimen fiscal y uso de CFDI.', 2, true),
   ('general', '¿Cómo funcionan las devoluciones?', 'El valor se devuelve como saldo a favor para comprar productos: 100% si el producto está sellado de fábrica y 70% si está abierto o sin empaque.', 3, true);
 
--- Los 3 banners literales de index.html:1955-1959 (`heroSlidesData`), con
--- sus imágenes reales (`uploads/hero1.png`..`hero3.png`, copiadas a
--- `public/uploads/` — resuelven en local porque `urlImagenPublica()` deja
--- pasar una clave relativa tal cual cuando no hay `NEXT_PUBLIC_R2_PUBLIC_URL`
--- configurada) y sus colores de degradado exactos (`gradient_from`/`_to`),
--- para que el encabezado y el muro de video ciclen con los mismos colores
--- que el demo en desarrollo.
+-- Banners reales por categoría (proporcionados por la dueña, 2026-09-22),
+-- copiados a `public/uploads/banners/` — resuelven en local si
+-- `NEXT_PUBLIC_R2_PUBLIC_URL` (`.env.local`) apunta al propio servidor de
+-- desarrollo (`http://localhost:3000`, donde Next.js sirve `public/`
+-- tal cual): el esquema de entorno (`server/config/env.ts`) exige
+-- `z.url()`, así que no puede quedar vacío ni con un placeholder que no
+-- resuelva (`https://cdn.example.com` rompía TODAS las imágenes del
+-- sitio en desarrollo, no solo los banners). Las imágenes ya traen su
+-- propio texto integrado, por eso `brand_label` va en `null` — pintar
+-- una etiqueta encima sería redundante.
 insert into public.banners (title, brand_label, image_url, group_id, gradient_from, gradient_to, position, active)
-select 'Tu tranquilidad, nuestra prioridad', 'VIDEOVIGILANCIA', 'uploads/hero1.png', id, '#2E9E5B', '#0B2A17', 0, true
+select 'Tu seguridad, en todo momento', null, 'uploads/banners/videovigilancia.webp', id, '#0B1E33', '#040B14', 0, true
 from public.groups where slug = 'videovigilancia';
 
 insert into public.banners (title, brand_label, image_url, group_id, gradient_from, gradient_to, position, active)
-select 'Energía eficiente, clima perfecto', 'ENERGÍA Y CLIMATIZACIÓN', 'uploads/hero2.png', id, '#1D5C9E', '#0A2038', 1, true
+select 'Personas autorizadas, solo donde deben estar.', null, 'uploads/banners/control-de-acceso.webp', id, '#0B1E33', '#040B14', 1, true
+from public.groups where slug = 'control-de-acceso';
+
+insert into public.banners (title, brand_label, image_url, group_id, gradient_from, gradient_to, position, active)
+select 'Más control, más seguridad, en un solo sistema.', null, 'uploads/banners/automatizacion-e-intrusion.webp', id, '#0B1E33', '#040B14', 2, true
+from public.groups where slug = 'automatizacion-e-intrusion';
+
+-- Los 2 banners de Energía siguen usando las imágenes literales del demo
+-- (index.html:1955-1959, `heroSlidesData`) — todavía no hay banners reales
+-- para este grupo.
+insert into public.banners (title, brand_label, image_url, group_id, gradient_from, gradient_to, position, active)
+select 'Energía eficiente, clima perfecto', 'ENERGÍA Y CLIMATIZACIÓN', 'uploads/hero2.png', id, '#1D5C9E', '#0A2038', 3, true
 from public.groups where slug = 'energia-y-climatizacion';
 
 insert into public.banners (title, brand_label, image_url, group_id, gradient_from, gradient_to, position, active)
-select 'Energía limpia, ahorro real', 'ENERGÍA SOLAR', 'uploads/hero3.png', id, '#1E8A4F', '#082A19', 2, true
+select 'Energía limpia, ahorro real', 'ENERGÍA SOLAR', 'uploads/hero3.png', id, '#1E8A4F', '#082A19', 4, true
 from public.groups where slug = 'energia-y-climatizacion';
 
 commit;
