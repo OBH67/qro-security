@@ -810,27 +810,38 @@ export async function obtenerReseñasPublicadas(limite: number): Promise<ReviewR
   return data ?? [];
 }
 
+/** Banners del carrusel de la portada (`BannerHero`) — `placement:
+ * 'home'` (0021). Nunca se mezclan con los de catálogo: son destinos
+ * distintos de la misma tabla, no la misma franja reutilizada en dos
+ * lugares (bug real del decimoséptimo incremento: actualizar un banner
+ * de categoría también cambiaba el carrusel de la portada). */
 export async function obtenerBannersActivos(): Promise<BannerRow[]> {
   const supabase = await crearClienteServidor();
   const { data, error } = await supabase
     .from("banners")
     .select("*")
     .eq("active", true)
+    .eq("placement", "home")
     .order("position", { ascending: true });
 
   if (error) throw new Error(`No se pudieron cargar los banners: ${error.message}`);
   return data ?? [];
 }
 
-/** Banner promocional para una página de catálogo (grupo o listado):
- * primero uno propio del grupo; si no hay, uno genérico (`group_id`
- * nulo); si tampoco hay uno genérico, el primero activo — la franja
- * debe persistir en todas las secciones del catálogo, no solo en las
- * que ya tienen un banner propio asignado. `null` únicamente cuando no
- * hay ningún banner activo en todo el catálogo, en vez de inventar
+/** Banner promocional para una página de catálogo (grupo o listado) —
+ * `placement: 'catalogo'` (0021), completamente separado de los de la
+ * portada. Primero uno propio del grupo; si no hay, uno genérico
+ * (`group_id` nulo); si tampoco hay uno genérico, el primero activo —
+ * la franja debe persistir en todas las secciones del catálogo, no solo
+ * en las que ya tienen un banner propio asignado. `null` únicamente
+ * cuando no hay ningún banner de catálogo activo, en vez de inventar
  * contenido. */
 export async function obtenerBannerDeGrupo(groupId: string): Promise<BannerRow | null> {
-  const banners = await obtenerBannersActivos();
+  const supabase = await crearClienteServidor();
+  const { data, error } = await supabase.from("banners").select("*").eq("active", true).eq("placement", "catalogo").order("position", { ascending: true });
+  if (error) throw new Error(`No se pudieron cargar los banners de catálogo: ${error.message}`);
+
+  const banners = data ?? [];
   if (banners.length === 0) return null;
   return banners.find((b) => b.group_id === groupId) ?? banners.find((b) => b.group_id === null) ?? banners[0];
 }

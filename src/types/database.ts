@@ -110,6 +110,10 @@ export interface BannerRow {
   active: boolean;
   starts_at: string | null;
   ends_at: string | null;
+  /** 0021: destino del banner — 'home' (carrusel de la portada,
+   * `BannerHero`) o 'catalogo' (franja de `/catalogo/*`,
+   * `BannerCatalogo`). Nunca se mezclan. */
+  placement: "home" | "catalogo";
 }
 
 export interface ReviewRow {

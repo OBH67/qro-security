@@ -1919,3 +1919,32 @@ además que el carrusel de la portada (`BannerHero`, que lee la misma
 tabla `banners`) sigue funcionando con la imagen real de Videovigilancia
 sin romperse. `npx tsc --noEmit`, `npm run build` y `npm run lint`
 limpios (mismos 14 warnings preexistentes).
+
+### Corrección (2026-09-22): el banner de catálogo cambiaba también el
+carrusel de la portada
+
+Error real: la tanda anterior actualizó la fila de banner de
+Videovigilancia (y agregó las de Control de Acceso y Automatización e
+Intrusión) reutilizando la misma tabla `banners` que ya leía
+`BannerHero` (el carrusel de la portada, `obtenerBannersActivos()` sin
+distinguir destino) — nunca se pidió tocar el hero, solo los banners del
+catálogo, pero al ser la misma fila el cambio se filtró a los dos
+lugares.
+
+**Corrección**: `supabase/migrations/0021_banners_placement.sql` agrega
+`banners.placement` (`'home' | 'catalogo'`, default `'home'` para no
+romper filas existentes). `obtenerBannersActivos()` (portada) ahora
+filtra `placement = 'home'`; `obtenerBannerDeGrupo()` (catálogo) filtra
+`placement = 'catalogo'` — dos consultas separadas, nunca la misma franja
+reutilizada. Se restauró el banner original de la portada para
+Videovigilancia (`hero1.png`, "Tu tranquilidad, nuestra prioridad",
+`placement: 'home'`) como fila aparte, y los 3 banners reales de
+categoría (2026-09-22) quedaron marcados `placement: 'catalogo'`.
+`seed_dev.sql` actualizado para reflejar el mismo esquema en cualquier
+entorno nuevo.
+
+Validado con el servidor de desarrollo real: la portada vuelve a mostrar
+el carrusel original de 3 slides (Videovigilancia/Energía×2) y el
+catálogo de cada categoría sigue mostrando su banner real, sin mezclarse
+entre sí. `npx tsc --noEmit`, `npm run build` y `npm run lint` limpios
+(mismos 14 warnings preexistentes).
