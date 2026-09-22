@@ -2206,3 +2206,61 @@ reset` (o el equivalente) contra un Postgres real y confirmar en el
 navegador que "Para Ti" ahora muestra varias pestañas con productos
 distintos — la validación de arriba descarta errores de sintaxis y de
 referencia por slug, pero no reemplaza correr el script de verdad.
+
+### Corrección (2026-09-22): "cuenta creada pero no pudimos guardar tu
+dirección" + login que no funciona aunque el usuario existe en Auth
+
+La dueña reportó el mensaje de dirección no guardada al registrarse, y
+por separado que ve sus usuarios de prueba en Authentication → Users de
+Supabase pero no puede iniciar sesión con ellos. Es el mismo bug,
+encontrado leyendo `RegistroWizard.tsx` y `cuenta.ts`:
+
+1. **`registrarCliente()`** regresa `requiereVerificacion: true` cuando
+   Supabase Auth no entrega sesión activa al hacer `signUp()` — pasa
+   cuando el proyecto exige confirmar el correo (por defecto en un
+   proyecto de Supabase alojado; en local lo desactiva
+   `supabase/config.toml` `[auth.email] enable_confirmations = false`,
+   pero solo si el contenedor de Auth arrancó con esa configuración).
+2. **`RegistroWizard.tsx`** entonces intentaba un login automático con la
+   contraseña recién creada (`iniciarSesion(...)`) para no obligar a la
+   persona a confirmar antes de comprar (§9.9) — pero **nunca revisaba
+   si ese login funcionó**. Si la cuenta sigue sin confirmar, ese login
+   también falla (silenciosamente, el resultado se descartaba), y el
+   código seguía de largo llamando a `guardarDireccion()`/
+   `guardarDatosFiscales()` sin ninguna sesión real — esas acciones
+   exigen sesión (`conSesion()`, `_guard.ts`) y fallan con "Necesitas
+   iniciar sesión para continuar.", que el wizard traducía al mensaje
+   genérico "no pudimos guardar tu dirección" sin explicar la causa.
+3. **`iniciarSesion()`** en `cuenta.ts` mapeaba CUALQUIER error de
+   `signInWithPassword` (`error.code`) al mismo mensaje "Correo o
+   contraseña incorrectos" — incluido `email_not_confirmed`, que es una
+   cuenta real con la contraseña correcta, simplemente bloqueada por
+   falta de confirmación. Por eso el login manual posterior "no
+   funcionaba" sin ninguna pista de que el problema era la confirmación,
+   no la contraseña.
+
+**Corrección**:
+- `cuenta.ts`: `iniciarSesion()` ahora distingue `error.code ===
+  'email_not_confirmed'` y da un mensaje específico y accionable ("tu
+  correo todavía no está confirmado...") en vez de mezclarlo con
+  credenciales incorrectas.
+- `RegistroWizard.tsx`: el resultado del login automático post-registro
+  ahora SÍ se revisa. Si no hay sesión real, ya no intenta guardar
+  dirección/facturación (fallarían igual, sin sesión) — muestra de una
+  vez el mensaje correcto explicando que falta confirmar el correo, en
+  vez del mensaje engañoso de "no pudimos guardar tu dirección".
+
+**Para desatorar las cuentas de prueba que ya quedaron así** (creadas
+pero sin confirmar): en Supabase Studio → SQL Editor,
+`update auth.users set email_confirmed_at = now() where email = '...';`
+las confirma manualmente sin necesidad de que llegue un correo real. Si
+el entorno es Supabase local, alternativamente `supabase stop` +
+`supabase start` para asegurar que Auth arranque con
+`enable_confirmations = false` de `config.toml`. **Pendiente**:
+confirmar con la dueña si está en Supabase local o en un proyecto
+alojado — en un proyecto alojado, `enable_confirmations = false` de
+`config.toml` NO aplica (ese archivo solo gobierna el CLI local); ahí la
+confirmación se desactiva desde el dashboard del proyecto
+(Authentication → Providers → Email → "Confirm email"), o si se prefiere
+mantenerla activa, hay que configurar un proveedor SMTP real para que el
+correo de confirmación sí llegue. `npx tsc --noEmit` limpio.

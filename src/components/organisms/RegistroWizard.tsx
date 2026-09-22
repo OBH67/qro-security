@@ -98,8 +98,23 @@ export function RegistroWizard() {
     // §9.9: la verificación de correo no bloquea la compra — si Auth no
     // regresó sesión activa (proyecto configurado para exigir confirmación),
     // se intenta iniciar sesión directo con la contraseña recién creada.
+    // El resultado de ese intento SÍ se revisa (antes no): si la cuenta
+    // exige confirmar el correo, este login también falla, y sin sesión
+    // `guardarDireccion`/`guardarDatosFiscales` de abajo fallarían igual
+    // con "Necesitas iniciar sesión para continuar." — un mensaje que no
+    // explica la causa real y hacía parecer que "el registro no guarda la
+    // dirección" cuando el problema de fondo es que la cuenta sigue sin
+    // confirmar.
+    let haySesion = !registro.data.requiereVerificacion;
     if (registro.data.requiereVerificacion) {
-      await iniciarSesion({ email: contacto.email, password: contacto.password });
+      const loginAutomatico = await iniciarSesion({ email: contacto.email, password: contacto.password });
+      haySesion = loginAutomatico.ok;
+    }
+
+    if (!haySesion) {
+      setErrorGeneral("Tu cuenta se creó, pero necesita que confirmes tu correo antes de iniciar sesión. Revisa tu bandeja de entrada (o spam), confirma tu cuenta y vuelve a iniciar sesión para agregar tu dirección.");
+      setEnviando(false);
+      return;
     }
 
     const [resultadoDireccion, resultadoFiscal] = await Promise.all([

@@ -53,7 +53,20 @@ export async function iniciarSesion(datosCrudos: unknown): Promise<ResultadoActi
     const datos = esquemaLogin.parse(datosCrudos);
     const supabase = await crearClienteServidor();
     const { error } = await supabase.auth.signInWithPassword({ email: datos.email, password: datos.password });
-    if (error) throw new Error("Correo o contraseña incorrectos.");
+    if (error) {
+      // `email_not_confirmed` no es "correo o contraseña incorrectos" — es
+      // una cuenta real con la contraseña correcta, bloqueada porque el
+      // proyecto exige confirmar el correo antes de iniciar sesión
+      // (`supabase/config.toml`, `[auth.email] enable_confirmations`, o la
+      // configuración del proyecto si es uno alojado). Mapear los dos
+      // casos al mismo mensaje genérico hacía perder este caso: la cuenta
+      // aparecía creada en Auth pero el login "no funcionaba" sin ninguna
+      // pista de por qué.
+      if (error.code === "email_not_confirmed") {
+        throw new Error("Tu correo todavía no está confirmado. Revisa tu bandeja de entrada (o la carpeta de spam) y confirma tu cuenta antes de iniciar sesión.");
+      }
+      throw new Error("Correo o contraseña incorrectos.");
+    }
     return { ok: true as const };
   });
 }
