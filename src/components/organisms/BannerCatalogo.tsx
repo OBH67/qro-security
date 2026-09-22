@@ -18,6 +18,7 @@ export function BannerCatalogo({ banner }: { banner: BannerRow | null }) {
         aspectRatio: "3 / 1",
         overflow: "hidden",
         marginBottom: 20,
+        borderRadius: 12,
         border: "1px solid var(--border)",
         background: banner.gradient_from ?? "var(--bg-card)",
       }}
