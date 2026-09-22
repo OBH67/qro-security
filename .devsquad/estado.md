@@ -2011,3 +2011,46 @@ con el título sin espacio muerto y llena su caja sin bandas a los lados,
 y que el apilado móvil no cambió. **Pendiente**: confirmar en un entorno
 con el servidor de desarrollo real corriendo contra Supabase antes de
 darlo por cerrado con la misma certeza que las correcciones anteriores.
+
+**Nota (2026-09-22)**: la dueña sí lo validó contra el servidor de
+desarrollo real y funcionó — el 404 que reportó después era caché vieja
+de Turbopack (`.next`) de una sesión anterior, no un bug de este cambio;
+se confirmó comparando el mismo entorno en el commit anterior (200 ahí)
+contra este commit con caché corrupta (404), y quedó resuelto al borrar
+`.next` y volver a levantar `next dev`.
+
+### Corrección (2026-09-22): hueco vacío debajo del banner al entrar a
+una categoría hoja (tercer nivel, sin hijas)
+
+La restructuración anterior (mover el título a la columna izquierda del
+grid) usaba `grid-template-areas` con el banner ocupando 2 filas
+("titulo" + "filtros") para que arrancara alineado con el título. Esas
+2 filas son PISTAS DE GRID COMPARTIDAS entre ambas columnas — CSS Grid
+reserva ese alto combinado sin importar cuál de las dos columnas lo
+necesita. Funcionaba bien en una categoría o subcategoría con hijas
+(el panel de filtros, con su sección "Categorías" poblada, ya era lo
+bastante alto). Pero en una categoría hoja (tercer nivel, sin hijas:
+"Categorías" se oculta sola, ver decimonoveno incremento) el panel de
+filtros queda corto — y el grid igual reservaba el alto que pedía el
+banner en esas 2 filas, dejando un hueco vacío entre el panel de
+filtros corto y "Ordenar por"/la cuadrícula de productos (que recién
+arrancaban después de que esas filas "oficialmente" terminaran).
+**Aprendizaje permanente**: `grid-template-areas` con un ítem que
+abarca varias filas fuerza esas filas a un alto mínimo compartido con
+TODAS las columnas que las cruzan — nunca usarlo para "alinear el tope
+de dos bloques de alto independiente"; para eso alcanza con que cada
+columna sea un solo hijo del grid con su propio flujo interno normal
+(`alignItems: "start"` ya alinea los topes sin acoplar los altos).
+
+**Corrección**: se quitó `gridTemplateAreas` por completo. El grid
+vuelve a ser de 2 columnas simples; el primer hijo agrupa migas + título
++ conteo + panel de filtros (antes repartidos en 2 divs con área
+propia), el segundo agrupa banner + resto del contenido — cada uno un
+bloque de flujo normal, así que el alto de una columna nunca fuerza el
+de la otra. Mismo orden en el DOM, mismo comportamiento en móvil.
+
+Validado con una réplica estática (Playwright/Chromium, mismo método que
+la corrección anterior — este entorno sigue sin Supabase real) tanto con
+panel de filtros alto (con "Categorías") como corto (sin ella, como en
+"Cámaras IP y NVRs"): en ambos casos "Ordenar por" y la cuadrícula
+arrancan justo debajo del banner, sin hueco. `npx tsc --noEmit` limpio.

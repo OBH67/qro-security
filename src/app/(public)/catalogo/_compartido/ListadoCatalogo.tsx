@@ -79,21 +79,27 @@ export async function ListadoCatalogo({
 
   return (
     <section style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "28px 20px 80px" }}>
-      {/* El encabezado (migas/título/conteo) y el panel de filtros viven en
-          la columna izquierda del `grid` de abajo, vía `grid-template-areas`
-          — no como bloque suelto arriba de las dos columnas. Puesto ahí,
-          antes dejaban un espacio muerto a la derecha (el ancho de la
-          columna de productos, sin nada dentro) antes de que empezara el
-          banner: el banner recién arrancaba varias filas más abajo, a la
-          altura del panel de filtros. Con el encabezado confinado a la
-          columna izquierda, el banner (área "banner") puede arrancar en la
-          misma fila, aprovechando ese espacio en vez de dejarlo vacío. El
+      {/* El encabezado (migas/título/conteo) y el panel de filtros van
+          juntos en el PRIMER hijo del grid (columna izquierda); el banner
+          y el resto del contenido van juntos en el SEGUNDO hijo (columna
+          derecha) — cada columna es un solo bloque con su propio flujo
+          interno normal, así que el banner arranca alineado con el
+          título (nada suelto arriba de las dos columnas dejando espacio
+          vacío) sin depender de filas de grid compartidas entre columnas.
+          Antes esto se resolvía con `grid-template-areas` poniendo el
+          banner a ocupar 2 filas ("titulo" + "filtros"), pero esas filas
+          se comparten entre ambas columnas: en una categoría hoja (sin
+          hijas, donde "Categorías" se oculta y el panel de filtros queda
+          corto) el grid igual reservaba el alto que pedía el banner,
+          dejando un hueco vacío debajo del panel de filtros antes de que
+          empezara "Ordenar por". Con cada columna como un solo bloque
+          independiente, su alto ya no depende de la otra columna. El
           orden en el DOM no cambia (migas → título → conteo → filtros →
-          banner → resto), solo su posición visual — así la lectura por
+          banner → resto), solo su agrupación visual — la lectura por
           teclado/lector de pantalla y el apilado en móvil siguen siendo
           los mismos de antes. */}
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,260px) minmax(0,1fr)", gridTemplateAreas: `"titulo banner" "filtros banner" "filtros contenido"`, gap: 32, alignItems: "start" }} className="listado-grid">
-        <div style={{ gridArea: "titulo" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,260px) minmax(0,1fr)", gap: 32, alignItems: "start" }} className="listado-grid">
+        <div>
           <Migas items={migas} />
           <h1 style={{ margin: 0 }}>{titulo}</h1>
           <p className="font-data" style={{ margin: "8px 0 0", fontSize: 13, color: "var(--text-muted)" }}>
@@ -112,21 +118,19 @@ export async function ListadoCatalogo({
           <BarraFiltrosMovil resultados={total} ordenActual={filtros.orden} className="filtros-barra-movil-envoltura">
             <PanelFiltros basePath={basePath} filtros={filtros} opcionesMarca={opcionesMarca} facetasAtributo={facetasAtributo} categorias={categorias} />
           </BarraFiltrosMovil>
+
+          <div className="filtros-panel-escritorio">
+            <PanelFiltros basePath={basePath} filtros={filtros} opcionesMarca={opcionesMarca} facetasAtributo={facetasAtributo} categorias={categorias} />
+          </div>
         </div>
 
-        <div className="filtros-panel-escritorio" style={{ gridArea: "filtros" }}>
-          <PanelFiltros basePath={basePath} filtros={filtros} opcionesMarca={opcionesMarca} facetasAtributo={facetasAtributo} categorias={categorias} />
-        </div>
-
-        {/* El banner va SOLO sobre la columna de productos, nunca de ancho
-            completo por encima del panel de filtros (referencia de la
-            dueña: Syscom) — por eso vive en su propia columna, nunca como
-            franja aparte arriba de las dos. */}
-        <div style={{ gridArea: "banner" }}>
+        <div>
+          {/* El banner va SOLO sobre la columna de productos, nunca de ancho
+              completo por encima del panel de filtros (referencia de la
+              dueña: Syscom) — por eso vive en su propia columna, nunca como
+              franja aparte arriba de las dos. */}
           <BannerCatalogo banner={banner} />
-        </div>
 
-        <div style={{ gridArea: "contenido" }}>
           <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", paddingBottom: 16, borderBottom: "1px solid var(--border)" }}>
             <ChipsFiltrosActivos basePath={basePath} filtros={filtros} nombresMarca={nombresMarcaPorSlug} etiquetasAtributo={etiquetasAtributoPorClave} />
             <SelectOrden ordenActual={filtros.orden} />
@@ -152,7 +156,7 @@ export async function ListadoCatalogo({
       <style>{`
         .filtros-barra-movil-envoltura { display: none; }
         @media (max-width: 900px) {
-          .listado-grid { grid-template-columns: 1fr !important; grid-template-areas: "titulo" "banner" "contenido" !important; }
+          .listado-grid { grid-template-columns: 1fr !important; }
           .filtros-panel-escritorio { display: none; }
           .filtros-barra-movil-envoltura { display: block; }
         }
