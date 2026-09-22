@@ -50,14 +50,31 @@ async function procesarFila(admin: ReturnType<typeof crearClienteAdmin>, mapa: R
  * con éxito — nunca dentro de la transacción SQL (el envío real es un
  * efecto de red, no algo que deba bloquear ni revertir un cambio de
  * estado ya confirmado, criterio C3.2).
+ *
+ * Por eso esta función NUNCA deja que un error se propague hacia quien
+ * la llama: el criterio C3.2 lo decía en el comentario de arriba, pero
+ * antes no se cumplía de verdad — no había ningún `try/catch`, así que
+ * cualquier falla de esta franja (canal de correo/WhatsApp mal
+ * configurado, red caída, hasta un error de import como el módulo
+ * `resend` faltante) reventaba hacia arriba y hacía que la acción
+ * completa (crear el pedido, confirmar un comprobante, etc.) se
+ * reportara como fallida — aunque el cambio de estado ya estuviera
+ * comprometido en la base de datos. Se atrapa aquí, se deja constancia
+ * en el log del servidor, y listo: las filas de `notification_outbox`
+ * se quedan en `pendiente` y las recoge el cron de reintentos
+ * (`reintentarNotificacionesVencidas`), así que nada se pierde.
  */
 export async function despacharPendientes(): Promise<void> {
-  const admin = crearClienteAdmin();
-  const { data: filas } = await admin.from("notification_outbox").select("*").eq("status", "pendiente").limit(50);
-  if (!filas || filas.length === 0) return;
+  try {
+    const admin = crearClienteAdmin();
+    const { data: filas } = await admin.from("notification_outbox").select("*").eq("status", "pendiente").limit(50);
+    if (!filas || filas.length === 0) return;
 
-  const mapa = canales();
-  await Promise.all(filas.map((f) => procesarFila(admin, mapa, f as FilaOutbox)));
+    const mapa = canales();
+    await Promise.all(filas.map((f) => procesarFila(admin, mapa, f as FilaOutbox)));
+  } catch (error) {
+    console.error("[despacharPendientes] no se pudo despachar notificaciones pendientes:", error);
+  }
 }
 
 /** Llamado por `/api/cron/reintentar-notificaciones`: toma lo que quedó

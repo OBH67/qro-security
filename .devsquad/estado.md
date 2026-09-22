@@ -2264,3 +2264,45 @@ confirmación se desactiva desde el dashboard del proyecto
 (Authentication → Providers → Email → "Confirm email"), o si se prefiere
 mantenerla activa, hay que configurar un proveedor SMTP real para que el
 correo de confirmación sí llegue. `npx tsc --noEmit` limpio.
+
+### Corrección (2026-09-22): un error del canal de notificaciones hacía
+parecer que el pedido no se había creado, aunque sí
+
+La dueña reportó `Module not found: Can't resolve 'resend'` (falta
+`npm install` en su máquina — no es bug de código, `resend` sigue en
+`package.json`) justo al completar una compra, y con razón hizo notar el
+problema de fondo: "los errores no deben bloquear otros procesos ni
+tirar la app, si algo falla se loguea y se muestra el error mas no
+afecta otros procesos".
+
+**Causa real**: `crearPedido()` (`mutations/pedidos.ts`) llama a
+`despacharPendientes()` justo DESPUÉS de que `crear_pedido()` (función
+SQL) ya hizo commit del pedido — a propósito, según el comentario ya
+existente ahí citando C3.2: "el envío real es un efecto de red, no algo
+que deba bloquear ni revertir un cambio de estado ya confirmado". El
+comentario decía la intención correcta, pero el código no la cumplía:
+`despacharPendientes()` no tenía ningún `try/catch` — cualquier falla en
+esa franja (canal de correo mal configurado, red caída, hasta un error
+de import como `resend` faltante) se propagaba hacia arriba y hacía que
+la Server Action completa reportara error al cliente, **aunque el
+pedido ya estuviera guardado**. Mismo patrón en otras 10 llamadas a
+`despacharPendientes()` (confirmar comprobante, aprobar/rechazar
+devolución, marcar enviado/entregado, etc. — `grep` confirmó 11 sitios,
+ninguno con guarda).
+
+**Corrección**: se envolvió el cuerpo de `despacharPendientes()` en un
+`try/catch` que solo hace `console.error` y regresa — nunca propaga.
+Arreglarlo en un solo lugar (el despachador) cubre los 11 sitios que lo
+llaman, en vez de parchar cada `mutation` por separado. Las filas de
+`notification_outbox` que no se lograron enviar se quedan en
+`pendiente`/`fallido` tal como ya estaban diseñadas para quedar — el
+cron de reintentos (`reintentarNotificacionesVencidas`, que si se deja
+reventar en el endpoint del cron, sin cambios, porque ahí sí es
+razonable que un 500 quede en el log de Vercel Cron) las recoge después,
+así que ningún correo/WhatsApp se pierde, solo se retrasa.
+
+Validado por lectura del código (no fue posible instalar `resend` ni
+correr el flujo de compra real contra Supabase en este entorno) y
+`npx tsc --noEmit` limpio. **Pendiente**: confirmar en el servidor real,
+una vez que `npm install` esté al corriente, que completar una compra ya
+no muestra error aunque el canal de correo falle.
