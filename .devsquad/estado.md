@@ -2352,3 +2352,42 @@ existente y probado — `background: var(--bg-hover)`, `color:
 var(--text-disabled)`, `cursor: not-allowed` — solo cambia CUÁNDO se
 aplica) y `npx tsc --noEmit` limpio. No se pudo confirmar visualmente
 contra el servidor real en este entorno.
+
+### Corrección (2026-09-22): el checkbox obligatorio de "Generar pedido"
+era casi invisible — bug de contraste, no solo de descubribilidad
+
+Con el botón ya mostrándose gris de verdad (corrección anterior), la
+dueña marcó una dirección y preguntó por qué seguía bloqueado — el
+checkbox "Entiendo que mi pedido se confirma al subir mi comprobante de
+pago." (`agree`, la condición que faltaba) no se veía en absoluto en su
+captura. Se midieron los píxeles exactos de la imagen: el borde del
+cuadrito sin marcar caía en `(22,40,58)` contra un fondo de tarjeta en
+`(15,29,43)` — coincide con `--border-subtle` (`#16283A`) sobre
+`--bg-card` (`#0F1D2B`), dos azules casi idénticos. No era una cuestión
+de que el checkbox no se notara por su tamaño o posición: literalmente
+no hay contraste suficiente para distinguir el borde del fondo.
+
+El mismo patrón exacto (mismo bloque de estilo, copiado) vive en
+`RegistroWizard.tsx` → `CasillaVisual` (la casilla "Acepto el aviso de
+privacidad y los términos y condiciones" del paso 3 de "Crear cuenta"),
+que gatea el mismo `disabled` del botón "Crear cuenta" — mismo bug,
+mismo riesgo de que alguien se quede atorado sin saber por qué.
+
+**Corrección**: en los dos, el borde del cuadrito SIN marcar cambió de
+`var(--border-subtle)` a `var(--border-input)` (`#52708F` — el mismo
+tono ya usado en los campos de formulario reales del sitio, pensado
+para contrastar contra `--bg-card`/`--bg-surface`). El estado marcado
+no cambia (sigue siendo `--accent` sólido).
+
+**Aprendizaje permanente**: `--border-subtle` está pensado para
+elementos pasivos/decorativos (separadores, el indicador de un paso ya
+completado, un borde que no necesita llamar la atención) — nunca para
+el borde de un control interactivo que la persona necesita VER para
+saber que existe y debe usarlo (checkbox, radio, campo). Para esos,
+`--border-input` es el token correcto.
+
+Validado midiendo los valores hex exactos de los tokens en
+`globals.css` (`--border-input: #52708f` vs `--bg-card: #0f1d2b` — salto
+de contraste real, contra `--border-subtle: #16283a`, casi el mismo tono
+que el fondo) y `npx tsc --noEmit` limpio. No se pudo confirmar
+visualmente contra el servidor real en este entorno.

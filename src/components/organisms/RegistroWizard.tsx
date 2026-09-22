@@ -285,7 +285,11 @@ function CasillaVisual({ marcada }: { marcada: boolean }) {
     <span
       style={{
         width: 18, height: 18, borderRadius: 3, flex: "0 0 auto", display: "grid", placeItems: "center",
-        border: `1px solid ${marcada ? "var(--accent)" : "var(--border-subtle)"}`,
+        // `--border-subtle` (casi el mismo tono que el fondo de la
+        // tarjeta) dejaba el cuadrito sin marcar prácticamente invisible
+        // — justo la casilla que bloquea "Crear cuenta" en el paso 3
+        // (ver `disabled` más abajo). `--border-input` da contraste real.
+        border: `1px solid ${marcada ? "var(--accent)" : "var(--border-input)"}`,
         background: marcada ? "var(--accent)" : "transparent", color: "var(--bg-base)", fontSize: 12,
       }}
     >

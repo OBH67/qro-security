@@ -200,7 +200,13 @@ export function CheckoutForm({
           {totalConSaldo === 0 ? "Cubierto con saldo · sin transferencia" : "IVA incluido · Envío se confirma con tu asesor"}
         </p>
         <button type="button" onClick={() => setAgree((v) => !v)} style={{ display: "flex", gap: 12, alignItems: "flex-start", textAlign: "left", fontSize: 13.5, lineHeight: 1.5, color: "var(--text-muted)", marginBottom: 18 }}>
-          <span style={{ width: 18, height: 18, borderRadius: 3, flex: "0 0 auto", display: "grid", placeItems: "center", border: `1px solid ${agree ? "var(--accent)" : "var(--border-subtle)"}`, background: agree ? "var(--accent)" : "transparent", color: "var(--bg-base)", fontSize: 12 }}>
+          {/* `--border-subtle` (casi el mismo tono que `--bg-card`, el
+              fondo de esta tarjeta) dejaba el cuadrito sin marcar
+              prácticamente invisible — justo la casilla que hay que ver
+              y marcar para poder generar el pedido. `--border-input` (el
+              mismo tono que ya usan los campos de formulario) da
+              contraste real contra el fondo. */}
+          <span style={{ width: 18, height: 18, borderRadius: 3, flex: "0 0 auto", display: "grid", placeItems: "center", border: `1px solid ${agree ? "var(--accent)" : "var(--border-input)"}`, background: agree ? "var(--accent)" : "transparent", color: "var(--bg-base)", fontSize: 12 }}>
             {agree && "✓"}
           </span>
           <span>
