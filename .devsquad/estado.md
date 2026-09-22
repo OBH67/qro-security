@@ -2391,3 +2391,44 @@ Validado midiendo los valores hex exactos de los tokens en
 de contraste real, contra `--border-subtle: #16283a`, casi el mismo tono
 que el fondo) y `npx tsc --noEmit` limpio. No se pudo confirmar
 visualmente contra el servidor real en este entorno.
+
+### Corrección (2026-09-22): "function gen_random_bytes(integer) does not
+exist" al generar un pedido — bug de `search_path`, específico de
+proyectos de Supabase alojados
+
+Con el checkbox ya visible, la dueña marcó dirección + checkbox y le
+salió este error de Postgres al darle "Generar pedido".
+
+**Causa raíz**: `generar_folio()` (`0008_funciones_transaccionales.sql`,
+la función que arma el folio corto de cada pedido/devolución) es
+`security definer` con `set search_path = public` — correcto, evita que
+alguien secuestre el search_path de una función con privilegios
+elevados. Llama a `gen_random_bytes()`, de la extensión `pgcrypto`, que
+`0001_extensiones.sql` instala con `create extension if not exists
+pgcrypto with schema public`. En Supabase LOCAL (`supabase start`) eso
+efectivamente la deja en `public`. Pero en un proyecto de Supabase
+ALOJADO (el caso real de la dueña), pgcrypto ya viene preinstalada por
+la plataforma en el schema `extensions`, no en `public` — así que el
+`create extension if not exists` de 0001 no hace nada (ya existe) y
+`gen_random_bytes()` se queda fuera del `search_path` de la función.
+Por eso el bug nunca apareció en las pruebas contra Supabase local de
+incrementos anteriores, solo contra el proyecto real.
+
+**Corrección**: `0022_generar_folio_search_path.sql` — una migración
+nueva (no se edita 0008, ya aplicada) que agrega `extensions` al
+`search_path` de la función: `alter function
+public.generar_folio(text, int) set search_path = public, extensions;`.
+No hace falta reescribir el cuerpo de la función, solo esa
+configuración. `grep` confirmó que `generar_folio()` es el ÚNICO sitio
+de todas las migraciones que llama a una función de `pgcrypto`
+(`gen_random_bytes`) — el fix cubre también a `crear_pedido()` (0010/
+0011) y a la creación de folios de devoluciones (0012), que llaman a
+`generar_folio()` internamente y por ser `security definer` corren con
+el `search_path` que declara la función, no el de quien la llama.
+
+**Pendiente, acción de la dueña**: esta migración vive en el repo pero
+NO se aplica sola a un proyecto alojado — hay que correrla ahí (`supabase
+db push` con la CLI apuntando al proyecto remoto, o pegar el contenido
+de `0022_generar_folio_search_path.sql` directo en Supabase Studio → SQL
+Editor → Run). No se pudo aplicar ni probar en este entorno (sin acceso
+al proyecto real).
