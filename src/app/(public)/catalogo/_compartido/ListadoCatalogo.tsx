@@ -79,36 +79,54 @@ export async function ListadoCatalogo({
 
   return (
     <section style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "28px 20px 80px" }}>
-      <Migas items={migas} />
-      <h1 style={{ margin: 0 }}>{titulo}</h1>
-      <p className="font-data" style={{ margin: "8px 0 0", fontSize: 13, color: "var(--text-muted)" }}>
-        {total} {total === 1 ? "resultado" : "resultados"}
-      </p>
+      {/* El encabezado (migas/título/conteo) y el panel de filtros viven en
+          la columna izquierda del `grid` de abajo, vía `grid-template-areas`
+          — no como bloque suelto arriba de las dos columnas. Puesto ahí,
+          antes dejaban un espacio muerto a la derecha (el ancho de la
+          columna de productos, sin nada dentro) antes de que empezara el
+          banner: el banner recién arrancaba varias filas más abajo, a la
+          altura del panel de filtros. Con el encabezado confinado a la
+          columna izquierda, el banner (área "banner") puede arrancar en la
+          misma fila, aprovechando ese espacio en vez de dejarlo vacío. El
+          orden en el DOM no cambia (migas → título → conteo → filtros →
+          banner → resto), solo su posición visual — así la lectura por
+          teclado/lector de pantalla y el apilado en móvil siguen siendo
+          los mismos de antes. */}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,260px) minmax(0,1fr)", gridTemplateAreas: `"titulo banner" "filtros banner" "filtros contenido"`, gap: 32, alignItems: "start" }} className="listado-grid">
+        <div style={{ gridArea: "titulo" }}>
+          <Migas items={migas} />
+          <h1 style={{ margin: 0 }}>{titulo}</h1>
+          <p className="font-data" style={{ margin: "8px 0 0", fontSize: 13, color: "var(--text-muted)" }}>
+            {total} {total === 1 ? "resultado" : "resultados"}
+          </p>
 
-      {/* Móvil: disparador pegajoso ("Filtros y orden") que abre un cajón
-          desde abajo (index.html:596/600) — oculto en escritorio.
-          `position:sticky` "se pega" dentro de los límites de su
-          contenedor de bloque más cercano — por eso la clase que lo
-          muestra/oculta va en el MISMO nodo que `position:sticky`, nunca
-          en un `<div>` envoltorio aparte que solo mide lo alto de la
-          barra: si el contenedor termina ahí, no hay margen para que se
-          quede pegada mientras se hace scroll por el resto de la página. */}
-      <BarraFiltrosMovil resultados={total} ordenActual={filtros.orden} className="filtros-barra-movil-envoltura">
-        <PanelFiltros basePath={basePath} filtros={filtros} opcionesMarca={opcionesMarca} facetasAtributo={facetasAtributo} categorias={categorias} />
-      </BarraFiltrosMovil>
+          {/* Móvil: disparador pegajoso ("Filtros y orden") que abre un
+              cajón desde abajo (index.html:596/600) — oculto en
+              escritorio. `position:sticky` "se pega" dentro de los
+              límites de su contenedor de bloque más cercano — por eso la
+              clase que lo muestra/oculta va en el MISMO nodo que
+              `position:sticky`, nunca en un `<div>` envoltorio aparte que
+              solo mide lo alto de la barra: si el contenedor termina ahí,
+              no hay margen para que se quede pegada mientras se hace
+              scroll por el resto de la página. */}
+          <BarraFiltrosMovil resultados={total} ordenActual={filtros.orden} className="filtros-barra-movil-envoltura">
+            <PanelFiltros basePath={basePath} filtros={filtros} opcionesMarca={opcionesMarca} facetasAtributo={facetasAtributo} categorias={categorias} />
+          </BarraFiltrosMovil>
+        </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,260px) minmax(0,1fr)", gap: 32, alignItems: "start" }} className="listado-grid">
-        <div className="filtros-panel-escritorio">
+        <div className="filtros-panel-escritorio" style={{ gridArea: "filtros" }}>
           <PanelFiltros basePath={basePath} filtros={filtros} opcionesMarca={opcionesMarca} facetasAtributo={facetasAtributo} categorias={categorias} />
         </div>
 
-        <div>
-          {/* El banner va SOLO sobre la columna de productos, nunca de
-              ancho completo por encima del panel de filtros (referencia
-              de la dueña: Syscom) — por eso vive adentro de esta columna,
-              no como franja aparte arriba de las dos columnas. */}
+        {/* El banner va SOLO sobre la columna de productos, nunca de ancho
+            completo por encima del panel de filtros (referencia de la
+            dueña: Syscom) — por eso vive en su propia columna, nunca como
+            franja aparte arriba de las dos. */}
+        <div style={{ gridArea: "banner" }}>
           <BannerCatalogo banner={banner} />
+        </div>
 
+        <div style={{ gridArea: "contenido" }}>
           <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", paddingBottom: 16, borderBottom: "1px solid var(--border)" }}>
             <ChipsFiltrosActivos basePath={basePath} filtros={filtros} nombresMarca={nombresMarcaPorSlug} etiquetasAtributo={etiquetasAtributoPorClave} />
             <SelectOrden ordenActual={filtros.orden} />
@@ -134,7 +152,7 @@ export async function ListadoCatalogo({
       <style>{`
         .filtros-barra-movil-envoltura { display: none; }
         @media (max-width: 900px) {
-          .listado-grid { grid-template-columns: 1fr !important; }
+          .listado-grid { grid-template-columns: 1fr !important; grid-template-areas: "titulo" "banner" "contenido" !important; }
           .filtros-panel-escritorio { display: none; }
           .filtros-barra-movil-envoltura { display: block; }
         }
