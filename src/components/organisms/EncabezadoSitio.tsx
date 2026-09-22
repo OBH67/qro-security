@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import type { GrupoConNavegacion, NodoNavegacionSubcategoria } from "@/server/db/queries/catalogo";
 import { useCarrito } from "@/components/providers/CarritoProvider";
+import { usePasoCicloHero } from "@/components/providers/CicloHeroProvider";
 
 /**
  * Traducción literal de `index.html:39-271` (barra flotante + encabezado +
@@ -46,8 +47,6 @@ const HERO_SLIDES = [
   { a: "#1D5C9E", b: "#0A2038", grupoCodigo: "ec" },
   { a: "#1E8A4F", b: "#082A19", grupoCodigo: "ec" },
 ] as const;
-
-const CICLO_DEGRADADO_MS = 5000;
 
 const SERVICIOS = [
   { tipo: "monitoreo", nombre: "Monitoreo de alarmas 24/7", linea: "Conectamos tu sistema a central de monitoreo, atendemos eventos y te enviamos reportes." },
@@ -125,7 +124,6 @@ export function EncabezadoSitio({
   const [servAbierto, setServAbierto] = useState(false);
   const [grupoMegaId, setGrupoMegaId] = useState(grupos[0]?.id ?? "");
   const [esMovil, setEsMovil] = useState(false);
-  const [heroSlideIdx, setHeroSlideIdx] = useState(0);
   const [flash, setFlash] = useState(false);
   const carrito = useCarrito();
   const cantidadPrevia = useRef(carrito.cantidadTotal);
@@ -133,28 +131,17 @@ export function EncabezadoSitio({
   const esHome = pathname === "/";
 
   const grupoActivoMega = grupos.find((g) => g.id === grupoMegaId) ?? grupos[0];
-  const hs = HERO_SLIDES[heroSlideIdx];
 
   // Ciclo del degradado del encabezado — index.html:1987 (`this.cycle`, 5 s).
-  // Solo corre fuera de la portada, el fondo es sólido (ver comentario de
-  // cabecera, punto 1). El índice se calcula desde `Date.now()` (reloj de
-  // pared), no incrementando desde donde se quedó: `EncabezadoSitio` vive
-  // en el layout raíz y nunca se desmonta al navegar, pero este efecto sí
-  // apaga el intervalo mientras `!esHome` — sin resincronizar aquí, al
-  // volver a la portada el índice se quedaba congelado en lo que fuera que
-  // alcanzó antes de salir, mientras `BannerHero` (que sí se desmonta y
-  // vuelve a montarse cada vez que se entra a `/`) reinicia su propio
-  // carrusel — dos relojes independientes que solo coincidían por
-  // casualidad. Calculándolo desde `Date.now()` con el mismo período
-  // (`CICLO_DEGRADADO_MS`) en los dos componentes, ambos quedan
-  // sincronizados sin importar cuánto tiempo se estuvo fuera de la portada.
-  useEffect(() => {
-    if (!esHome) return;
-    const sincronizar = () => setHeroSlideIdx(Math.floor(Date.now() / CICLO_DEGRADADO_MS) % HERO_SLIDES.length);
-    sincronizar();
-    const id = setInterval(sincronizar, CICLO_DEGRADADO_MS);
-    return () => clearInterval(id);
-  }, [esHome]);
+  // Solo se pinta en la portada, el resto usa fondo sólido (ver comentario
+  // de cabecera, punto 1). El "paso" viene de `CicloHeroProvider`, el mismo
+  // reloj único que usa `BannerHero` para su carrusel — antes cada uno
+  // llevaba su propio `setInterval`/estado, "sincronizados" solo porque
+  // compartían período por convención; se desincronizaban en cuanto uno se
+  // desmontaba y el otro no (ver el comentario del Provider para el detalle
+  // completo). Con un solo reloj compartido no hay nada que resincronizar.
+  const paso = usePasoCicloHero();
+  const hs = HERO_SLIDES[paso % HERO_SLIDES.length];
 
   // Ancho de pantalla (index.html:1988, `mobile: window.innerWidth < 760`).
   useEffect(() => {

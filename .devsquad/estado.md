@@ -2107,3 +2107,63 @@ Supabase). `npx tsc --noEmit` limpio. **Pendiente**: confirmar
 navegando catálogo → portada varias veces con distintos tiempos de
 espera contra el servidor real antes de darlo por cerrado con la misma
 certeza que las correcciones anteriores.
+
+### Refactor (2026-09-22): un solo reloj compartido para el degradado del
+encabezado y el carrusel del hero, en vez de dos `Date.now()` separados
+
+La dueña, al ver la corrección anterior, propuso algo mejor: en vez de
+que el encabezado y el hero calculen cada uno por su cuenta (aunque sea
+con la misma fórmula), que haya un solo punto que controle el timing.
+Tenía razón — dos cálculos independientes que solo coinciden porque
+comparten la misma fórmula es frágil (cualquiera que cambie el período
+en un solo lado, o el largo de un arreglo, rompe la sincronía otra vez
+sin que el compilador avise). Se evaluó meterlos dentro de un mismo
+contenedor visual (`<div>`), pero el encabezado vive en `SitioConChrome`
+(la raíz de cada grupo de rutas — `(public)`, `(auth)`, `(cuenta)` — para
+persistir sin desmontarse al navegar entre pantallas) mientras el hero
+vive únicamente dentro del árbol de la página de inicio: envolverlos en
+un mismo nodo del DOM habría exigido sacar el encabezado de la raíz y
+renderizarlo solo desde la portada, perdiendo esa persistencia (el menú
+móvil, la animación del carrito y la barra flotante se reiniciarían en
+cada navegación, no solo al entrar/salir de la portada).
+
+**Solución**: `CicloHeroProvider` (`src/components/providers/
+CicloHeroProvider.tsx`), un Context nuevo con el mismo patrón que
+`CarritoProvider`/`ToastProvider`, montado en `SitioConChrome` (junto al
+encabezado, envolviendo también `{children}` — así cubre tanto
+`EncabezadoSitio` como `BannerHero` cuando este último existe). Lleva
+un único `setInterval` de 5 s que incrementa un contador (`paso`) desde
+que carga el sitio, sin reiniciarse ni congelarse nunca — no vuelve a
+haber "cuál se desmontó y cuál no" porque ya no hay dos relojes que
+puedan desincronizarse entre sí. El Provider no sabe nada de banners ni
+de colores: expone el `paso` crudo (sin aplicar el módulo), y cada
+consumidor aplica `paso % <su propio largo>` (el encabezado, contra sus
+3 colores fijos; el hero, contra sus banners reales de la base de
+datos) — así ambos quedan atados al mismo reloj sin que el Provider
+necesite conocer sus arreglos.
+
+Con esto, `BannerHero` deja de necesitar un `useState`/`useEffect`
+propios para el ciclo automático — solo le queda `indiceManual` (un
+estado local mínimo para el clic en los puntos del carrusel, que se
+limpia solo en el siguiente "paso" del reloj compartido para retomar el
+auto-avance, igual que antes). `EncabezadoSitio` perdió por completo su
+`useState`/`useEffect` del degradado.
+
+**Aprendizaje permanente**: cuando dos componentes en árboles distintos
+(uno persistente, otro que se monta/desmonta) necesitan quedar
+sincronizados en algo que cambia con el tiempo, la solución correcta no
+es "que ambos calculen lo mismo por su cuenta" (frágil, se rompe en
+silencio si algo cambia de un solo lado) ni "meterlos en el mismo nodo
+del DOM" (a veces imposible sin sacrificar la arquitectura de layouts
+persistentes de Next.js) — es un Context/Provider colocado en el
+ancestro común más alto que YA es persistente frente al remount del
+componente más profundo, exponiendo el dato crudo (aquí, el contador de
+pasos) para que cada consumidor lo traduzca a su propio dominio.
+
+Validado con `npx tsc --noEmit` y `npm run build` (compila y tipa
+limpio; el build se detiene después solo por variables de entorno
+ausentes en este sandbox, igual que en incrementos anteriores) —
+seguía sin ser posible probar contra Supabase real en este entorno.
+**Pendiente**: la misma validación visual pendiente de la corrección
+anterior (navegar catálogo → portada con distintos tiempos de espera
+contra el servidor real).

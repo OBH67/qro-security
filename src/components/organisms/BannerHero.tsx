@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { BannerRow, ReviewRow } from "@/types/database";
 import { urlImagenPublica } from "@/lib/imagenes";
 import { PanelResenas } from "@/components/organisms/PanelResenas";
+import { usePasoCicloHero } from "@/components/providers/CicloHeroProvider";
 
 /**
  * index.html:276-338 — sección completa del "muro de video" de la
@@ -25,7 +26,6 @@ import { PanelResenas } from "@/components/organisms/PanelResenas";
 
 const DEGRADADO_A_DEFECTO = "#2E9E5B";
 const DEGRADADO_B_DEFECTO = "#0B2A17";
-const CICLO_MS = 5000;
 
 export function BannerHero({
   banners,
@@ -36,25 +36,29 @@ export function BannerHero({
   grupoSlugPorId: Map<string, string>;
   reseñas: ReviewRow[];
 }) {
-  // Arranca en 0 (igual en servidor y cliente, sin riesgo de mismatch de
-  // hidratación) y se resincroniza con el reloj de pared (`Date.now()`) en
-  // el efecto de abajo, que solo corre en el cliente. Sin esto, `indice`
-  // siempre arrancaba en 0 al montar — y este componente vive dentro del
-  // árbol de la portada, así que se desmonta al salir de `/` y se vuelve a
-  // montar al regresar. El color de fondo de `EncabezadoSitio` (que vive en
-  // el layout raíz, nunca se desmonta, y calcula su propio índice también
-  // desde `Date.now()` con el mismo período) casi nunca coincidía con el
-  // slide que se veía aquí al volver a la portada.
-  const [indice, setIndice] = useState(0);
+  // `paso` viene de `CicloHeroProvider` — el mismo reloj único que usa
+  // `EncabezadoSitio` para el degradado del encabezado (ver el comentario
+  // del Provider para el porqué: antes cada uno llevaba su propio
+  // `setInterval`, y se desincronizaban en cuanto uno se desmontaba y el
+  // otro no). `indiceManual` es el único estado propio que le queda a este
+  // componente: al hacer clic en un punto del carrusel se ve ese slide de
+  // inmediato, y se limpia solo en el siguiente "paso" del reloj
+  // compartido para retomar el auto-avance — mismo comportamiento que
+  // tenía el `setInterval` incremental de antes, que también dejaba de
+  // lado la selección manual en el siguiente tic.
+  const paso = usePasoCicloHero();
+  const [indiceManual, setIndiceManual] = useState<number | null>(null);
+  const primerPaso = useRef(true);
 
   useEffect(() => {
-    if (banners.length === 0) return;
-    const sincronizar = () => setIndice(Math.floor(Date.now() / CICLO_MS) % banners.length);
-    sincronizar();
-    if (banners.length < 2) return;
-    const id = setInterval(sincronizar, CICLO_MS);
-    return () => clearInterval(id);
-  }, [banners.length]);
+    if (primerPaso.current) {
+      primerPaso.current = false;
+      return;
+    }
+    setIndiceManual(null);
+  }, [paso]);
+
+  const indice = indiceManual ?? (banners.length > 0 ? paso % banners.length : 0);
 
   if (banners.length === 0) {
     return (
@@ -180,7 +184,7 @@ export function BannerHero({
                   key={b.id}
                   type="button"
                   aria-label={`Banner ${i + 1}: ${b.title}`}
-                  onClick={() => setIndice(i)}
+                  onClick={() => setIndiceManual(i)}
                   style={{
                     width: i === indice ? 26 : 9,
                     height: 9,

@@ -3,6 +3,7 @@ import { obtenerSesionActual } from "@/server/auth/sesion";
 import { LayoutTienda } from "@/components/templates/LayoutTienda";
 import { CarritoProvider } from "@/components/providers/CarritoProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
+import { CicloHeroProvider } from "@/components/providers/CicloHeroProvider";
 
 /** El demo (`index.html`) es una sola página: el encabezado y el pie
  * persisten en TODAS las pantallas, incluidas login/registro/checkout/mi
@@ -14,9 +15,11 @@ export async function SitioConChrome({ children }: { children: React.ReactNode }
   return (
     <ToastProvider>
       <CarritoProvider sesionIniciada={!!sesion}>
-        <LayoutTienda grupos={grupos} sesion={sesion ? { nombre: sesion.perfil.first_name } : null}>
-          {children}
-        </LayoutTienda>
+        <CicloHeroProvider>
+          <LayoutTienda grupos={grupos} sesion={sesion ? { nombre: sesion.perfil.first_name } : null}>
+            {children}
+          </LayoutTienda>
+        </CicloHeroProvider>
       </CarritoProvider>
     </ToastProvider>
   );
