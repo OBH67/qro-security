@@ -1948,3 +1948,66 @@ el carrusel original de 3 slides (Videovigilancia/Energía×2) y el
 catálogo de cada categoría sigue mostrando su banner real, sin mezclarse
 entre sí. `npx tsc --noEmit`, `npm run build` y `npm run lint` limpios
 (mismos 14 warnings preexistentes).
+
+### Corrección (2026-09-22): espacio muerto arriba del banner + letterbox
+a los lados
+
+La dueña marcó con una captura un espacio vacío arriba del banner de
+"Control de Acceso" y pidió aprovecharlo, más un contenedor "muy grande
+a nivel de width". Dos causas distintas, confirmadas midiendo píxeles
+de su captura (color de fondo exacto en cada zona, no a ojo):
+
+1. **Espacio muerto arriba**: migas + `<h1>` + "N resultados" estaban
+   sueltos ARRIBA de las dos columnas (filtros | productos), no dentro
+   de ninguna. Como ese bloque es angosto (texto corto, alineado a la
+   izquierda), dejaba vacía la franja a su derecha — justo el ancho de
+   la columna de productos — antes de que el banner arrancara, ya que
+   el banner sí estaba bien alineado con "Categorías" (su vecino de
+   columna), solo que mucho más abajo de lo necesario. **Aprendizaje
+   permanente**: en un layout de dos columnas, cualquier encabezado que
+   se quiera "compartir fila" con una de las columnas debe vivir DENTRO
+   de esa columna (o de un grid con `grid-template-areas`), nunca como
+   hermano suelto arriba de la rejilla completa — si no, dejará vacía
+   la franja de la columna que no lo necesita.
+2. **Letterbox a los lados** (el "container muy grande a nivel width"):
+   `BannerCatalogo.tsx` fijaba una altura en `clamp(…vw…)` independiente
+   del ancho real de la columna, así que en viewports anchos el
+   contenedor terminaba con una proporción (~3.8:1) más ancha que la
+   imagen real (2000×667 = 3:1 exacto en los 3 banners subidos). Con
+   `object-fit: contain` eso deja bandas del color `gradient_from` a los
+   lados — casi invisibles aquí porque ese color es una variante muy
+   cercana al panel navy de la propia imagen, pero espacio muerto real
+   medible en píxeles. **Aprendizaje permanente**: una caja de banner
+   nunca debe fijar alto y ancho por separado (uno en `vw`, el otro al
+   100% del contenedor) cuando se espera que el contenido tenga una
+   proporción conocida — `aspect-ratio` en el contenedor +
+   `object-fit: cover` en la imagen es la combinación que garantiza cero
+   espacio muerto sin importar el ancho real de la columna en cada
+   viewport.
+
+**Corrección**: `ListadoCatalogo.tsx` — la rejilla de dos columnas pasó a
+usar `grid-template-areas` (`"titulo banner" "filtros banner" "filtros
+contenido"`); migas/título/conteo (y el disparador móvil de filtros que
+vive con ellos) ahora son el primer elemento dentro del área "titulo"
+(columna izquierda), así que el banner (área "banner") arranca en la
+misma fila que el título, no varias filas después. El orden en el DOM no
+cambió (sigue siendo migas → título → conteo → filtros → banner → resto)
+para no alterar la lectura por teclado/lector de pantalla ni el apilado
+en móvil, que ahora tiene su propio `grid-template-areas` bajo el
+`@media (max-width: 900px)` (`"titulo" "banner" "contenido"`).
+`BannerCatalogo.tsx` cambió de `height: clamp(140px, 22vw, 280px)` +
+`object-fit: contain` a `aspect-ratio: 3 / 1` + `object-fit: cover`.
+
+**Cómo se validó** (con una salvedad importante frente a las
+correcciones anteriores): este entorno de ejecución no tenía
+`node_modules` instalado ni credenciales de Supabase, así que no se pudo
+levantar `next dev` como en incrementos previos. En su lugar se midieron
+los píxeles exactos de la captura de la dueña (Python/Pillow) para
+confirmar la causa raíz, y se construyó una réplica estática del mismo
+layout/CSS con la imagen real del banner, renderizada con Chromium vía
+Playwright en 1895×877 (escritorio, viewport de la captura original) y
+420×900 (móvil) — confirmando visualmente que el banner arranca alineado
+con el título sin espacio muerto y llena su caja sin bandas a los lados,
+y que el apilado móvil no cambió. **Pendiente**: confirmar en un entorno
+con el servidor de desarrollo real corriendo contra Supabase antes de
+darlo por cerrado con la misma certeza que las correcciones anteriores.
