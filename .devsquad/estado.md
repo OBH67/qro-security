@@ -2559,3 +2559,36 @@ por falta de variables de entorno reales (Supabase/R2/Resend/etc.) —
 limitación ya conocida de este entorno (sin conexión a un proyecto real),
 no relacionada con este cambio. No se pudo probar visualmente contra la
 app corriendo ni contra un viewport real de teléfono en este entorno.
+
+### Corrección (2026-09-22): "Mis pedidos" en móvil se desbordaba horizontalmente (grid blowout)
+
+Probado en un teléfono real: todas las pantallas del incremento
+anterior se veían bien excepto "Mis pedidos", donde toda la página
+—incluido el encabezado fijo arriba— se podía arrastrar horizontalmente
+más allá del viewport, aunque la fila de chips de filtro ya tenía su
+propio `overflow-x:auto`.
+
+**Causa**: `.cuenta-contenido` (donde vive `{children}`, o sea el
+contenido de cada página) es un *grid item* dentro de `.cuenta-grid`
+(`mi-cuenta/layout.tsx`). Un grid item mide por default
+`min-width: auto`, que en la práctica equivale al ancho de su
+contenido más ancho que no se pueda partir en varias líneas — en este
+caso, la fila de 6 chips de filtro de "Mis pedidos" (`flex:"0 0 auto"`
+cada uno, "Comprobante recibido" es el más largo). Aunque esa fila
+tenía su propio scroll interno, el TRACK del grid se agrandaba igual
+para "caber" ese contenido, y arrastraba a toda la sección — encabezado
+fijo incluido, porque comparte el mismo ancho de página — en un scroll
+horizontal fantasma. El resto de las pantalla no tiene una fila tan
+ancha sin partir, por eso no se notaba ahí.
+
+**Fix**: en el `<style>` de `mi-cuenta/layout.tsx`, el track del grid
+en móvil pasa de `grid-template-columns: 1fr` a
+`minmax(0, 1fr)` (el `0` es lo que faltaba — sin él, `1fr` solo no
+cambia el mínimo automático del track) y se agrega `min-width: 0` +
+`overflow-x: hidden` explícitos a `.cuenta-contenido` como respaldo.
+Es el fix estándar para este bug clásico de CSS Grid (el mismo
+problema que existe en Flexbox con `min-width:auto` en los hijos).
+
+Validado con `npx tsc --noEmit` limpio. No se pudo volver a probar en
+un teléfono real desde este entorno — pendiente que la dueña confirme
+que ya no se desborda.

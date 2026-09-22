@@ -48,8 +48,15 @@ export default async function LayoutMiCuenta({ children }: { children: React.Rea
         @media (max-width: 760px) {
           .cuenta-movil-solo { display: block; }
           .cuenta-escritorio-solo { display: none !important; }
-          .cuenta-grid { grid-template-columns: 1fr !important; gap: 0 !important; padding: 0 !important; }
-          .cuenta-contenido { padding: 16px 14px 34px !important; }
+          /* "minmax(0,1fr)", no "1fr" a secas: un grid item mide por
+             default "min-width:auto" (= el ancho de su contenido más
+             ancho sin partir, ej. la fila de chips de filtro de
+             pedidos) — sin el "0" de este minmax, ESE contenido empuja
+             el track completo más allá del viewport y arrastra a toda
+             la página en un scroll horizontal fantasma, aunque cada
+             fila interna ya tenga su propio overflow-x:auto. */
+          .cuenta-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 0 !important; padding: 0 !important; }
+          .cuenta-contenido { padding: 16px 14px 34px !important; min-width: 0 !important; overflow-x: hidden; }
         }
       `}</style>
 
