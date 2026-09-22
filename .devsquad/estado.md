@@ -2592,3 +2592,38 @@ problema que existe en Flexbox con `min-width:auto` en los hijos).
 Validado con `npx tsc --noEmit` limpio. No se pudo volver a probar en
 un teléfono real desde este entorno — pendiente que la dueña confirme
 que ya no se desborda.
+
+### Corrección (2026-09-22): más productos por pestaña en "Para Ti", para que el riel se vea como carrusel
+
+**Contexto**: tras el bulk de 43 productos de un incremento anterior
+(uno por cada subcategoría raíz que no tenía ninguno), `obtenerParaTi()`
+(`src/server/db/queries/catalogo.ts`) elige sus hasta 8 pestañas por la
+subcategoría con MÁS productos — pero casi todas tenían exactamente 1,
+así que cada pestaña mostraba un solo producto: el riel (`ParaTi.tsx`)
+no tenía nada que desplazar y la sección se veía estática en vez de una
+pasarela.
+
+**No fue necesario tocar código**: `ParaTi.tsx` y `obtenerParaTi()` ya
+leen lo que haya en la base de datos — es puramente un problema de
+datos de muestra insuficientes, no de lógica. Nuevo script
+`supabase/seed_dev_bulk_para_ti.sql` (mismo criterio que
+`seed_dev_bulk_43_productos.sql`: standalone, `begin`/`commit` propio,
+un solo uso, para aplicar sobre una base ya sembrada) que agrega 6
+productos más a 6 subcategorías raíz ya existentes, repartidas en 5
+grupos distintos para que "Para Ti" siga mostrando variedad de
+departamentos: Videovigilancia · Cámaras IP y NVRs (llega a 8),
+Control de acceso · Biométricos (llega a 7), Control de acceso ·
+Cerraduras (llega a 7), Automatización e intrusión · Cercas eléctricas
+(llega a 7), Energía y climatización · Respaldo de energía (llega a 7),
+Cableado estructurado · Cable - Bobinas (llega a 8) — todas por debajo
+del tope real de 9 por pestaña. SKU en el rango 0200-0299 por prefijo
+para no chocar con los ya usados (0001-0099 y 0100-0111); fotos
+reutilizan la misma URL ya asignada a cada grupo en `seed_dev.sql` (no
+hay foto real por producto todavía, PA-11 sigue abierta).
+
+**Pendiente, acción de la dueña**: correr `seed_dev_bulk_para_ti.sql`
+en el SQL Editor de Supabase Studio del proyecto hosteado (no se pudo
+aplicar ni probar contra la base real desde este entorno). Verificado
+por lectura: 36 productos (6 × 6 subcategorías), sin SKU ni slug
+duplicados contra los ya existentes en `seed_dev.sql` y
+`seed_dev_bulk_43_productos.sql`.
