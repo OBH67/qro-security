@@ -2167,3 +2167,42 @@ seguía sin ser posible probar contra Supabase real en este entorno.
 **Pendiente**: la misma validación visual pendiente de la corrección
 anterior (navegar catálogo → portada con distintos tiempos de espera
 contra el servidor real).
+
+### Datos (2026-09-22): bulk de 43 productos, uno por cada subcategoría
+raíz que todavía no tenía ninguno
+
+La dueña pidió un bulk de inserts para "la mayoría de las categorías,
+al menos 1 producto", para empezar a ver "Para Ti" (`ParaTi.tsx`,
+sección de la portada con pestañas por subcategoría y riel horizontal
+que se desplaza solo) con contenido real y poder navegar entre
+productos de categorías distintas. `obtenerParaTi()` arma hasta 8
+pestañas a partir de las subcategorías RAÍZ (D7, `parent_id` nulo) que
+tengan al menos un producto activo — de las 54 raíces reales
+(`seed.sql`), solo 11 tenían alguno antes de este incremento (la
+mayoría de los datos de muestra existentes se concentraban en
+videovigilancia).
+
+**Qué se hizo**: se agregaron los 43 productos que faltaban a
+`seed_dev.sql`, uno por cada subcategoría raíz sin cubrir — Videovigilancia
+(7), Control de Acceso (12), Automatización e Intrusión (9), Energía y
+Climatización (7), Cableado Estructurado (8). El grupo GPS/Telemática
+tiene una sola raíz y ya estaba cubierta, así que no se tocó. Precio,
+stock y atributos son de relleno razonable (PA-11 sigue abierta, no es
+catálogo real); cada foto reutiliza la misma URL de Pexels ya asignada
+arriba para su GRUPO (no hay foto real por subcategoría todavía), para
+no introducir URLs nuevas sin poder verificar que resuelven.
+
+**Validación** (sin Supabase real en este entorno, igual que las
+correcciones anteriores): se verificó por script que los 43 pares
+(grupo, slug de subcategoría) usados en los `join` existen exactamente
+como subcategoría raíz en `seed.sql` — un slug con typo aquí insertaría
+0 filas sin dar ningún error, porque el `insert ... select ... join`
+simplemente no encuentra coincidencia. También se verificó que no hay
+SKU ni slug duplicado entre los 57 productos totales del archivo (14
+previos + 43 nuevos), que los paréntesis del archivo cierran parejo, y
+que los 57 `jsonb_build_object(...)` tienen número par de argumentos
+(pares clave/valor completos). **Pendiente**: correr `supabase db
+reset` (o el equivalente) contra un Postgres real y confirmar en el
+navegador que "Para Ti" ahora muestra varias pestañas con productos
+distintos — la validación de arriba descarta errores de sintaxis y de
+referencia por slug, pero no reemplaza correr el script de verdad.
