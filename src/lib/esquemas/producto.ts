@@ -20,6 +20,10 @@ export const esquemaProducto = z
   .refine((d) => d.condition === "nuevo" || d.conditionDetail, {
     message: "Escribe el motivo visible al cliente para esta condición.",
     path: ["conditionDetail"],
+  })
+  .refine((d) => d.condition !== "nuevo" || (d.stock !== undefined && d.stock !== null), {
+    message: "Escribe el stock inicial.",
+    path: ["stock"],
   });
 
 export type DatosProductoForm = z.infer<typeof esquemaProducto>;

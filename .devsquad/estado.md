@@ -3043,3 +3043,56 @@ TABLE`, no debería toparse con el mismo error). No se pudo probar
 contra un Postgres real en este entorno — validado con `tsc --noEmit`/
 `eslint`/`next build` limpios y la sintaxis de la migración confirmada
 con `pglast`.
+
+### Corrección (2026-09-23): "Nuevo producto" guardaba todo producto
+condición "nuevo" con stock 0, sin manera de corregirlo desde el panel
+
+La dueña probó a fondo el alta manual de un producto y reportó, con
+capturas: (a) problemas de responsive en la tabla de catálogo en
+móvil, (b) la pestaña "Precio y stock" es un placeholder que contradice
+a "General", que ya pide el precio, y (c) su impresión general de que
+"ninguna funcionalidad de cargar el producto no está implementada".
+
+Se confirmó con lectura de código un bug real, no solo de percepción:
+para la condición por defecto "Nuevo", el formulario (`FormularioProducto.tsx`)
+nunca mostraba un campo de stock — el stock editable solo existía
+(hardcoded a "1, pieza única") para "Caja abierta"/"Usado", correcto
+según D6 pero dejando "Nuevo" sin ninguna forma de fijar existencia. El
+objeto `datos` de `guardar()` nunca incluía `stock`, así que
+`crearProductoAction` → `crearProductoAdmin` caía siempre en su valor
+por defecto (`p_stock: datos.stock ?? 0`): **todo producto nuevo se
+guardaba con stock = 0**, invisible en el catálogo público
+(`disponible = stock - reserved`) sin ningún aviso de error ni en
+pantalla ni en la validación de Zod (`stock` era `optional()`).
+
+Corregido:
+- Se agregó un campo "Stock inicial \*" editable en la tarjeta
+  "Condición (D6)" de la pestaña General, visible solo cuando
+  `condition === "nuevo"` (espejo del campo de solo-lectura que ya
+  existía para las otras condiciones), y se conectó al objeto que
+  manda `guardar()`.
+- Se quitó la pestaña "Precio y stock" de `PESTAÑAS` — era 100%
+  placeholder y duplicaba lo que "General" ya pedía (precio) más lo
+  que ahora también pide (stock); quedan como placeholder documentado
+  solo "Fotos", "Especificaciones" y "Documentos", que sí son trabajo
+  pendiente real de una pasada futura (diseño.md §11.7).
+- `esquemaProducto` (Zod) ahora exige `stock` cuando `condition ===
+  "nuevo"` con un `.refine()`, para que el error se vea en el
+  formulario en vez de guardarse en silencio con 0.
+
+No se tocó el importador CSV (`ImportadorCatalogo`) — ese flujo ya
+lee `stock` de una columna dedicada de la plantilla y nunca tuvo este
+problema.
+
+Queda sin resolver, y sin decidir el alcance con la dueña, el punto
+(a) — el panel de admin (tabla de catálogo y el resto de las
+pantallas) no tiene prácticamente ningún CSS responsive (`grep` de
+`@media`/`overflow-x`/`min-width` en `admin.css` no encontró nada
+relevante) a diferencia del rediseño móvil que ya se hizo para "Mi
+cuenta" del lado del cliente. Es un trabajo de mayor alcance (todo el
+panel, no solo esta tabla) — pendiente de confirmar prioridad con la
+dueña antes de emprenderlo.
+
+Validado con `tsc --noEmit` y `eslint` limpios (no se pudo compilar
+`next build` completo en este entorno por falta de red hacia Google
+Fonts, limitación ya documentada en incrementos anteriores).

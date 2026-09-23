@@ -8,7 +8,7 @@ import { BotonAdmin } from "@/components/atoms/BotonAdmin";
 import type { DatosFormularioProducto } from "@/server/db/queries/admin/catalogo";
 import type { CondicionProducto, ProductRow } from "@/types/database";
 
-const PESTAÑAS = ["General", "Precio y stock", "Fotos", "Especificaciones", "Documentos"] as const;
+const PESTAÑAS = ["General", "Fotos", "Especificaciones", "Documentos"] as const;
 const MOTIVOS_POR_CONDICION: Record<Exclude<CondicionProducto, "nuevo">, string[]> = {
   caja_abierta: ["Empaque abierto, producto sin usar", "Caja dañada en tránsito", "Devolución sin abrir el sello del producto", "Otro"],
   usado: ["Usado para prueba", "Incompleto — faltan piezas", "Unidad de exhibición", "Otro"],
@@ -33,6 +33,7 @@ export function FormularioProducto({ producto, datosFormulario }: { producto?: P
   const [subcategoryId, setSubcategoryId] = useState(producto?.subcategory_id ?? "");
   const [status, setStatus] = useState<"activo" | "agotado" | "descontinuado">(producto?.status ?? "activo");
   const [price, setPrice] = useState(producto?.price ?? "");
+  const [stock, setStock] = useState(producto?.stock ?? "");
   const [condition, setCondition] = useState<CondicionProducto>(producto?.condition ?? "nuevo");
   const [conditionDetail, setConditionDetail] = useState(producto?.condition_detail ?? MOTIVOS_POR_CONDICION.usado[0]);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +59,7 @@ export function FormularioProducto({ producto, datosFormulario }: { producto?: P
       groupId,
       subcategoryId,
       price,
+      stock: condition === "nuevo" ? stock : undefined,
       status,
       condition,
       conditionDetail: condition !== "nuevo" ? conditionDetail : "",
@@ -201,6 +203,12 @@ export function FormularioProducto({ producto, datosFormulario }: { producto?: P
                   <input type="radio" name="condicion" checked={condition === "usado"} onChange={() => elegirCondicion("usado")} /> Usado
                 </label>
               </div>
+              {condition === "nuevo" && (
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border)" }}>
+                  <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>Stock inicial *</label>
+                  <input className="campo mono" type="number" min={0} step="1" value={stock} onChange={(e) => setStock(e.target.value === "" ? "" : Number(e.target.value))} placeholder="0" />
+                </div>
+              )}
               {condition !== "nuevo" && (
                 <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: 12 }}>
                   <div>
