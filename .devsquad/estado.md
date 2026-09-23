@@ -2946,3 +2946,58 @@ correr `next build` en este intento — el entorno no tuvo salida a
 Google Fonts en este momento, sin relación con este cambio (`tsc` ya
 había pasado limpio, que es la validación que de verdad cubre este
 código).
+
+### Incremento (2026-09-23): paso 3 del importador CSV — "Aplicar" ya
+escribe de verdad al catálogo
+
+Última pieza pendiente del panel admin (F2.3, arquitectura.md §9.5).
+Antes: la vista previa (paso 2) ya validaba de verdad, pero el botón
+"Aplicar N productos" estaba deshabilitado a propósito, con una nota
+explicando que la escritura por lotes era la siguiente pieza — nunca
+fingió aplicar algo que no aplicaba.
+
+**Diseño (igual al de arquitectura.md §9.5 y diseño.md §11.8, con una
+simplificación real documentada abajo)**: tabla nueva `import_jobs`
+(migración `0024_import_jobs.sql`) que guarda las filas ya validadas
+(`ok: true` únicamente — las filas con error del paso 2 nunca llegan
+aquí) y un cursor de avance. El navegador aplica de a 200 filas por
+llamada (`procesarLoteImportacionAction`), cada lote en su propia
+transacción por fila (reutiliza `crearProductoAdmin()`/
+`actualizarProductoAdmin()`, las mismas funciones del alta/edición
+individual — mismo `crear_producto()`/`actualizar_producto()` de
+0016_catalogo_admin.sql, sin funciones SQL nuevas), y repite hasta
+terminar — con una barra de progreso que se actualiza en cada vuelta.
+Una fila que falla (p. ej. una categoría borrada entre el paso 2 y el
+lote que la procesa) no detiene a las demás (F2.4): se cuenta aparte y
+sigue con la siguiente.
+
+**Simplificación real frente al diseño, documentada en el propio
+archivo de la migración**: el avance de lote a lote lo dispara el
+navegador de quien importa mientras la pestaña sigue abierta — NO es
+un trabajo en segundo plano de verdad en el servidor (sin cron). Por
+eso no existe el aviso "puedes cerrar esta pestaña, te avisamos por
+correo cuando termine" que describe diseño.md §11.8 — se quitó de la
+UI en vez de dejarlo prometiendo algo que no pasa. Sí se conserva lo
+importante de esa idea: el trabajo persiste en la base, así que si se
+cierra la pestaña o se corta internet a medio camino, al volver a
+entrar a "Importar catálogo" se reanuda solo desde donde se quedó
+(estado.md §11.8 "Interrumpido") — nada más hay que dejar la pestaña
+abierta mientras corre. "Detener la importación" si conserva lo ya
+aplicado y cancela el resto, como pide el diseño.
+
+**Resolución de marca/grupo/subcategoría por nombre**: el paso 2 nunca
+exigió que existieran para actualizar un producto YA existente (solo
+para uno nuevo) — se respetó ese mismo criterio aquí: en una
+actualización, un nombre que ya no resuelve a nada simplemente no
+toca ese campo (el producto conserva su marca/categoría actual) en vez
+de tronar la fila entera.
+
+**Pendiente, acción de la dueña**: correr en Supabase Studio → SQL
+Editor el contenido de `supabase/migrations/0024_import_jobs.sql`
+antes de usar el paso 3 (crea la tabla `import_jobs` que no existe
+todavía). No se pudo aplicar la migración ni probar un lote real
+contra Postgres en este entorno (sin acceso a un proyecto real);
+tampoco crear un producto de verdad para confirmar el resultado —
+validado por lectura del código, `tsc --noEmit`/`eslint` limpios,
+`next build` exitoso, y la sintaxis de la migración confirmada válida
+con `pglast` (parser real de Postgres, sin conexión a una base).

@@ -22,6 +22,11 @@ export interface FilaValidada {
   esNueva: boolean;
   motivo: string;
   ofrecerCrearSubcategoria?: string; // nombre de la subcategoría a crear, si aplica
+  // Fila cruda completa (incluye marca/grupo/subcategoria/estado/descripcion,
+  // no solo los 4 campos de arriba que se muestran en la tabla de vista
+  // previa) — el paso 3 ("Aplicar") la necesita completa y así evita
+  // volver a leer o parsear el archivo.
+  datos: Record<string, string>;
 }
 
 const ESTADOS_VALIDOS = new Set(["activo", "agotado", "descontinuado"]);
@@ -31,7 +36,7 @@ export function validarFilaImportacion(fila: FilaCsvCruda, modo: ModoImportacion
   const nombre = fila.valores.nombre ?? "";
   const precio = fila.valores.precio ?? "";
   const stock = fila.valores.stock ?? "";
-  const base = { numeroFila: fila.numeroFila, sku, nombre, precio, stock };
+  const base = { numeroFila: fila.numeroFila, sku, nombre, precio, stock, datos: fila.valores };
 
   if (!sku.trim()) {
     return { ...base, ok: false, esNueva: false, motivo: "Falta el SKU. Es obligatorio." };
