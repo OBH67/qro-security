@@ -36,9 +36,16 @@ const envSchema = z.object({
 
   // ── 10.4 WhatsApp — opcional hasta que Meta apruebe el número ────
   WHATSAPP_PROVIDER: z.enum(["none", "meta", "twilio"]).default("none"),
+  // Específicas de Meta Cloud API.
   WHATSAPP_PHONE_NUMBER_ID: z.string().min(1).optional(),
   WHATSAPP_ACCESS_TOKEN: z.string().min(1).optional(),
   WHATSAPP_TEMPLATE_NAME: z.string().min(1).optional(),
+  // Específicas de Twilio (Sandbox o número de WhatsApp Business).
+  TWILIO_ACCOUNT_SID: z.string().min(1).optional(),
+  TWILIO_AUTH_TOKEN: z.string().min(1).optional(),
+  // Formato E.164 con prefijo "whatsapp:", ej. "whatsapp:+14155238886"
+  // (el número compartido del Sandbox de Twilio).
+  TWILIO_WHATSAPP_FROM: z.string().min(1).optional(),
 
   // ── 10.5 Seguridad y operación ────────────────────────────────────
   PAYMENT_TOKEN_PEPPER: z.string().min(16),
@@ -70,13 +77,19 @@ function loadEnv(): Env {
     );
   }
 
+  if (parsed.data.WHATSAPP_PROVIDER === "meta" && !parsed.data.WHATSAPP_ACCESS_TOKEN) {
+    throw new Error(
+      "WHATSAPP_PROVIDER=meta pero falta WHATSAPP_ACCESS_TOKEN. " +
+        "Usa WHATSAPP_PROVIDER=none mientras no haya credenciales de Meta.",
+    );
+  }
   if (
-    parsed.data.WHATSAPP_PROVIDER !== "none" &&
-    !parsed.data.WHATSAPP_ACCESS_TOKEN
+    parsed.data.WHATSAPP_PROVIDER === "twilio" &&
+    (!parsed.data.TWILIO_ACCOUNT_SID || !parsed.data.TWILIO_AUTH_TOKEN || !parsed.data.TWILIO_WHATSAPP_FROM)
   ) {
     throw new Error(
-      "WHATSAPP_PROVIDER está configurado pero falta WHATSAPP_ACCESS_TOKEN. " +
-        "Usa WHATSAPP_PROVIDER=none mientras no haya credenciales de Meta/Twilio.",
+      "WHATSAPP_PROVIDER=twilio pero faltan TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN o TWILIO_WHATSAPP_FROM. " +
+        "Usa WHATSAPP_PROVIDER=none mientras no haya credenciales de Twilio.",
     );
   }
 
