@@ -2773,3 +2773,71 @@ la primera vez que se visita y el prefetch está apagado). **Pendiente
 de revisar en Supabase**: Project Settings → JWT Keys; si el proyecto
 sigue con la llave HS256 heredada, migrar a llaves asimétricas para que
 `getClaims()` deje de ir a la red.
+
+### Incremento (2026-09-23): todos los botones de acción muestran que
+están trabajando
+
+Pedido explícito de la dueña: "todos los botones, incluyendo admin y
+cliente" necesitan un mecanismo de carga. Se auditaron los 22 componentes
+cliente de todo el sitio que hacen `await` dentro de un manejador (Server
+Action, `fetch`, o el carrito) — la lista completa, sin excepción, ya
+tiene alguna forma de aviso.
+
+**Base reutilizable (diseño.md §12.3: "Spinner dentro + verbo en
+gerundio; el ancho no cambia")**:
+- `Spinner` ahora acepta `color`, para que se vea sobre cualquier fondo
+  (antes tenía un solo color fijo — invisible sobre un botón del mismo
+  tono).
+- `Boton` (átomo del sitio) gana `cargando`/`textoCargando`: deshabilita,
+  muestra el spinner y, si se da, cambia el texto — **sin ponerse gris**,
+  porque "ocupado" no es lo mismo que "no disponible" (eso sigue siendo
+  `disabled`/`variante="deshabilitada"`).
+- `BotonAdmin`, componente nuevo con el mismo contrato para las clases
+  `.btn .btn-*` que usa todo el panel admin (no comparte átomos con el
+  sitio público — arquitecturas de CSS separadas desde el inicio del
+  proyecto). Se le agregó a `admin.css` el estado `:disabled` que no
+  existía.
+
+**Aplicado en cliente**: login, recuperar contraseña, registro (3 pasos),
+dirección, datos fiscales, subir comprobante (escritorio y móvil), nueva
+devolución, checkout ("Generar pedido"), agregar al pedido/comprar ahora
+(ficha de producto y tarjeta de catálogo), solicitud de servicio. También
+"Eliminar"/"Usar por defecto" en direcciones y datos fiscales de Mi
+cuenta (antes sin ningún aviso).
+
+**Aplicado en admin**: login del panel, las 5 acciones de un pedido
+(validar pago, rechazar comprobante, cancelar, marcar enviado, marcar
+entregado), aprobar/rechazar devolución, marcar solicitud en
+seguimiento/cerrada, datos bancarios/contacto/plazos de Configuración,
+guardar producto, crear/editar/eliminar categoría y subcategoría,
+"Revisar archivo" del importador CSV.
+
+**Hallazgo aparte, con arreglo específico (no genérico)**: el carrito con
+sesión iniciada no actualiza la cantidad ni quita un producto hasta que
+el servidor responde — sin optimismo, a diferencia del carrito de
+invitado (`localStorage`), que sí se sentía instantáneo. Por eso +/- y
+"Quitar" parecían no hacer nada. Se le agregó a `SelectorCantidad` un
+`cargando` opcional (deshabilita +/- y muestra el spinner en vez de la
+cifra) y al carrito un aviso por renglón — **no se tocó la falta de
+actualización optimista en sí**, que es un cambio de arquitectura más
+grande y más riesgoso que agregar un aviso de espera.
+
+**Casos revisados y dejados igual, a propósito**:
+- `FormularioContacto` no llama a ningún backend (documentado así desde
+  antes — el propio `index.html` tampoco lo hace): no hay nada que
+  "cargar".
+- Copiar CLABE/cuenta en `DatosTransferencia` usa el portapapeles, que
+  resuelve en menos de 1 ms — un spinner ahí solo parpadearía.
+- La edición de precio en línea de `TablaCatalogoAdmin` (doble clic) ya
+  deshabilita el campo mientras guarda; no es un botón.
+- `BarraNavegacion` (del incremento anterior) ahora también arranca con
+  formularios `method="get"` (los filtros de Pedidos/Solicitudes/
+  Catálogo en admin), no solo con clics en `<a>` — antes esos filtros
+  navegaban sin ningún aviso.
+
+Validado: `tsc --noEmit` y `eslint` limpios (el único error de ESLint
+que reporta el repo, en `FormularioComprobante.tsx`, es preexistente a
+este incremento — no relacionado con botones); `next build` exitoso;
+capturas en Chromium contra `next start` confirmando que el spinner
+conserva el color de cada variante (no se pone gris) y que sí gira al
+hacer clic real.

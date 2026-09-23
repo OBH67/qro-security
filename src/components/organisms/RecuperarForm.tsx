@@ -50,8 +50,8 @@ export function RecuperarForm() {
         onChange={(e) => setEmail(e.target.value)}
         error={error ?? undefined}
       />
-      <Boton type="submit" tamano="lg" disabled={enviando}>
-        {enviando ? "Enviando…" : "Enviar enlace de recuperación"}
+      <Boton type="submit" tamano="lg" cargando={enviando} textoCargando="Enviando…">
+        Enviar enlace de recuperación
       </Boton>
     </form>
   );

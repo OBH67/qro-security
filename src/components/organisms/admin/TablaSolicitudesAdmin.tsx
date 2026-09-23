@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { marcarEnSeguimientoAction, marcarCerradaAction } from "@/server/actions/admin/solicitudes";
 import { formatearPrecio } from "@/lib/formato";
+import { BotonAdmin } from "@/components/atoms/BotonAdmin";
 import type { EstadoSolicitudServicio, ServiceRequestRow } from "@/types/database";
 
 const ETIQUETA_SERVICIO: Record<string, string> = {
@@ -148,13 +149,13 @@ export function TablaSolicitudesAdmin({ solicitudes }: { solicitudes: ServiceReq
             {seleccion.status !== "cerrada" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
                 {seleccion.status === "nueva" && (
-                  <button className="btn btn-primario cut cut-10" onClick={() => confirmar("seguimiento")} disabled={isPending}>
-                    {isPending ? "Procesando…" : "Marcar en seguimiento"}
-                  </button>
+                  <BotonAdmin className="cut cut-10" onClick={() => confirmar("seguimiento")} cargando={isPending} textoCargando="Procesando…">
+                    Marcar en seguimiento
+                  </BotonAdmin>
                 )}
-                <button className="btn btn-secundario cut cut-10" onClick={() => confirmar("cerrada")} disabled={isPending}>
-                  {isPending ? "Procesando…" : "Marcar cerrada"}
-                </button>
+                <BotonAdmin variante="secundario" className="cut cut-10" onClick={() => confirmar("cerrada")} cargando={isPending} textoCargando="Procesando…">
+                  Marcar cerrada
+                </BotonAdmin>
               </div>
             )}
 

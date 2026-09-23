@@ -65,8 +65,8 @@ export function LoginForm() {
         ¿Olvidaste tu contraseña?
       </a>
       {errorGeneral && <p style={{ margin: 0, fontSize: 13.5, color: "var(--danger-text)" }}>{errorGeneral}</p>}
-      <Boton type="submit" tamano="lg" disabled={enviando}>
-        {enviando ? "Entrando…" : "Entrar"}
+      <Boton type="submit" tamano="lg" cargando={enviando} textoCargando="Entrando…">
+        Entrar
       </Boton>
     </form>
   );

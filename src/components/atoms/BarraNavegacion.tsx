@@ -86,9 +86,22 @@ export function BarraNavegacion() {
       control.iniciar();
     }
 
+    // Formularios de filtro (`<form method="get">`, p. ej. el buscador del
+    // panel admin): sin `action` a una Server Action, el navegador hace una
+    // navegación normal a la misma URL con otra query — no pasa por
+    // `router.push`, así que el clic en <a> no lo cubre.
+    function alEnviar(e: SubmitEvent) {
+      const formulario = e.target;
+      if (!(formulario instanceof HTMLFormElement)) return;
+      if (formulario.method !== "get" || e.defaultPrevented) return;
+      control.iniciar();
+    }
+
     document.addEventListener("click", alClic, true);
+    document.addEventListener("submit", alEnviar, true);
     return () => {
       document.removeEventListener("click", alClic, true);
+      document.removeEventListener("submit", alEnviar, true);
       control.limpiar();
     };
   }, [control]);

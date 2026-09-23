@@ -7,6 +7,7 @@ import { solicitarSubidaComprobanteAction, confirmarComprobanteAction } from "@/
 import { formatearPrecio, formatearMontoInput } from "@/lib/formato";
 import { CampoConError } from "@/components/molecules/CampoConError";
 import { Boton } from "@/components/atoms/Boton";
+import { Spinner } from "@/components/atoms/Spinner";
 
 const TIPOS_ACEPTADOS = ".jpg,.jpeg,.png,.heic,.pdf";
 const TAMANO_MAXIMO_MB = 5;
@@ -204,8 +205,8 @@ export function FormularioComprobante({ orderId, folio, total }: { orderId: stri
       {errorGeneral && <p style={{ margin: "18px 0 0", fontSize: 14, color: "var(--danger-text)" }}>{errorGeneral}</p>}
 
       <div className="cuenta-escritorio-solo" style={{ marginTop: 28 }}>
-        <Boton type="submit" tamano="lg" disabled={estado === "subiendo"}>
-          {estado === "subiendo" ? "Enviando…" : "Enviar comprobante"}
+        <Boton type="submit" tamano="lg" cargando={estado === "subiendo"} textoCargando="Enviando…">
+          Enviar comprobante
         </Boton>
       </div>
 
@@ -290,15 +291,20 @@ export function FormularioComprobante({ orderId, folio, total }: { orderId: stri
             style={{
               width: "100%",
               padding: 16,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
               background: "#3CE7FF",
               color: "#07111C",
               fontFamily: "'Chakra Petch',sans-serif",
               fontWeight: 600,
               fontSize: 16,
               boxShadow: "0 0 18px rgba(60,231,255,.3)",
-              opacity: estado === "subiendo" ? 0.6 : 1,
+              cursor: estado === "subiendo" ? "wait" : "pointer",
             }}
           >
+            {estado === "subiendo" && <Spinner tamano={16} color="#07111C" />}
             {estado === "subiendo" ? "Enviando…" : "Enviar comprobante"}
           </button>
         </div>

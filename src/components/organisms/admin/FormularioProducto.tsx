@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { crearProductoAction, actualizarProductoAction } from "@/server/actions/admin/catalogo";
+import { BotonAdmin } from "@/components/atoms/BotonAdmin";
 import type { DatosFormularioProducto } from "@/server/db/queries/admin/catalogo";
 import type { CondicionProducto, ProductRow } from "@/types/database";
 
@@ -238,9 +239,9 @@ export function FormularioProducto({ producto, datosFormulario }: { producto?: P
         <Link href="/admin/catalogo" className="btn btn-fantasma cut cut-10">
           Cancelar
         </Link>
-        <button type="button" className="btn btn-primario cut cut-12" onClick={guardar} disabled={isPending}>
-          {isPending ? "Guardando…" : "Guardar"}
-        </button>
+        <BotonAdmin type="button" className="cut cut-12" onClick={guardar} cargando={isPending} textoCargando="Guardando…">
+          Guardar
+        </BotonAdmin>
       </div>
     </div>
   );

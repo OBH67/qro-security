@@ -68,8 +68,8 @@ export function FormularioDireccion({ onGuardado }: { onGuardado: () => void }) 
         </div>
       </div>
       {error && <p style={{ margin: 0, fontSize: 13.5, color: "var(--danger-text)" }}>{error}</p>}
-      <Boton type="submit" disabled={enviando} style={{ alignSelf: "flex-start" }}>
-        {enviando ? "Guardando…" : "Guardar dirección"}
+      <Boton type="submit" cargando={enviando} textoCargando="Guardando…" style={{ alignSelf: "flex-start" }}>
+        Guardar dirección
       </Boton>
     </form>
   );

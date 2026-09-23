@@ -254,8 +254,8 @@ export function FormularioNuevaDevolucion({ pedidos }: { pedidos: PedidoElegible
           {error && <p style={{ margin: "18px 0 0", fontSize: 14, color: "var(--danger-text)" }}>{error}</p>}
 
           <div style={{ marginTop: 26 }}>
-            <Boton type="submit" tamano="lg" disabled={estado === "enviando"}>
-              {estado === "enviando" ? "Enviando…" : "Enviar solicitud"}
+            <Boton type="submit" tamano="lg" cargando={estado === "enviando"} textoCargando="Enviando…">
+              Enviar solicitud
             </Boton>
           </div>
         </>

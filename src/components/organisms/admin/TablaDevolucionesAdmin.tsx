@@ -10,6 +10,7 @@ import {
   rechazarDevolucionAction,
 } from "@/server/actions/admin/devoluciones";
 import type { DetalleDevolucionAdmin, FilaDevolucionAdmin } from "@/server/db/queries/admin/devoluciones";
+import { BotonAdmin } from "@/components/atoms/BotonAdmin";
 import type { EstadoDevolucion } from "@/types/database";
 
 const ESTILO_ESTADO: Record<EstadoDevolucion, { label: string; estilo: React.CSSProperties }> = {
@@ -299,9 +300,16 @@ export function TablaDevolucionesAdmin({ devoluciones }: { devoluciones: FilaDev
 
                     {!mostrarRechazo ? (
                       <>
-                        <button className="btn btn-primario cut cut-12" style={{ width: "100%", marginBottom: 10 }} onClick={confirmarAprobar} disabled={isPending || (pctElegido === "otro" && !pctOtro)}>
-                          {isPending ? "Procesando…" : `Aprobar y abonar ${formatearPrecio(montoCalculado)}`}
-                        </button>
+                        <BotonAdmin
+                          className="cut cut-12"
+                          style={{ width: "100%", marginBottom: 10 }}
+                          onClick={confirmarAprobar}
+                          disabled={pctElegido === "otro" && !pctOtro}
+                          cargando={isPending}
+                          textoCargando="Procesando…"
+                        >
+                          {`Aprobar y abonar ${formatearPrecio(montoCalculado)}`}
+                        </BotonAdmin>
                         <button className="btn btn-peligro cut cut-10" style={{ width: "100%" }} onClick={() => setMostrarRechazo(true)} disabled={isPending}>
                           Rechazar devolución
                         </button>
@@ -311,9 +319,17 @@ export function TablaDevolucionesAdmin({ devoluciones }: { devoluciones: FilaDev
                         <button className="btn btn-fantasma cut cut-10" style={{ flex: 1 }} onClick={() => setMostrarRechazo(false)} disabled={isPending}>
                           Volver
                         </button>
-                        <button className="btn btn-peligro cut cut-10" style={{ flex: 1 }} onClick={confirmarRechazar} disabled={isPending || !motivoRechazo.trim()}>
-                          {isPending ? "Procesando…" : "Confirmar rechazo"}
-                        </button>
+                        <BotonAdmin
+                          variante="peligro"
+                          className="cut cut-10"
+                          style={{ flex: 1 }}
+                          onClick={confirmarRechazar}
+                          disabled={!motivoRechazo.trim()}
+                          cargando={isPending}
+                          textoCargando="Procesando…"
+                        >
+                          Confirmar rechazo
+                        </BotonAdmin>
                       </div>
                     )}
                   </>

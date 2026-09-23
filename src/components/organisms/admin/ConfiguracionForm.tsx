@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { guardarDatosBancariosAction, guardarContactoAction, guardarPlazosAction, enviarCorreoPruebaAction } from "@/server/actions/admin/configuracion";
 import { validarClabe, agruparClabe } from "@/lib/clabe";
 import { formatearPrecio } from "@/lib/formato";
+import { BotonAdmin } from "@/components/atoms/BotonAdmin";
 import type { ConfiguracionAdmin, UltimaModificacionSeccion } from "@/server/db/queries/admin/configuracion";
 
 function textoUltimaModificacion(u: UltimaModificacionSeccion | null): string | null {
@@ -165,9 +166,15 @@ export function ConfiguracionForm({
           {okBancarios && !errorBancarios && <p style={{ fontSize: 13, color: "var(--success)", marginTop: 14 }}>Datos bancarios guardados.</p>}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16 }}>
             <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{textoUltimaModificacion(ultimaModificacion.bancarios)}</span>
-            <button className="btn btn-primario cut cut-10" onClick={guardarBancarios} disabled={guardandoBancarios || (Boolean(clabeDigitada) && !validacionClabe.valida)}>
-              {guardandoBancarios ? "Guardando…" : "Guardar datos bancarios"}
-            </button>
+            <BotonAdmin
+              className="cut cut-10"
+              onClick={guardarBancarios}
+              disabled={Boolean(clabeDigitada) && !validacionClabe.valida}
+              cargando={guardandoBancarios}
+              textoCargando="Guardando…"
+            >
+              Guardar datos bancarios
+            </BotonAdmin>
           </div>
         </div>
 
@@ -190,12 +197,19 @@ export function ConfiguracionForm({
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{textoUltimaModificacion(ultimaModificacion.contacto)}</span>
             <div style={{ display: "flex", gap: 10 }}>
-              <button className="btn btn-fantasma cut cut-10" onClick={enviarPrueba} disabled={enviandoPrueba || !adminEmail.trim()}>
-                {enviandoPrueba ? "Enviando…" : "Enviarme un correo de prueba"}
-              </button>
-              <button className="btn btn-primario cut cut-10" onClick={guardarContacto} disabled={guardandoContacto}>
-                {guardandoContacto ? "Guardando…" : "Guardar contacto"}
-              </button>
+              <BotonAdmin
+                variante="fantasma"
+                className="cut cut-10"
+                onClick={enviarPrueba}
+                disabled={!adminEmail.trim()}
+                cargando={enviandoPrueba}
+                textoCargando="Enviando…"
+              >
+                Enviarme un correo de prueba
+              </BotonAdmin>
+              <BotonAdmin className="cut cut-10" onClick={guardarContacto} cargando={guardandoContacto} textoCargando="Guardando…">
+                Guardar contacto
+              </BotonAdmin>
             </div>
           </div>
         </div>
@@ -217,9 +231,9 @@ export function ConfiguracionForm({
           {okPlazos && !errorPlazos && <p style={{ fontSize: 13, color: "var(--success)", marginBottom: 12 }}>Plazos guardados.</p>}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{textoUltimaModificacion(ultimaModificacion.plazos)}</span>
-            <button className="btn btn-primario cut cut-10" onClick={guardarPlazos} disabled={guardandoPlazos}>
-              {guardandoPlazos ? "Guardando…" : "Guardar plazos"}
-            </button>
+            <BotonAdmin className="cut cut-10" onClick={guardarPlazos} cargando={guardandoPlazos} textoCargando="Guardando…">
+              Guardar plazos
+            </BotonAdmin>
           </div>
         </div>
       </div>

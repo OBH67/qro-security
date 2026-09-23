@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { analizarCsvAction } from "@/server/actions/admin/importador";
 import { generarPlantillaCsvCatalogo } from "@/lib/plantillaCsvCatalogo";
+import { BotonAdmin } from "@/components/atoms/BotonAdmin";
 import type { ResultadoAnalisisCsv } from "@/server/actions/admin/importador";
 import type { ModoImportacion } from "@/server/domain/csvImportador";
 
@@ -129,9 +130,9 @@ export function ImportadorCatalogo() {
           <Link href="/admin/catalogo" className="btn btn-fantasma cut cut-10">
             Cancelar
           </Link>
-          <button className="btn btn-primario cut cut-12" onClick={analizar} disabled={!archivo || analizando}>
-            {analizando ? "Revisando…" : "Revisar archivo"}
-          </button>
+          <BotonAdmin className="cut cut-12" onClick={analizar} disabled={!archivo} cargando={analizando} textoCargando="Revisando…">
+            Revisar archivo
+          </BotonAdmin>
         </div>
       </div>
     );

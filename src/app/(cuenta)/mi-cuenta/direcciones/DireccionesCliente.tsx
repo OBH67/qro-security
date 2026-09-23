@@ -5,6 +5,7 @@ import { useState } from "react";
 import { borrarDireccion, marcarComoPredeterminada } from "@/server/actions/direcciones";
 import { FormularioDireccion } from "@/components/organisms/FormularioDireccion";
 import { Boton } from "@/components/atoms/Boton";
+import { Spinner } from "@/components/atoms/Spinner";
 import type { AddressRow } from "@/types/database";
 
 /** index.html:1263-1273 (`secDirecciones`) — B3.1. El bloque móvil
@@ -18,15 +19,22 @@ import type { AddressRow } from "@/types/database";
 export function DireccionesCliente({ direcciones }: { direcciones: AddressRow[] }) {
   const router = useRouter();
   const [mostrarForma, setMostrarForma] = useState(direcciones.length === 0);
+  // Qué fila está en proceso y con qué acción — para no bloquear las demás
+  // tarjetas mientras una sola espera al servidor.
+  const [enCurso, setEnCurso] = useState<{ id: string; accion: "eliminar" | "default" } | null>(null);
 
   async function eliminar(id: string) {
+    setEnCurso({ id, accion: "eliminar" });
     await borrarDireccion(id);
     router.refresh();
+    setEnCurso(null);
   }
 
   async function marcarDefault(id: string) {
+    setEnCurso({ id, accion: "default" });
     await marcarComoPredeterminada(id);
     router.refresh();
+    setEnCurso(null);
   }
 
   return (
@@ -40,8 +48,14 @@ export function DireccionesCliente({ direcciones }: { direcciones: AddressRow[] 
                 {a.street} {a.ext_number}{a.int_number ? `, Int. ${a.int_number}` : ""}, Col. {a.neighborhood}, C.P. {a.postal_code}, {a.municipality}, {a.state} · Recibe {a.recipient_name}
               </span>
             </div>
-            <button type="button" onClick={() => eliminar(a.id)} style={{ fontSize: 13.5, color: "var(--text-muted)" }}>
-              Eliminar
+            <button
+              type="button"
+              onClick={() => eliminar(a.id)}
+              disabled={enCurso?.id === a.id}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13.5, color: "var(--text-muted)", cursor: enCurso?.id === a.id ? "wait" : "pointer" }}
+            >
+              {enCurso?.id === a.id && enCurso.accion === "eliminar" && <Spinner tamano={13} color="var(--text-muted)" />}
+              {enCurso?.id === a.id && enCurso.accion === "eliminar" ? "Eliminando…" : "Eliminar"}
             </button>
           </div>
         ))}
@@ -70,12 +84,24 @@ export function DireccionesCliente({ direcciones }: { direcciones: AddressRow[] 
             </p>
             <div style={{ display: "flex", gap: 16, marginTop: 12 }}>
               {!a.is_default && (
-                <button type="button" onClick={() => marcarDefault(a.id)} style={{ fontSize: 13.5, color: "#9FB2C3" }}>
-                  Usar por defecto
+                <button
+                  type="button"
+                  onClick={() => marcarDefault(a.id)}
+                  disabled={enCurso?.id === a.id}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13.5, color: "#9FB2C3", cursor: enCurso?.id === a.id ? "wait" : "pointer" }}
+                >
+                  {enCurso?.id === a.id && enCurso.accion === "default" && <Spinner tamano={13} color="#9FB2C3" />}
+                  {enCurso?.id === a.id && enCurso.accion === "default" ? "Aplicando…" : "Usar por defecto"}
                 </button>
               )}
-              <button type="button" onClick={() => eliminar(a.id)} style={{ fontSize: 13.5, color: "#9FB2C3" }}>
-                Eliminar
+              <button
+                type="button"
+                onClick={() => eliminar(a.id)}
+                disabled={enCurso?.id === a.id}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13.5, color: "#9FB2C3", cursor: enCurso?.id === a.id ? "wait" : "pointer" }}
+              >
+                {enCurso?.id === a.id && enCurso.accion === "eliminar" && <Spinner tamano={13} color="#9FB2C3" />}
+                {enCurso?.id === a.id && enCurso.accion === "eliminar" ? "Eliminando…" : "Eliminar"}
               </button>
             </div>
           </div>

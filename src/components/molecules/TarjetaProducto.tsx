@@ -171,9 +171,10 @@ export function TarjetaProducto({ producto }: { producto: ProductoTarjeta }) {
             anchoCompleto
             style={{ marginTop: 4 }}
             onClick={agregarAlPedido}
-            disabled={agregando}
+            cargando={agregando}
+            textoCargando="Agregando…"
           >
-            {agregando ? "Agregando…" : "Agregar al pedido"}
+            Agregar al pedido
           </Boton>
         ) : (
           <div style={{ marginTop: 4 }}>
