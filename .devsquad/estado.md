@@ -2733,3 +2733,43 @@ Dos hallazgos de la dueña probando el panel real:
 Validado por lectura del código; no se pudo correr `npx tsc --noEmit`
 en este entorno (`node_modules` no está instalado aquí) ni probar
 contra Postgres real.
+
+### Incremento (2026-09-23): navegación lenta y sin retroalimentación
+
+La dueña reportó que al cambiar de sección "no se sabe si está cargando"
+y la pantalla aparece de golpe. No es un límite de Next.js; eran dos
+causas del proyecto:
+
+1. **Cero `loading.tsx` en 27 páginas dinámicas.** Sin él, Next espera a
+   que el servidor termine TODO el render antes de mostrar algo. Se
+   agregaron esqueletos con la forma real del contenido (diseño.md
+   §12.3) en `(public)`, `(public)/catalogo`, `(public)/producto/[slug]`,
+   `mi-cuenta` y `admin/(protegido)`, más una barra de progreso superior
+   (`BarraNavegacion`, diseño.md §7.1) para las esperas que un
+   `loading.tsx` no cubre: layouts que consultan datos al entrar a otra
+   sección y la compilación bajo demanda de `next dev`.
+2. **Consultas repetidas a Supabase Auth.** `getUser()` va a la red en
+   cada llamada, y se llamaba en el proxy (cada request, prefetch
+   incluido) y de nuevo en el marco del sitio, el layout y la página:
+   hasta 4 viajes en serie al entrar a "Mi cuenta". Ahora
+   `obtenerSesionActual` usa `cache()` de React (una sola vez por
+   request) y tanto ella como el proxy usan `getClaims()`, que valida
+   el JWT localmente con llaves asimétricas (con llaves HS256 heredadas
+   cae solo a `getUser()`, igual que antes — nunca empeora).
+   Contrapartida conocida de `getClaims()`: una sesión cerrada desde
+   otro dispositivo sigue siendo válida hasta que vence su JWT (1 h por
+   default); el rol se sigue leyendo de `profiles` en cada request.
+
+Validado: `tsc --noEmit` y `eslint` limpios, `next build` exitoso, y
+prueba en Chromium contra `next start` con rutas temporales (ya
+eliminadas): el esqueleto aparece <250 ms tras el clic en una página
+de 3 s; la barra no aparece en navegaciones <120 ms, avanza de forma
+gradual en una espera de 2.5 s y desaparece al llegar; sin scroll
+horizontal a 390 px.
+
+**Recomendación a la dueña**: medir la velocidad con `npm run build &&
+npm start`, no con `npm run dev` (en desarrollo cada pantalla se compila
+la primera vez que se visita y el prefetch está apagado). **Pendiente
+de revisar en Supabase**: Project Settings → JWT Keys; si el proyecto
+sigue con la llave HS256 heredada, migrar a llaves asimétricas para que
+`getClaims()` deje de ir a la red.

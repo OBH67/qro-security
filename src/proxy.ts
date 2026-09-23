@@ -37,9 +37,11 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims(), no getUser(): valida el JWT localmente (llaves asimétricas)
+  // en vez de ir a Supabase Auth en CADA request, prefetch incluido. Igual
+  // refresca la sesión vencida y escribe las cookies nuevas vía setAll.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims ?? null;
 
   if (!user && request.nextUrl.pathname.startsWith("/mi-cuenta")) {
     const redirigirA = new URL("/ingresar", request.url);

@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Chakra_Petch, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { BarraNavegacion } from "@/components/atoms/BarraNavegacion";
 import "./globals.css";
 
 // Tipografías definidas en `.devsquad/diseno.md` §2.2. Ninguna otra familia
@@ -40,7 +42,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`dark ${chakraPetch.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
       style={{ colorScheme: "dark" }}
     >
-      <body>{children}</body>
+      <body>
+        <Suspense fallback={null}>
+          <BarraNavegacion />
+        </Suspense>
+        {children}
+      </body>
     </html>
   );
 }
