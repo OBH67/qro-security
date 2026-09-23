@@ -69,32 +69,52 @@ export function FormularioComprobante({ orderId, folio, total }: { orderId: stri
     setErrores({});
     setEstado("subiendo");
 
-    const firma = await solicitarSubidaComprobanteAction({
-      orderId,
-      folio,
-      nombreArchivo: archivo.name,
-      contentType: archivo.type,
-    });
-    if (!firma.ok) {
-      setErrorGeneral(firma.error);
-      setEstado("form");
-      return;
-    }
+    // Sin try/catch, un `fetch` que se RECHAZA (típicamente un bloqueo de
+    // CORS en el bucket de R2, o la red caída) nunca llegaba a los
+    // `if (!x.ok)` de abajo: la promesa de `enviar()` se rechazaba sin que
+    // nadie la atrapara, el botón se quedaba en "Enviando…" para siempre y
+    // no aparecía ningún mensaje de error.
+    try {
+      const firma = await solicitarSubidaComprobanteAction({
+        orderId,
+        folio,
+        nombreArchivo: archivo.name,
+        contentType: archivo.type,
+      });
+      if (!firma.ok) {
+        setErrorGeneral(firma.error);
+        setEstado("form");
+        return;
+      }
 
-    const subida = await fetch(firma.data.url, { method: "PUT", body: archivo, headers: { "Content-Type": archivo.type } });
-    if (!subida.ok) {
-      setErrorGeneral("No se pudo subir el archivo. Revisa tu conexión e intenta de nuevo.");
-      setEstado("form");
-      return;
-    }
+      let subida: Response;
+      try {
+        subida = await fetch(firma.data.url, { method: "PUT", body: archivo, headers: { "Content-Type": archivo.type } });
+      } catch (error) {
+        setErrorGeneral(
+          `No se pudo subir el archivo al almacenamiento (${error instanceof Error ? error.message : "error de red"}). ` +
+            "Si el problema sigue, puede ser la política CORS del bucket — avísale a soporte.",
+        );
+        setEstado("form");
+        return;
+      }
+      if (!subida.ok) {
+        setErrorGeneral(`No se pudo subir el archivo (el almacenamiento respondió ${subida.status}). Revisa tu conexión e intenta de nuevo.`);
+        setEstado("form");
+        return;
+      }
 
-    const confirmado = await confirmarComprobanteAction(orderId, firma.data.key, parseo.data);
-    if (!confirmado.ok) {
-      setErrorGeneral(confirmado.error);
+      const confirmado = await confirmarComprobanteAction(orderId, firma.data.key, parseo.data);
+      if (!confirmado.ok) {
+        setErrorGeneral(confirmado.error);
+        setEstado("form");
+        return;
+      }
+      setEstado("hecho");
+    } catch (error) {
+      setErrorGeneral(`Ocurrió un error inesperado (${error instanceof Error ? error.message : "desconocido"}). Intenta de nuevo.`);
       setEstado("form");
-      return;
     }
-    setEstado("hecho");
   }
 
   if (estado === "hecho") {
