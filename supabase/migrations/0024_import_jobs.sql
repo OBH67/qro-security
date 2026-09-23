@@ -1,50 +1,35 @@
 -- 0024_import_jobs.sql
--- F2.3/F2.4 — paso 3 del importador de catálogo ("Aplicar"), arquitectura.md
--- §9.5: procesar hasta 1,050 filas en una sola petición choca contra el
--- tiempo máximo de una función serverless, y un fallo a la mitad deja el
--- catálogo en un estado indeterminado. Se guarda el trabajo en esta tabla
--- y se aplica por lotes (200 filas, `aplicarLoteImportacionAction`), cada
--- lote en su propia llamada — así una fila mala no detiene a las demás
--- (F2.4) y el progreso sobrevive a un refresh o a cerrar la pestaña sin
--- terminar (se reanuda leyendo `siguiente_indice`).
+-- F2.3/F2.4 — paso 3 del importador de catálogo ("Aplicar"). La tabla
+-- `import_jobs` ya existía desde 0003_catalogo.sql (adición de
+-- arquitectura §9.5, prevista desde el día 1 aunque nada la usaba
+-- todavía) y su RLS desde 0007_rls_policies.sql — esta migración solo la
+-- COMPLETA, nunca la recrea.
 --
--- Simplificación real frente a §9.5/diseño.md §11.8, documentada aquí en
--- vez de omitida en silencio: el avance de lote a lote lo dispara el
--- navegador de quien importa (un `fetch` tras otro mientras la pestaña
--- sigue abierta), no un cron en el servidor — por eso NO hay aviso por
--- correo "te avisamos cuando termine" ni avance real con la pestaña
--- cerrada. Si se cierra a medio camino, el trabajo se queda "procesando"
--- con su progreso intacto y se reanuda (mismo botón) la próxima vez que
--- se entra al importador — solo que hay que dejar la pestaña abierta
--- mientras corre.
-create table public.import_jobs (
-  id uuid primary key default gen_random_uuid(),
-  created_by uuid not null references public.profiles (id),
-  nombre_archivo text not null,
-  modo text not null check (modo in ('todo', 'solo_precios', 'solo_stock')),
-  status text not null default 'procesando' check (status in ('procesando', 'completado', 'detenido')),
-  -- Solo las filas que pasaron la validación del paso 2 (F2.2) — las que
-  -- tenían error nunca llegan aquí, se descartan desde el paso 2.
-  filas jsonb not null,
-  total int not null,
-  -- Fijos desde que se crea el trabajo (lo que decidió el paso 2, F2.2) —
-  -- no una cuenta en vivo de lo aplicado, para el resumen final
-  -- "X aplicados · Y nuevos · Z actualizados" de diseño.md §11.8.
-  nuevos int not null default 0,
-  actualizados int not null default 0,
-  siguiente_indice int not null default 0,
-  aplicados int not null default 0,
-  fallidos int not null default 0,
-  -- [{numeroFila, sku, nombre, motivo}] — para el CSV de "filas que fallaron".
-  fallas jsonb not null default '[]'::jsonb,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+-- Dos cosas le faltaban a ese diseño original para el paso 3 de verdad:
+--
+-- 1. Dónde guardar las filas YA VALIDADAS (paso 2, F2.2) para aplicarlas
+--    por lotes sin releer ni revalidar el archivo en cada lote — el
+--    diseño original solo guardaba `file_url` (la clave del archivo en
+--    R2) asumiendo que cada lote lo releería de ahí. Se simplifica aquí:
+--    en vez de subir el CSV a R2 y volver a parsearlo/validarlo en cada
+--    llamada de lote, las filas ya validadas (`ok: true` únicamente) se
+--    guardan tal cual en la columna nueva `filas` al crear el trabajo —
+--    el archivo nunca se sube a R2 en esta implementación. Por eso
+--    `file_url` (que sí sigue existiendo, `not null`) guarda el NOMBRE
+--    del archivo para mostrarlo en pantalla, no una clave real de R2.
+-- 2. Un estado para "el usuario detuvo la importación a la mitad"
+--    (diseño.md §11.8, "¿Detener la importación?") — el check original
+--    de `status` no lo contemplaba.
+alter table public.import_jobs
+  add column filas jsonb not null default '[]'::jsonb,
+  add column nuevos int not null default 0,
+  add column actualizados int not null default 0;
 
-create index import_jobs_created_by_idx on public.import_jobs (created_by, status);
+comment on column public.import_jobs.file_url is
+  'Nombre del archivo subido (no una clave de R2 — el archivo no se sube a R2 en esta implementación, ver 0024_import_jobs.sql).';
+comment on column public.import_jobs.filas is
+  'Filas ya validadas en el paso 2 (solo ok:true) — lo que el paso 3 va aplicando por lotes.';
 
-alter table public.import_jobs enable row level security;
-
--- Mismo alcance que el resto del importador (F2): admin e inventario.
-create policy import_jobs_staff_select on public.import_jobs
-  for select to authenticated using (public.is_staff_catalogo());
+alter table public.import_jobs drop constraint import_jobs_status_check;
+alter table public.import_jobs add constraint import_jobs_status_check
+  check (status in ('analizando', 'listo_para_aplicar', 'aplicando', 'completado', 'error', 'detenido'));
