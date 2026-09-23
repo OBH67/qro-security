@@ -2895,3 +2895,54 @@ pero si en algún momento quiere algo con garantía real necesitaría un
 número de WhatsApp Business propio — eso sigue requiriendo verificación
 de negocio ante Meta, aunque Twilio acompaña el trámite. Mientras tanto
 el correo (ya activo) sigue siendo el respaldo si el WhatsApp fallara.
+
+### Incremento (2026-09-23): subir comprobante/fotos de devolución se
+quedaba en "Enviando…" para siempre, sin ningún error
+
+La dueña reportó que subir un comprobante ya no funcionaba: el botón se
+quedaba cargando, la barra de progreso terminaba y no pasaba nada — sin
+ningún mensaje de error, y el pedido seguía en "pendiente de pago" al
+regresar a Mis pedidos. Al inicio se sospechó de la configuración de
+Twilio (coincidió en el tiempo), pero se descartó: el resto del sitio
+seguía funcionando con normalidad, lo cual no pasaría si `env.ts`
+hubiera fallado al arrancar (esa validación revienta TODO el servidor,
+no solo WhatsApp).
+
+**Causa real, encontrada por lectura del código — bug preexistente, no
+introducido en este incremento**: `enviar()` en `FormularioComprobante.
+tsx` (y el mismo patrón en `FormularioNuevaDevolucion.tsx`) no tenía
+ningún `try/catch`. El `fetch(...)` que sube el archivo directo del
+navegador a R2 (arquitectura §7.1) puede **rechazar** la promesa en vez
+de resolver con `ok: false` — típicamente por un bloqueo de CORS del
+bucket, o la red caída. Sin `try/catch`, ese rechazo nunca llegaba al
+`if (!subida.ok)` que sí mostraba un error: la función completa se
+interrumpía en silencio, `estado` se quedaba en `"subiendo"` para
+siempre (botón pegado) y no había ningún aviso — exactamente lo que
+describió la dueña.
+
+Se envolvió el cuerpo de `enviar()` en `try/catch`, y el `fetch` a R2 en
+su propio `try/catch` con un mensaje específico (incluye el motivo del
+error y una pista sobre CORS) en vez de uno genérico. En
+`FormularioNuevaDevolucion.tsx` cada foto se sube dentro de su propio
+`try/catch` en el ciclo — una foto que falla no debe tirar la solicitud
+completa, que ya quedó registrada antes de intentar las fotos.
+
+**Pendiente, acción de la dueña**: con este cambio ya desplegado, subir
+un comprobante de nuevo — si el problema sigue siendo CORS de R2, ahora
+sí va a aparecer un mensaje de error explícito en pantalla (en vez de
+quedarse pegado en silencio) que dice el motivo exacto; si dice algo
+relacionado con CORS o "Failed to fetch", hay que revisar en Cloudflare
+→ R2 → el bucket `R2_BUCKET_PRIVATE` → Settings → CORS Policy que el
+origen `https://qro-security.vercel.app` siga permitido con método
+`PUT` y el header `Content-Type` (documentado también en
+arquitectura.md §7.1 y en el incremento del 22 de septiembre de este
+mismo archivo). No se pudo reproducir el fallo original ni confirmar la
+causa exacta en este entorno (sin acceso al bucket real ni al
+navegador de la dueña).
+
+Validado: `tsc --noEmit` y `eslint` limpios (mismo único error
+preexistente de siempre en este archivo, no relacionado). No se pudo
+correr `next build` en este intento — el entorno no tuvo salida a
+Google Fonts en este momento, sin relación con este cambio (`tsc` ya
+había pasado limpio, que es la validación que de verdad cubre este
+código).

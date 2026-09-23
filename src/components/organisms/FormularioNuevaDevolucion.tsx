@@ -94,16 +94,26 @@ export function FormularioNuevaDevolucion({ pedidos }: { pedidos: PedidoElegible
       return;
     }
 
+    // La solicitud ya quedó registrada en este punto — una foto que falla
+    // (firma o subida a R2) no debe tirar todo el flujo, así que cada una
+    // se atrapa por separado en vez de dejar que una excepción sin atrapar
+    // (típicamente CORS del bucket) deje el botón pegado en "Enviando…"
+    // para siempre sin avisar que la solicitud sí se guardó.
     for (const archivo of archivos) {
-      const firma = await solicitarSubidaFotoDevolucionAction({
-        returnId: resultado.data.id,
-        folio: resultado.data.folio,
-        nombreArchivo: archivo.name,
-        contentType: archivo.type,
-      });
-      if (!firma.ok) continue; // la solicitud ya quedó registrada; una foto que falla no debe tirar todo el flujo
-      const subida = await fetch(firma.data.url, { method: "PUT", body: archivo, headers: { "Content-Type": archivo.type } });
-      if (subida.ok) await confirmarFotoDevolucionAction(resultado.data.id, firma.data.key);
+      try {
+        const firma = await solicitarSubidaFotoDevolucionAction({
+          returnId: resultado.data.id,
+          folio: resultado.data.folio,
+          nombreArchivo: archivo.name,
+          contentType: archivo.type,
+        });
+        if (!firma.ok) continue;
+        const subida = await fetch(firma.data.url, { method: "PUT", body: archivo, headers: { "Content-Type": archivo.type } });
+        if (subida.ok) await confirmarFotoDevolucionAction(resultado.data.id, firma.data.key);
+      } catch {
+        // Una foto que no se pudo subir no debe impedir que las demás se
+        // intenten ni que la solicitud (ya registrada) se marque como enviada.
+      }
     }
 
     setEstado("hecho");
