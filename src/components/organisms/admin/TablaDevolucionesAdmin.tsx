@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { formatearPrecio } from "@/lib/formato";
 import {
   obtenerDetalleDevolucionAction,
@@ -157,7 +158,7 @@ export function TablaDevolucionesAdmin({ devoluciones }: { devoluciones: FilaDev
 
       {seleccionId && (
         <div className="modal-overlay" style={{ justifyContent: "flex-end" }} onClick={cerrarCajon}>
-          <div className="tarjeta sg-in" style={{ width: 440, height: "100vh", overflow: "auto", padding: 22 }} onClick={(e) => e.stopPropagation()}>
+          <div className="tarjeta sg-in" style={{ width: "min(680px, 94vw)", height: "100vh", overflow: "auto", padding: 22 }} onClick={(e) => e.stopPropagation()}>
             {cargando && <p style={{ color: "var(--text-muted)" }}>Cargando…</p>}
             {!cargando && detalle && item && (
               <>
@@ -194,6 +195,25 @@ export function TablaDevolucionesAdmin({ devoluciones }: { devoluciones: FilaDev
                 <div className="badge" style={{ background: "transparent", border: "1px solid var(--border-strong)", color: "var(--text-primary)", marginBottom: 16 }}>
                   {item.condition}
                 </div>
+
+                <div style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>
+                  Fotos del cliente
+                </div>
+                {detalle.fotos.length > 0 ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10, marginBottom: 16 }}>
+                    {detalle.fotos.map((url, i) => (
+                      <a key={i} href={url} target="_blank" rel="noopener noreferrer" style={{ display: "block" }}>
+                        <div style={{ background: "var(--bg-inset)", border: "1px solid var(--border)", height: 200, position: "relative", overflow: "hidden" }}>
+                          <Image src={url} alt={`Foto ${i + 1} de la devolución`} fill style={{ objectFit: "contain" }} unoptimized />
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ background: "var(--bg-inset)", border: "1px solid var(--border)", padding: 14, textAlign: "center", color: "var(--text-dim)", fontSize: 13, marginBottom: 16 }}>
+                    El cliente no subió fotos.
+                  </div>
+                )}
 
                 {resuelta ? (
                   <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16, fontSize: 14 }}>
