@@ -3096,3 +3096,46 @@ dueña antes de emprenderlo.
 Validado con `tsc --noEmit` y `eslint` limpios (no se pudo compilar
 `next build` completo en este entorno por falta de red hacia Google
 Fonts, limitación ya documentada en incrementos anteriores).
+
+### Corrección (2026-09-23): panel de admin sin CSS responsive — el sidebar
+fijo aplastaba el contenido en móvil
+
+La dueña confirmó (alcance "todo el panel") el problema de responsive
+que había quedado pendiente del incremento anterior. La causa raíz era
+una sola: el layout protegido (`admin/(protegido)/layout.tsx`) y
+`SidebarAdmin.tsx` solo tenían las medidas de escritorio de la
+maqueta — un sidebar de 248px fijo, siempre visible, sin ningún
+`@media` — así que en una pantalla de ~390px de ancho el sidebar por sí
+solo ocupaba más de la mitad, y el resto del panel (tablas, formularios
+de dos columnas) nunca tuvo ninguna regla para apilarse.
+
+Cambios:
+- **Sidebar → panel deslizable en móvil** (`admin.css` `.admin-sidebar`,
+  `.admin-menutoggle`, `.admin-sidebar-overlay`, breakpoint 860px).
+  `SidebarAdmin.tsx` pasó a client component: agrega el botón ☰, el
+  overlay para cerrar tocando fuera, y se cierra solo al cambiar de
+  ruta (comparando `pathname` contra su valor anterior durante el
+  render — no con un `useEffect`, para no disparar el lint de
+  "setState síncrono en un efecto" que ya se había visto antes en este
+  proyecto).
+- **Tablas** (catálogo, pedidos, devoluciones, solicitudes,
+  importador): todas viven dentro de una `.tarjeta`, así que se le dio
+  `overflow-x: auto` a esa clase globalmente en vez de tocar cada
+  componente — y un `min-width` a `table` bajo 700px para que las
+  columnas hagan scroll horizontal en vez de aplastarse hasta ser
+  ilegibles.
+- **Formularios de 2-3 columnas fijas** (`FormularioProducto`,
+  `ConfiguracionForm`, `ImportadorCatalogo`, `ArbolCategorias`): las
+  `gridTemplateColumns` inline (que no se pueden envolver en un
+  `@media` desde `style`) se movieron a 5 clases utilitarias nuevas
+  (`.admin-grid-2`, `.admin-grid-2-ancho`, `.admin-grid-3`,
+  `.admin-grid-lateral`, `.admin-grid-arbol`) que colapsan a una sola
+  columna bajo 780px.
+- **Modal genérico** (`.modal`): `max-width: 92vw` para que no se corte
+  en pantallas angostas de 460px o menos.
+
+No se tocó el sitio público ni "Mi cuenta" — ya tenían su propio
+rediseño móvil de un incremento anterior. Validado con `tsc --noEmit`/
+`eslint` limpios; no se pudo verificar visualmente en un dispositivo
+real en este entorno (sin navegador con DevTools) — pendiente de que
+la dueña confirme en su celular.

@@ -71,6 +71,14 @@
   border-collapse: collapse;
   width: 100%;
 }
+@media (max-width: 700px) {
+  /* Deja que la tarjeta contenedora (`.tarjeta`, ya con overflow-x: auto)
+   * scrollee la tabla en horizontal en vez de aplastar columnas hasta
+   * volverlas ilegibles. */
+  .admin-root table {
+    min-width: 560px;
+  }
+}
 .admin-root .mono {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -202,6 +210,8 @@
 .admin-root .tarjeta {
   background: var(--bg-card);
   border: 1px solid var(--border);
+  max-width: 100%;
+  overflow-x: auto;
 }
 .admin-root .badge {
   display: inline-flex;
@@ -326,6 +336,115 @@
 .admin-root tr.fila:hover td {
   background: var(--bg-hover);
 }
+/* Corrección (2026-09-23): el layout protegido y el sidebar solo tenían
+ * los estilos de escritorio de la maqueta (sidebar fijo de 248px, sin
+ * media queries) — en móvil ocupaba más de la mitad del viewport y
+ * aplastaba el contenido (reporte de la dueña con capturas). Se agregan
+ * las clases de abajo para que el sidebar se vuelva un panel deslizable
+ * (`.admin-sidebar.abierta`) por debajo de 860px, controlado por
+ * `SidebarAdmin.tsx` (client component, botón ☰ + overlay). */
+.admin-shell {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  background: var(--bg-base);
+}
+.admin-main {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 32px 64px;
+  max-width: 1400px;
+}
+.admin-sidebar {
+  width: 248px;
+  flex: 0 0 248px;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.admin-menutoggle {
+  display: none;
+}
+.admin-sidebar-overlay {
+  display: none;
+}
+@media (max-width: 860px) {
+  .admin-main {
+    padding: 76px 16px 48px;
+  }
+  .admin-menutoggle {
+    display: flex;
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 80;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 18px;
+  }
+  .admin-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(280px, 84vw);
+    flex: none;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    z-index: 90;
+  }
+  .admin-sidebar.abierta {
+    transform: translateX(0);
+  }
+  .admin-sidebar-overlay.visible {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(7, 17, 28, 0.6);
+    z-index: 85;
+  }
+}
+/* Utilidades de grilla reutilizadas por los formularios/tarjetas del
+ * panel (catálogo, configuración, categorías, devoluciones) — antes cada
+ * uno fijaba sus columnas en `style` inline sin ninguna manera de
+ * colapsar en móvil; con la clase, una sola media query las apila todas. */
+.admin-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.admin-grid-2-ancho {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+}
+.admin-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.admin-grid-lateral {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+}
+.admin-grid-arbol {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+}
+@media (max-width: 780px) {
+  .admin-grid-2,
+  .admin-grid-2-ancho,
+  .admin-grid-3,
+  .admin-grid-lateral,
+  .admin-grid-arbol {
+    grid-template-columns: 1fr;
+  }
+}
 .admin-root .modal-overlay {
   position: fixed;
   inset: 0;
@@ -340,5 +459,11 @@
   border: 1px solid var(--border-strong);
   box-shadow: 0 26px 50px rgba(0, 0, 0, 0.55);
   width: 460px;
+  max-width: 92vw;
   padding: 28px;
+}
+@media (max-width: 480px) {
+  .admin-root .modal {
+    padding: 20px;
+  }
 }

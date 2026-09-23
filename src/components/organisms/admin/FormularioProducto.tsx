@@ -101,9 +101,9 @@ export function FormularioProducto({ producto, datosFormulario }: { producto?: P
       </div>
 
       {tab === "General" ? (
-        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 20 }}>
+        <div className="admin-grid-2-ancho" style={{ gap: 20 }}>
           <div className="tarjeta" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div className="admin-grid-2" style={{ gap: 14 }}>
               <div>
                 <label style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>SKU *</label>
                 <input className="campo mono" value={sku} onChange={(e) => setSku(e.target.value)} placeholder="SGQ-VV-0000" disabled={esEdicion} />
@@ -121,7 +121,7 @@ export function FormularioProducto({ producto, datosFormulario }: { producto?: P
               <label style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>Nombre *</label>
               <input className="campo" value={name} onChange={(e) => setName(e.target.value)} placeholder="Cámara IP bala 4 MP con detección de personas y vehículos" />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div className="admin-grid-2" style={{ gap: 14 }}>
               <div>
                 <label style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>Precio (con IVA) *</label>
                 <input className="campo mono" type="number" min={0} step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="1289.00" />
@@ -144,7 +144,7 @@ export function FormularioProducto({ producto, datosFormulario }: { producto?: P
                 Categoría del producto
               </div>
               <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>Grupo y subcategoría del árbol (D7). Un producto siempre queda en el nivel más específico disponible.</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div className="admin-grid-2" style={{ gap: 12 }}>
                 <div>
                   <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6, fontFamily: "var(--font-title)", fontWeight: 600, letterSpacing: 0.3, textTransform: "uppercase" }}>① Grupo *</label>
                   <select

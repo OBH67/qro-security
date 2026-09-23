@@ -110,7 +110,7 @@ export function ConfiguracionForm({
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 20, maxWidth: 900 }}>
+    <div className="admin-grid-lateral" style={{ gap: 20, maxWidth: 900 }}>
       <div style={{ position: "sticky", top: 20, height: "fit-content", display: "flex", flexDirection: "column", gap: 2 }}>
         <a href="#config-bancarios" style={{ fontSize: 13, padding: "8px 10px", color: "var(--accent)", borderLeft: "2px solid var(--accent)", background: "var(--bg-card)" }}>
           Datos bancarios
@@ -129,7 +129,7 @@ export function ConfiguracionForm({
           <div style={{ fontSize: 13, color: "var(--warning)", background: "var(--warning-tint)", border: "1px solid var(--warning)", padding: "10px 12px", marginBottom: 16 }}>
             ⚠ Estos datos se le muestran al cliente al generar su pedido. Un error aquí significa transferencias a una cuenta equivocada. Revísalos dos veces.
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+          <div className="admin-grid-2" style={{ gap: 14, marginBottom: 14 }}>
             <div>
               <label style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>Banco *</label>
               <input className="campo" value={bankName} onChange={(e) => setBankName(e.target.value)} />
@@ -139,7 +139,7 @@ export function ConfiguracionForm({
               <input className="campo" value={beneficiary} onChange={(e) => setBeneficiary(e.target.value)} />
             </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 8 }}>
+          <div className="admin-grid-2" style={{ gap: 14, marginBottom: 8 }}>
             <div>
               <label style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>CLABE interbancaria *</label>
               <input className="campo mono" value={clabe} onChange={(e) => setClabe(e.target.value.replace(/\D/g, "").slice(0, 18))} />
@@ -180,7 +180,7 @@ export function ConfiguracionForm({
 
         <div className="tarjeta" id="config-contacto" style={{ padding: 22 }}>
           <h2 style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 16, margin: "0 0 12px" }}>Contacto del administrador</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 10 }}>
+          <div className="admin-grid-2" style={{ gap: 14, marginBottom: 10 }}>
             <div>
               <label style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>Correo para avisos *</label>
               <input className="campo" type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} />
