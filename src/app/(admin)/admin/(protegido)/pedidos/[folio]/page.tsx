@@ -37,6 +37,7 @@ const PASOS_HISTORIAL: { estado: EstadoPedido; label: string }[] = [
   { estado: "enviado", label: "Enviado" },
   { estado: "entregado", label: "Entregado" },
 ];
+const PASO_CANCELADO: { estado: EstadoPedido; label: string } = { estado: "cancelado", label: "Cancelado" };
 
 /** panel-admin-maqueta.html:377-508 — dos variantes de la misma pantalla
  * (detalle normal con comprobante, y RN-11 pagado con saldo al 100%),
@@ -141,11 +142,12 @@ export default async function PaginaDetallePedidoAdmin({ params }: { params: Pro
             </div>
             <div className="tarjeta" style={{ padding: 18 }}>
               <h3 style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 13, letterSpacing: 0.5, color: "var(--text-muted)", textTransform: "uppercase", margin: "0 0 10px" }}>Historial</h3>
-              {PASOS_HISTORIAL.map((paso) => {
+              {(pedido.status === "cancelado" ? [...PASOS_HISTORIAL, PASO_CANCELADO] : PASOS_HISTORIAL).map((paso) => {
                 const evento = historial.find((h) => h.to_status === paso.estado);
+                const esCancelado = paso.estado === "cancelado";
                 return (
                   <div key={paso.estado} style={{ display: "flex", gap: 10, fontSize: 13, marginBottom: 8, color: evento ? "var(--text-primary)" : "var(--text-dim)" }}>
-                    <span style={{ color: evento ? "var(--accent)" : "var(--text-dim)" }}>{evento ? "●" : "○"}</span>
+                    <span style={{ color: evento ? (esCancelado ? "var(--danger-text)" : "var(--accent)") : "var(--text-dim)" }}>{evento ? "●" : "○"}</span>
                     <span>{paso.label}</span>
                     {evento && (
                       <span className="mono" style={{ color: "var(--text-muted)", marginLeft: "auto" }}>
