@@ -5,6 +5,7 @@ import { useState } from "react";
 import { borrarDatosFiscales, marcarDatosFiscalesComoPredeterminados } from "@/server/actions/datosFiscales";
 import { FormularioDatosFiscales } from "@/components/organisms/FormularioDatosFiscales";
 import { Boton } from "@/components/atoms/Boton";
+import { Spinner } from "@/components/atoms/Spinner";
 import type { BillingProfileRow } from "@/types/database";
 
 /** index.html:1275-1283 (`secFacturacion`) — B3.2/B3.3. El bloque móvil
@@ -17,15 +18,20 @@ import type { BillingProfileRow } from "@/types/database";
 export function DatosFiscalesCliente({ registros }: { registros: BillingProfileRow[] }) {
   const router = useRouter();
   const [mostrarForma, setMostrarForma] = useState(registros.length === 0);
+  const [enCurso, setEnCurso] = useState<{ id: string; accion: "eliminar" | "default" } | null>(null);
 
   async function eliminar(id: string) {
+    setEnCurso({ id, accion: "eliminar" });
     await borrarDatosFiscales(id);
     router.refresh();
+    setEnCurso(null);
   }
 
   async function marcarDefault(id: string) {
+    setEnCurso({ id, accion: "default" });
     await marcarDatosFiscalesComoPredeterminados(id);
     router.refresh();
+    setEnCurso(null);
   }
 
   return (
@@ -39,8 +45,14 @@ export function DatosFiscalesCliente({ registros }: { registros: BillingProfileR
             <Dato etiqueta="Uso de CFDI" valor={f.cfdi_use} />
             <Dato etiqueta="C.P. fiscal" valor={f.postal_code} mono />
             <div style={{ gridColumn: "1 / -1" }}>
-              <button type="button" onClick={() => eliminar(f.id)} style={{ fontSize: 13.5, color: "var(--text-muted)" }}>
-                Eliminar
+              <button
+                type="button"
+                onClick={() => eliminar(f.id)}
+                disabled={enCurso?.id === f.id}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13.5, color: "var(--text-muted)", cursor: enCurso?.id === f.id ? "wait" : "pointer" }}
+              >
+                {enCurso?.id === f.id && enCurso.accion === "eliminar" && <Spinner tamano={13} color="var(--text-muted)" />}
+                {enCurso?.id === f.id && enCurso.accion === "eliminar" ? "Eliminando…" : "Eliminar"}
               </button>
             </div>
           </div>
@@ -59,12 +71,24 @@ export function DatosFiscalesCliente({ registros }: { registros: BillingProfileR
             </div>
             <div style={{ display: "flex", gap: 16, marginTop: 10 }}>
               {!f.is_default && (
-                <button type="button" onClick={() => marcarDefault(f.id)} style={{ fontSize: 13.5, color: "#9FB2C3" }}>
-                  Usar por defecto
+                <button
+                  type="button"
+                  onClick={() => marcarDefault(f.id)}
+                  disabled={enCurso?.id === f.id}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13.5, color: "#9FB2C3", cursor: enCurso?.id === f.id ? "wait" : "pointer" }}
+                >
+                  {enCurso?.id === f.id && enCurso.accion === "default" && <Spinner tamano={13} color="#9FB2C3" />}
+                  {enCurso?.id === f.id && enCurso.accion === "default" ? "Aplicando…" : "Usar por defecto"}
                 </button>
               )}
-              <button type="button" onClick={() => eliminar(f.id)} style={{ fontSize: 13.5, color: "#9FB2C3" }}>
-                Eliminar
+              <button
+                type="button"
+                onClick={() => eliminar(f.id)}
+                disabled={enCurso?.id === f.id}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13.5, color: "#9FB2C3", cursor: enCurso?.id === f.id ? "wait" : "pointer" }}
+              >
+                {enCurso?.id === f.id && enCurso.accion === "eliminar" && <Spinner tamano={13} color="#9FB2C3" />}
+                {enCurso?.id === f.id && enCurso.accion === "eliminar" ? "Eliminando…" : "Eliminar"}
               </button>
             </div>
           </div>

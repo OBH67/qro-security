@@ -1,21 +1,27 @@
 "use client";
 
 import { useState } from "react";
+import { Spinner } from "@/components/atoms/Spinner";
 
 /** index.html:756-767 — selector de cantidad. Funciona en modo NO
  * controlado (ficha de producto, antes de agregar al carrito: expone la
  * cantidad elegida vía `onChange`) o CONTROLADO (`valor` + `onChange`,
- * carrito — Épica B, `it.onInc`/`it.onDec` de index.html:884-886). */
+ * carrito — Épica B, `it.onInc`/`it.onDec` de index.html:884-886).
+ * `cargando`: el carrito con sesión espera la respuesta del servidor antes
+ * de reflejar la nueva cantidad (sin actualización optimista) — sin este
+ * aviso, +/- parecía no hacer nada hasta que la cifra saltaba sola. */
 export function SelectorCantidad({
   maximo,
   valor,
   onChange,
   tamano = "normal",
+  cargando,
 }: {
   maximo: number;
   valor?: number;
   onChange?: (cantidad: number) => void;
   tamano?: "normal" | "compacto";
+  cargando?: boolean;
 }) {
   const [cantidadInterna, setCantidadInterna] = useState(1);
   const cantidad = valor ?? cantidadInterna;
@@ -30,23 +36,35 @@ export function SelectorCantidad({
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", border: "1px solid var(--border-input)", borderRadius: "var(--radius-input)", width: "fit-content" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          border: "1px solid var(--border-input)",
+          borderRadius: "var(--radius-input)",
+          width: "fit-content",
+          opacity: cargando ? 0.7 : 1,
+          cursor: cargando ? "wait" : undefined,
+        }}
+      >
         <button
           type="button"
           aria-label="Quitar uno"
           onClick={() => cambiar(cantidad - 1)}
-          style={{ width: dimension, height: dimension, fontSize: 18, color: "var(--text-muted)" }}
+          disabled={cargando}
+          style={{ width: dimension, height: dimension, fontSize: 18, color: "var(--text-muted)", cursor: cargando ? "wait" : undefined }}
         >
           −
         </button>
-        <span className="font-data" style={{ minWidth: 40, textAlign: "center", fontSize: 15 }}>
-          {cantidad}
+        <span className="font-data" style={{ minWidth: 40, display: "grid", placeItems: "center", fontSize: 15 }}>
+          {cargando ? <Spinner tamano={14} color="var(--text-muted)" /> : cantidad}
         </span>
         <button
           type="button"
           aria-label="Agregar uno"
           onClick={() => cambiar(cantidad + 1)}
-          style={{ width: dimension, height: dimension, fontSize: 18, color: "var(--text-muted)" }}
+          disabled={cargando}
+          style={{ width: dimension, height: dimension, fontSize: 18, color: "var(--text-muted)", cursor: cargando ? "wait" : undefined }}
         >
           +
         </button>

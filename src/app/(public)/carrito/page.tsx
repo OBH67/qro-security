@@ -1,16 +1,34 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatearPrecio } from "@/lib/formato";
 import { useCarrito } from "@/components/providers/CarritoProvider";
 import { SelectorCantidad } from "@/components/molecules/SelectorCantidad";
 import { Boton } from "@/components/atoms/Boton";
+import { Spinner } from "@/components/atoms/Spinner";
 
 /** index.html:859-923 (`isCart`) — traducción literal. */
 export default function PaginaCarrito() {
   const carrito = useCarrito();
   const router = useRouter();
+  // Qué producto está en proceso y con qué acción — el carrito con sesión
+  // no actualiza la cifra hasta que el servidor responde (sin optimismo),
+  // así que sin este aviso +/- y "Quitar" parecían no hacer nada.
+  const [enCurso, setEnCurso] = useState<{ productId: string; accion: "cantidad" | "quitar" } | null>(null);
+
+  async function actualizarCantidad(productId: string, qty: number) {
+    setEnCurso({ productId, accion: "cantidad" });
+    await carrito.actualizarCantidad(productId, qty);
+    setEnCurso(null);
+  }
+
+  async function quitar(productId: string) {
+    setEnCurso({ productId, accion: "quitar" });
+    await carrito.quitar(productId);
+    setEnCurso(null);
+  }
 
   if (carrito.cargando) {
     return <section style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "36px 20px 80px" }} />;
@@ -59,11 +77,18 @@ export default function PaginaCarrito() {
                     <SelectorCantidad
                       maximo={it.disponible}
                       valor={it.qty}
-                      onChange={(qty) => carrito.actualizarCantidad(it.productId, qty)}
+                      onChange={(qty) => actualizarCantidad(it.productId, qty)}
                       tamano="compacto"
+                      cargando={enCurso?.productId === it.productId && enCurso.accion === "cantidad"}
                     />
-                    <button type="button" onClick={() => carrito.quitar(it.productId)} style={{ fontSize: 14, color: "var(--text-muted)" }}>
-                      Quitar
+                    <button
+                      type="button"
+                      onClick={() => quitar(it.productId)}
+                      disabled={enCurso?.productId === it.productId}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, color: "var(--text-muted)", cursor: enCurso?.productId === it.productId ? "wait" : "pointer" }}
+                    >
+                      {enCurso?.productId === it.productId && enCurso.accion === "quitar" && <Spinner tamano={13} color="var(--text-muted)" />}
+                      {enCurso?.productId === it.productId && enCurso.accion === "quitar" ? "Quitando…" : "Quitar"}
                     </button>
                   </div>
                 </div>

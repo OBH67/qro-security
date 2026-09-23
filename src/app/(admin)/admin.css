@@ -172,6 +172,16 @@
   padding: 0 12px;
   font-size: 13px;
 }
+.admin-root .btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.admin-root .btn:disabled.btn-cargando {
+  /* Ocupado, no inválido: conserva el color de la variante y solo cambia
+   * el cursor — el spinner ya avisa que está trabajando (diseño.md §12.3). */
+  opacity: 0.85;
+  cursor: wait;
+}
 .admin-root .campo {
   width: 100%;
   background: var(--bg-inset);

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { crearGrupoAction, crearSubcategoriaAction, actualizarCategoriaAction, eliminarSubcategoriaAction } from "@/server/actions/admin/categorias";
+import { BotonAdmin } from "@/components/atoms/BotonAdmin";
 import type { NodoGrupo, NodoSubcategoria } from "@/server/db/queries/admin/categorias";
 
 type Seleccion = { tipo: "grupo"; nodo: NodoGrupo; padre: string } | { tipo: "subcategoria"; nodo: NodoSubcategoria; padre: string };
@@ -238,9 +239,15 @@ export function ArbolCategorias({ grupos }: { grupos: NodoGrupo[] }) {
               <button className="btn btn-fantasma cut cut-10" onClick={() => setFormNuevoGrupo(false)}>
                 Cancelar
               </button>
-              <button className="btn btn-primario cut cut-10" onClick={crearGrupo} disabled={isPending || !nombreGrupo.trim() || !codigoGrupo.trim()}>
-                {isPending ? "Creando…" : "Crear"}
-              </button>
+              <BotonAdmin
+                className="cut cut-10"
+                onClick={crearGrupo}
+                disabled={!nombreGrupo.trim() || !codigoGrupo.trim()}
+                cargando={isPending}
+                textoCargando="Creando…"
+              >
+                Crear
+              </BotonAdmin>
             </div>
           </>
         ) : formNuevaSub ? (
@@ -253,9 +260,9 @@ export function ArbolCategorias({ grupos }: { grupos: NodoGrupo[] }) {
               <button className="btn btn-fantasma cut cut-10" onClick={() => setFormNuevaSub(null)}>
                 Cancelar
               </button>
-              <button className="btn btn-primario cut cut-10" onClick={crearSub} disabled={isPending || !nombreNueva.trim()}>
-                {isPending ? "Creando…" : "Crear"}
-              </button>
+              <BotonAdmin className="cut cut-10" onClick={crearSub} disabled={!nombreNueva.trim()} cargando={isPending} textoCargando="Creando…">
+                Crear
+              </BotonAdmin>
             </div>
           </>
         ) : !seleccion ? (
@@ -289,15 +296,15 @@ export function ArbolCategorias({ grupos }: { grupos: NodoGrupo[] }) {
             {error && <p style={{ fontSize: 13, color: "var(--danger-text)", marginBottom: 14 }}>{error}</p>}
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               {seleccion.tipo === "subcategoria" ? (
-                <button className="btn btn-peligro cut cut-10" onClick={eliminar} disabled={isPending}>
+                <BotonAdmin variante="peligro" className="cut cut-10" onClick={eliminar} cargando={isPending} textoCargando="Eliminando…">
                   Eliminar
-                </button>
+                </BotonAdmin>
               ) : (
                 <span />
               )}
-              <button className="btn btn-primario cut cut-10" onClick={guardar} disabled={isPending || !nombreEdit.trim()}>
-                {isPending ? "Guardando…" : "Guardar"}
-              </button>
+              <BotonAdmin className="cut cut-10" onClick={guardar} disabled={!nombreEdit.trim()} cargando={isPending} textoCargando="Guardando…">
+                Guardar
+              </BotonAdmin>
             </div>
           </>
         )}

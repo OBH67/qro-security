@@ -58,8 +58,8 @@ export function FormularioDatosFiscales({ onGuardado }: { onGuardado: () => void
         <CampoConError label="Código postal fiscal" placeholder="76000" value={datos.postalCode} onChange={(e) => setDatos((d) => ({ ...d, postalCode: e.target.value }))} error={errores.postalCode} />
       </div>
       {error && <p style={{ margin: 0, fontSize: 13.5, color: "var(--danger-text)" }}>{error}</p>}
-      <Boton type="submit" disabled={enviando} style={{ alignSelf: "flex-start" }}>
-        {enviando ? "Guardando…" : "Guardar datos fiscales"}
+      <Boton type="submit" cargando={enviando} textoCargando="Guardando…" style={{ alignSelf: "flex-start" }}>
+        Guardar datos fiscales
       </Boton>
     </form>
   );

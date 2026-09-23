@@ -2,7 +2,7 @@
 
 Carpeta de trabajo: `/home/user/qro-security`
 Rama: `claude/sg-queretaro-sales-platform-6a7359`
-Última actualización: 2026-09-21
+Última actualización: 2026-09-23
 
 ## Fase actual
 **Implementación en curso — decimonoveno incremento (2026-09-21): la
@@ -2433,6 +2433,9 @@ de `0022_generar_folio_search_path.sql` directo en Supabase Studio → SQL
 Editor → Run). No se pudo aplicar ni probar en este entorno (sin acceso
 al proyecto real).
 
+**RESUELTO (2026-09-23, confirmado por la dueña):** migración 0022
+aplicada en el proyecto de Supabase alojado.
+
 ### Incremento (2026-09-22): vista previa del comprobante, monto con
 separador de miles, y el `NetworkError` al subir es CORS de R2 sin
 configurar (no es bug de código)
@@ -2478,6 +2481,10 @@ La dueña, ya con un pedido de prueba generado, pidió tres cosas sobre
    en desarrollo + el dominio real de producción), método `PUT`, y el
    header `Content-Type`. No se pudo aplicar ni probar contra el bucket
    real en este entorno (sin acceso a la cuenta de Cloudflare).
+
+**RESUELTO (2026-09-23, confirmado por la dueña):** el permiso de R2
+para subir comprobantes ya funciona. Hizo una carga de prueba y el
+comprobante aparece en el bucket privado.
 
 Validado por lectura del código y `npx tsc --noEmit` limpio; la lógica
 de `formatearMontoInput()` se probó aparte con casos de borde (entero
@@ -2688,3 +2695,149 @@ errores. No se pudo probar contra la base real ni ver el resultado
 visual (logos de terceros, tamaño/proporción real en la marquesina)
 desde este entorno — pendiente que la dueña corra
 `seed_marcas_reales.sql` y confirme cómo se ven.
+
+### Pendientes resueltos (2026-09-23, confirmado por la dueña)
+1. Migración `0022_generar_folio_search_path.sql` aplicada en Supabase
+   alojado.
+2. Permiso/CORS de Cloudflare R2 para comprobantes funcionando (carga
+   de prueba visible en el bucket privado).
+
+Con esto ya se puede probar el flujo de compra completo de punta a
+punta.
+
+### Incremento (2026-09-23): historial no mostraba la cancelación, y el
+motivo de cancelación no llegaba al cliente en el sitio
+
+Dos hallazgos de la dueña probando el panel real:
+
+1. **"Historial" (detalle de pedido, panel admin) no registraba un
+   pedido cancelado.** La lista de pasos (`PASOS_HISTORIAL`) solo tenía
+   los del flujo normal (generado → comprobante → listo envío → enviado
+   → entregado); "cancelado" nunca estaba ahí, aunque el evento sí se
+   guarda en `order_status_history`. Ahora, si el pedido está cancelado,
+   se agrega ese paso a la lista con un punto rojo.
+2. **El cliente no podía ver el motivo que el admin escribe al
+   cancelar.** Ese motivo solo vivía en `order_status_history.note`,
+   tabla que el cliente no puede leer por RLS (solo admin) — sí llegaba
+   por correo (`construirPedidoCancelado`), pero no en el sitio.
+   **Pendiente, acción de la dueña**: correr en Supabase Studio → SQL
+   Editor el contenido de
+   `supabase/migrations/0023_motivo_cancelacion_visible_cliente.sql`.
+   Agrega la columna `orders.cancellation_reason` y actualiza
+   `liberar_apartado()` para copiar ahí el motivo al cancelar. No se
+   pudo aplicar ni probar en este entorno (sin acceso al proyecto real).
+   Mientras no se aplique, `/mi-cuenta/pedidos/[folio]` simplemente no
+   muestra el bloque de motivo (columna inexistente → siempre nula), no
+   truena.
+
+Validado por lectura del código; no se pudo correr `npx tsc --noEmit`
+en este entorno (`node_modules` no está instalado aquí) ni probar
+contra Postgres real.
+
+### Incremento (2026-09-23): navegación lenta y sin retroalimentación
+
+La dueña reportó que al cambiar de sección "no se sabe si está cargando"
+y la pantalla aparece de golpe. No es un límite de Next.js; eran dos
+causas del proyecto:
+
+1. **Cero `loading.tsx` en 27 páginas dinámicas.** Sin él, Next espera a
+   que el servidor termine TODO el render antes de mostrar algo. Se
+   agregaron esqueletos con la forma real del contenido (diseño.md
+   §12.3) en `(public)`, `(public)/catalogo`, `(public)/producto/[slug]`,
+   `mi-cuenta` y `admin/(protegido)`, más una barra de progreso superior
+   (`BarraNavegacion`, diseño.md §7.1) para las esperas que un
+   `loading.tsx` no cubre: layouts que consultan datos al entrar a otra
+   sección y la compilación bajo demanda de `next dev`.
+2. **Consultas repetidas a Supabase Auth.** `getUser()` va a la red en
+   cada llamada, y se llamaba en el proxy (cada request, prefetch
+   incluido) y de nuevo en el marco del sitio, el layout y la página:
+   hasta 4 viajes en serie al entrar a "Mi cuenta". Ahora
+   `obtenerSesionActual` usa `cache()` de React (una sola vez por
+   request) y tanto ella como el proxy usan `getClaims()`, que valida
+   el JWT localmente con llaves asimétricas (con llaves HS256 heredadas
+   cae solo a `getUser()`, igual que antes — nunca empeora).
+   Contrapartida conocida de `getClaims()`: una sesión cerrada desde
+   otro dispositivo sigue siendo válida hasta que vence su JWT (1 h por
+   default); el rol se sigue leyendo de `profiles` en cada request.
+
+Validado: `tsc --noEmit` y `eslint` limpios, `next build` exitoso, y
+prueba en Chromium contra `next start` con rutas temporales (ya
+eliminadas): el esqueleto aparece <250 ms tras el clic en una página
+de 3 s; la barra no aparece en navegaciones <120 ms, avanza de forma
+gradual en una espera de 2.5 s y desaparece al llegar; sin scroll
+horizontal a 390 px.
+
+**Recomendación a la dueña**: medir la velocidad con `npm run build &&
+npm start`, no con `npm run dev` (en desarrollo cada pantalla se compila
+la primera vez que se visita y el prefetch está apagado). **Pendiente
+de revisar en Supabase**: Project Settings → JWT Keys; si el proyecto
+sigue con la llave HS256 heredada, migrar a llaves asimétricas para que
+`getClaims()` deje de ir a la red.
+
+### Incremento (2026-09-23): todos los botones de acción muestran que
+están trabajando
+
+Pedido explícito de la dueña: "todos los botones, incluyendo admin y
+cliente" necesitan un mecanismo de carga. Se auditaron los 22 componentes
+cliente de todo el sitio que hacen `await` dentro de un manejador (Server
+Action, `fetch`, o el carrito) — la lista completa, sin excepción, ya
+tiene alguna forma de aviso.
+
+**Base reutilizable (diseño.md §12.3: "Spinner dentro + verbo en
+gerundio; el ancho no cambia")**:
+- `Spinner` ahora acepta `color`, para que se vea sobre cualquier fondo
+  (antes tenía un solo color fijo — invisible sobre un botón del mismo
+  tono).
+- `Boton` (átomo del sitio) gana `cargando`/`textoCargando`: deshabilita,
+  muestra el spinner y, si se da, cambia el texto — **sin ponerse gris**,
+  porque "ocupado" no es lo mismo que "no disponible" (eso sigue siendo
+  `disabled`/`variante="deshabilitada"`).
+- `BotonAdmin`, componente nuevo con el mismo contrato para las clases
+  `.btn .btn-*` que usa todo el panel admin (no comparte átomos con el
+  sitio público — arquitecturas de CSS separadas desde el inicio del
+  proyecto). Se le agregó a `admin.css` el estado `:disabled` que no
+  existía.
+
+**Aplicado en cliente**: login, recuperar contraseña, registro (3 pasos),
+dirección, datos fiscales, subir comprobante (escritorio y móvil), nueva
+devolución, checkout ("Generar pedido"), agregar al pedido/comprar ahora
+(ficha de producto y tarjeta de catálogo), solicitud de servicio. También
+"Eliminar"/"Usar por defecto" en direcciones y datos fiscales de Mi
+cuenta (antes sin ningún aviso).
+
+**Aplicado en admin**: login del panel, las 5 acciones de un pedido
+(validar pago, rechazar comprobante, cancelar, marcar enviado, marcar
+entregado), aprobar/rechazar devolución, marcar solicitud en
+seguimiento/cerrada, datos bancarios/contacto/plazos de Configuración,
+guardar producto, crear/editar/eliminar categoría y subcategoría,
+"Revisar archivo" del importador CSV.
+
+**Hallazgo aparte, con arreglo específico (no genérico)**: el carrito con
+sesión iniciada no actualiza la cantidad ni quita un producto hasta que
+el servidor responde — sin optimismo, a diferencia del carrito de
+invitado (`localStorage`), que sí se sentía instantáneo. Por eso +/- y
+"Quitar" parecían no hacer nada. Se le agregó a `SelectorCantidad` un
+`cargando` opcional (deshabilita +/- y muestra el spinner en vez de la
+cifra) y al carrito un aviso por renglón — **no se tocó la falta de
+actualización optimista en sí**, que es un cambio de arquitectura más
+grande y más riesgoso que agregar un aviso de espera.
+
+**Casos revisados y dejados igual, a propósito**:
+- `FormularioContacto` no llama a ningún backend (documentado así desde
+  antes — el propio `index.html` tampoco lo hace): no hay nada que
+  "cargar".
+- Copiar CLABE/cuenta en `DatosTransferencia` usa el portapapeles, que
+  resuelve en menos de 1 ms — un spinner ahí solo parpadearía.
+- La edición de precio en línea de `TablaCatalogoAdmin` (doble clic) ya
+  deshabilita el campo mientras guarda; no es un botón.
+- `BarraNavegacion` (del incremento anterior) ahora también arranca con
+  formularios `method="get"` (los filtros de Pedidos/Solicitudes/
+  Catálogo en admin), no solo con clics en `<a>` — antes esos filtros
+  navegaban sin ningún aviso.
+
+Validado: `tsc --noEmit` y `eslint` limpios (el único error de ESLint
+que reporta el repo, en `FormularioComprobante.tsx`, es preexistente a
+este incremento — no relacionado con botones); `next build` exitoso;
+capturas en Chromium contra `next start` confirmando que el spinner
+conserva el color de cada variante (no se pone gris) y que sí gira al
+hacer clic real.

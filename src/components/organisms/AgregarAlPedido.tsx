@@ -36,11 +36,25 @@ export function AgregarAlPedido({
   return (
     <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginTop: 26 }}>
       <SelectorCantidad maximo={producto.disponible} valor={cantidad} onChange={setCantidad} />
-      <Boton variante="primaria" tamano="lg" onClick={agregar} disabled={agregando !== null}>
-        {agregando === "agregar" ? "Agregando…" : "Agregar al pedido"}
+      <Boton
+        variante="primaria"
+        tamano="lg"
+        onClick={agregar}
+        disabled={agregando === "comprar"}
+        cargando={agregando === "agregar"}
+        textoCargando="Agregando…"
+      >
+        Agregar al pedido
       </Boton>
-      <Boton variante="secundaria" tamano="lg" onClick={comprarAhora} disabled={agregando !== null}>
-        {agregando === "comprar" ? "Un momento…" : "Comprar ahora"}
+      <Boton
+        variante="secundaria"
+        tamano="lg"
+        onClick={comprarAhora}
+        disabled={agregando === "agregar"}
+        cargando={agregando === "comprar"}
+        textoCargando="Un momento…"
+      >
+        Comprar ahora
       </Boton>
     </div>
   );

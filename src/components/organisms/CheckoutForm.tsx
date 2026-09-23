@@ -216,8 +216,8 @@ export function CheckoutForm({
           </span>
         </button>
         {error && <p style={{ margin: "0 0 14px", fontSize: 13.5, color: "var(--danger-text)" }}>{error}</p>}
-        <Boton anchoCompleto tamano="lg" disabled={!agree || enviando || !addressId} onClick={generar}>
-          {enviando ? "Generando…" : "Generar pedido"}
+        <Boton anchoCompleto tamano="lg" disabled={!agree || !addressId} cargando={enviando} textoCargando="Generando…" onClick={generar}>
+          Generar pedido
         </Boton>
       </aside>
       <style>{`

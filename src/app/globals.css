@@ -243,6 +243,50 @@
   }
 }
 
+/* Estados de carga de navegación — diseño.md §12.3 ("esqueleto con la
+ * forma del contenido final") y §7.1 (`Salto`, `BarraProgreso`: pista
+ * --track, relleno --accent). */
+@keyframes sgBarrido {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+@keyframes sgAparecer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.sg-salto {
+  display: block;
+  background: linear-gradient(90deg, var(--bg-elevated) 30%, var(--track) 50%, var(--bg-elevated) 70%);
+  background-size: 300% 100%;
+  animation: sgBarrido 1.3s ease-in-out infinite;
+}
+/* Retraso de 150 ms: una navegación rápida no alcanza a parpadear el
+ * esqueleto; solo aparece si de verdad hay espera. */
+.sg-carga {
+  animation: sgAparecer 200ms ease 150ms both;
+}
+.sg-barra-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10000;
+  height: 3px;
+  background: var(--accent);
+  box-shadow: 0 0 10px rgba(60, 231, 255, 0.7);
+  pointer-events: none;
+  transition:
+    width 250ms ease,
+    opacity 200ms ease 150ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

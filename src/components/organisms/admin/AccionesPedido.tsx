@@ -10,6 +10,7 @@ import {
   marcarEntregadoAction,
 } from "@/server/actions/admin/pedidos";
 import { formatearPrecio } from "@/lib/formato";
+import { BotonAdmin } from "@/components/atoms/BotonAdmin";
 import type { EstadoPedido } from "@/types/database";
 
 type TipoModal = "validar" | "rechazar" | "cancelar" | "enviar" | "entregar" | null;
@@ -40,7 +41,7 @@ export function AccionesPedido({ orderId, folio, status }: { orderId: string; fo
       if (modal === "validar") resultado = await validarPagoAction(orderId, folio);
       else if (modal === "rechazar") resultado = await rechazarComprobanteAction(orderId, folio, motivo);
       else if (modal === "cancelar") resultado = await cancelarPedidoAction(orderId, folio, motivo || undefined);
-      else if (modal === "enviar") resultado = await marcarEnviadoAction(orderId, folio, Number(costoEnvio));
+      else if (modal === "enviar") resultado = await marcarEnviadoAction(orderId, folio, costoEnvio.trim() ? Number(costoEnvio) : null);
       else if (modal === "entregar") resultado = await marcarEntregadoAction(orderId, folio);
       else return;
 
@@ -81,12 +82,12 @@ export function AccionesPedido({ orderId, folio, status }: { orderId: string; fo
               type="number"
               min={0}
               step="0.01"
-              placeholder="Costo de envío"
+              placeholder="Costo de envío (opcional)"
               value={costoEnvio}
               onChange={(e) => setCostoEnvio(e.target.value)}
               style={{ flex: 1 }}
             />
-            <button className="btn btn-primario cut cut-12" onClick={() => setModal("enviar")} disabled={!costoEnvio}>
+            <button className="btn btn-primario cut cut-12" onClick={() => setModal("enviar")}>
               Marcar enviado
             </button>
           </div>
@@ -123,9 +124,16 @@ export function AccionesPedido({ orderId, folio, status }: { orderId: string; fo
               <button className="btn btn-fantasma cut cut-10" onClick={cerrar} disabled={isPending}>
                 Cancelar
               </button>
-              <button className={`btn ${modalInfo[modal].claseBtn} cut cut-10`} onClick={confirmar} disabled={isPending || (modal === "rechazar" && !motivo.trim())}>
-                {isPending ? "Procesando…" : modalInfo[modal].boton}
-              </button>
+              <BotonAdmin
+                variante={modalInfo[modal].claseBtn.replace(/^btn-/, "") as "primario" | "peligro-lleno"}
+                className="cut cut-10"
+                onClick={confirmar}
+                disabled={modal === "rechazar" && !motivo.trim()}
+                cargando={isPending}
+                textoCargando="Procesando…"
+              >
+                {modalInfo[modal].boton}
+              </BotonAdmin>
             </div>
           </div>
         </div>

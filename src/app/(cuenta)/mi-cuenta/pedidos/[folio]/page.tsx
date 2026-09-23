@@ -55,6 +55,10 @@ export default async function PaginaDetallePedido({ params }: { params: Promise<
 
       <PasosPedido estado={pedido.status} />
 
+      {pedido.status === "cancelado" && pedido.cancellation_reason && (
+        <p style={{ margin: "0 0 20px", fontSize: 14, color: "var(--text-muted)" }}>Motivo: {pedido.cancellation_reason}</p>
+      )}
+
       {pendienteDeComprobante && (
         <DatosTransferencia
           folio={pedido.folio}

@@ -263,8 +263,8 @@ export function RegistroWizard() {
             Volver
           </Boton>
         )}
-        <Boton onClick={avanzar} disabled={enviando || (paso === 3 && !acepta)} tamano="lg">
-          {enviando ? "Un momento…" : paso === 3 ? "Crear cuenta" : "Continuar"}
+        <Boton onClick={avanzar} disabled={paso === 3 && !acepta} cargando={enviando} textoCargando="Un momento…" tamano="lg">
+          {paso === 3 ? "Crear cuenta" : "Continuar"}
         </Boton>
         <a href="/ingresar" style={{ fontSize: 14, color: "var(--text-muted)" }}>Ya tengo cuenta</a>
       </div>

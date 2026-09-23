@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { iniciarSesionStaffAction } from "@/server/actions/admin/auth";
+import { BotonAdmin } from "@/components/atoms/BotonAdmin";
 
 /** panel-admin-maqueta.html:78-105 (`isLogin`) — traducción literal. */
 export function LoginStaffForm() {
@@ -90,9 +91,9 @@ export function LoginStaffForm() {
               autoComplete="current-password"
             />
           </div>
-          <button type="submit" disabled={enviando} className="btn btn-primario cut cut-12" style={{ width: "100%" }}>
-            {enviando ? "Entrando…" : "Entrar"}
-          </button>
+          <BotonAdmin type="submit" cargando={enviando} textoCargando="Entrando…" className="cut cut-12" style={{ width: "100%" }}>
+            Entrar
+          </BotonAdmin>
           <a href="/recuperar" style={{ fontSize: 14, textAlign: "center" }}>
             ¿Olvidaste tu contraseña?
           </a>

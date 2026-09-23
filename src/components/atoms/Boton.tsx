@@ -1,5 +1,6 @@
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, CSSProperties } from "react";
 import Link from "next/link";
+import { Spinner } from "./Spinner";
 
 /**
  * Átomo de botón. No sabe nada de negocio — recibe estilo y contenido
@@ -50,6 +51,13 @@ function estiloVariante(variante: Variante): CSSProperties {
   }
 }
 
+const COLOR_SPINNER: Record<Variante, string> = {
+  primaria: "var(--bg-base)",
+  secundaria: "var(--accent)",
+  fantasma: "var(--accent)",
+  deshabilitada: "var(--text-disabled)",
+};
+
 interface PropsComunes {
   variante?: Variante;
   tamano?: Tamano;
@@ -57,6 +65,11 @@ interface PropsComunes {
   sinCorte?: boolean;
   className?: string;
   children: React.ReactNode;
+  /** diseño.md §12.3: "Acción en un botón: Spinner dentro + verbo en
+   * gerundio; el ancho no cambia" — deshabilita el botón, muestra el
+   * spinner y, si se da, cambia el texto (ej. "Guardando…"). */
+  cargando?: boolean;
+  textoCargando?: React.ReactNode;
 }
 
 type PropsBoton = PropsComunes &
@@ -74,6 +87,8 @@ export function Boton(props: PropsBoton | PropsEnlace) {
     className,
     children,
     style,
+    cargando,
+    textoCargando,
     ...resto
   } = props;
 
@@ -88,7 +103,11 @@ export function Boton(props: PropsBoton | PropsEnlace) {
   // `variante="deshabilitada"` explícito) siempre se ve con el estilo
   // gris/apagado, sin que cada pantalla tenga que acordarse de pasar las
   // dos props a la vez.
-  const estaDeshabilitado = variante === "deshabilitada" || Boolean(("disabled" in resto && resto.disabled));
+  const deshabilitadoExplicito = variante === "deshabilitada" || Boolean(("disabled" in resto && resto.disabled));
+  // `cargando` bloquea el clic igual que `disabled`, pero NO se pinta gris:
+  // el botón conserva el color de su variante y muestra el spinner encima
+  // (diseño.md §12.3) — gris es para "no disponible", no para "trabajando".
+  const estaDeshabilitado = deshabilitadoExplicito || Boolean(cargando);
 
   const estiloBase: CSSProperties = {
     display: "inline-flex",
@@ -101,20 +120,31 @@ export function Boton(props: PropsBoton | PropsEnlace) {
     fontWeight: 600,
     fontSize: tamano === "sm" ? 14 : tamano === "lg" ? 16 : 14.5,
     width: anchoCompleto ? "100%" : undefined,
-    ...estiloVariante(estaDeshabilitado ? "deshabilitada" : variante),
+    ...estiloVariante(deshabilitadoExplicito ? "deshabilitada" : variante),
+    ...(cargando ? { cursor: "wait" } : null),
     ...style,
   };
 
   const claseCorte = sinCorte ? "" : CLIP_CLASS[tamano];
   const clases = [claseCorte, className].filter(Boolean).join(" ");
 
+  const colorSpinner = COLOR_SPINNER[deshabilitadoExplicito ? "deshabilitada" : variante];
+  const contenido = cargando ? (
+    <>
+      <Spinner tamano={tamano === "sm" ? 14 : 16} color={colorSpinner} />
+      {textoCargando ?? children}
+    </>
+  ) : (
+    children
+  );
+
   if ("href" in props && props.href) {
     const { href, ...anchorResto } = resto as AnchorHTMLAttributes<HTMLAnchorElement> & {
       href: string;
     };
     return (
-      <Link href={href} className={clases} style={estiloBase} {...anchorResto}>
-        {children}
+      <Link href={href} className={clases} style={estiloBase} aria-busy={cargando || undefined} {...anchorResto}>
+        {contenido}
       </Link>
     );
   }
@@ -126,9 +156,10 @@ export function Boton(props: PropsBoton | PropsEnlace) {
       className={clases}
       style={estiloBase}
       disabled={estaDeshabilitado}
+      aria-busy={cargando || undefined}
       {...boton}
     >
-      {children}
+      {contenido}
     </button>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { enviarSolicitudServicioAction } from "@/server/actions/servicios";
 import { WidgetTurnstile } from "@/components/molecules/WidgetTurnstile";
+import { Spinner } from "@/components/atoms/Spinner";
 import type { TipoServicio } from "@/types/database";
 
 /** index.html:1485-1523 (`srvFormOpen`) — traducción literal de los campos
@@ -236,15 +237,20 @@ export function FormularioServicio({ servicioInicial }: { servicioInicial?: Tipo
         style={{
           marginTop: 26,
           padding: "15px 28px",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
           background: "#3CE7FF",
           color: "#07111C",
           fontFamily: "'Chakra Petch',sans-serif",
           fontWeight: 600,
           fontSize: 16,
           boxShadow: "0 0 18px rgba(60,231,255,.35)",
-          opacity: isPending ? 0.6 : 1,
+          cursor: isPending ? "wait" : "pointer",
         }}
       >
+        {isPending && <Spinner tamano={16} color="#07111C" />}
         {isPending ? "Enviando..." : "Enviar solicitud"}
       </button>
     </form>
