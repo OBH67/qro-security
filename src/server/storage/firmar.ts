@@ -42,3 +42,17 @@ export async function firmarLecturaPrivada(key: string) {
   const comando = new GetObjectCommand({ Bucket: env.R2_BUCKET_PRIVATE, Key: key });
   return getSignedUrl(cliente, comando, { expiresIn: VIGENCIA_LECTURA_SEGUNDOS });
 }
+
+/** URL firmada de subida directa navegador→R2 al bucket PÚBLICO (fotos y
+ * documentos de producto, F1.4) — mismo patrón que `firmarSubidaPrivada`,
+ * pero genérica en el `contentType` porque la reutilizan dos tipos de
+ * archivo distintos (fotos jpg/png/webp, documentos pdf) con sus propios
+ * catálogos de tipo en `archivosProducto.ts`. La lectura no necesita
+ * firmarse — el bucket público se sirve directo por su CDN
+ * (`urlImagenPublica()`, `src/lib/imagenes.ts`). */
+export async function firmarSubidaPublica(params: { key: string; contentType: string }) {
+  const cliente = crearClienteR2();
+  const comando = new PutObjectCommand({ Bucket: env.R2_BUCKET_PUBLIC, Key: params.key, ContentType: params.contentType });
+  const url = await getSignedUrl(cliente, comando, { expiresIn: VIGENCIA_SUBIDA_SEGUNDOS });
+  return { url, expiraEn: VIGENCIA_SUBIDA_SEGUNDOS };
+}

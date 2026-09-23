@@ -4,9 +4,13 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { crearProductoAction, actualizarProductoAction } from "@/server/actions/admin/catalogo";
+import { obtenerAtributosDeCategoriaAction } from "@/server/actions/admin/productoArchivos";
 import { BotonAdmin } from "@/components/atoms/BotonAdmin";
+import { GestorFotosProducto } from "@/components/organisms/admin/GestorFotosProducto";
+import { GestorDocumentosProducto } from "@/components/organisms/admin/GestorDocumentosProducto";
+import { EditorEspecificacionesProducto } from "@/components/organisms/admin/EditorEspecificacionesProducto";
 import type { DatosFormularioProducto } from "@/server/db/queries/admin/catalogo";
-import type { CondicionProducto, ProductRow } from "@/types/database";
+import type { CondicionProducto, ProductRow, ProductImageRow, ProductDocumentRow, CategoryAttributeRow } from "@/types/database";
 
 const PESTAÑAS = ["General", "Fotos", "Especificaciones", "Documentos"] as const;
 const MOTIVOS_POR_CONDICION: Record<Exclude<CondicionProducto, "nuevo">, string[]> = {
@@ -16,12 +20,28 @@ const MOTIVOS_POR_CONDICION: Record<Exclude<CondicionProducto, "nuevo">, string[
 
 /** panel-admin-maqueta.html:560-709 (`isNuevoProducto`) — traducción
  * literal de la pestaña "General" (la única que la maqueta construyó
- * completa); las otras 4 quedan como placeholder explícito, igual que la
- * maqueta ("sigue la misma especificación de diseño.md §11.7 — no
- * incluida en esta pasada"). Comportamiento de "Usado" (stock fijo en 1,
- * SKU sugerido con sufijo) viene de diseño.md §11.7, que cubre lo que la
- * maqueta no mostró por ser estático. */
-export function FormularioProducto({ producto, datosFormulario }: { producto?: ProductRow; datosFormulario: DatosFormularioProducto }) {
+ * completa). Comportamiento de "Usado" (stock fijo en 1, SKU sugerido con
+ * sufijo) viene de diseño.md §11.7, que cubre lo que la maqueta no mostró
+ * por ser estático.
+ *
+ * Fotos/Especificaciones/Documentos (F1.4) solo se pueden editar sobre un
+ * producto ya guardado — `product_images`/`product_documents` tienen FK a
+ * `products.id`, y las especificaciones dependen de la categoría elegida
+ * en "General". Al crear un producto nuevo esas 3 pestañas muestran un
+ * aviso de "guarda primero" en vez de su contenido real. */
+export function FormularioProducto({
+  producto,
+  datosFormulario,
+  galeriaInicial = [],
+  documentosIniciales = [],
+  atributosDeCategoria = [],
+}: {
+  producto?: ProductRow;
+  datosFormulario: DatosFormularioProducto;
+  galeriaInicial?: ProductImageRow[];
+  documentosIniciales?: ProductDocumentRow[];
+  atributosDeCategoria?: CategoryAttributeRow[];
+}) {
   const router = useRouter();
   const esEdicion = !!producto;
   const [tab, setTab] = useState<(typeof PESTAÑAS)[number]>("General");
@@ -36,6 +56,8 @@ export function FormularioProducto({ producto, datosFormulario }: { producto?: P
   const [stock, setStock] = useState(producto?.stock ?? "");
   const [condition, setCondition] = useState<CondicionProducto>(producto?.condition ?? "nuevo");
   const [conditionDetail, setConditionDetail] = useState(producto?.condition_detail ?? MOTIVOS_POR_CONDICION.usado[0]);
+  const [atributos, setAtributos] = useState<CategoryAttributeRow[]>(atributosDeCategoria);
+  const [attributes, setAttributes] = useState<Record<string, string | number | boolean>>((producto?.attributes as Record<string, string | number | boolean>) ?? {});
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -46,6 +68,16 @@ export function FormularioProducto({ producto, datosFormulario }: { producto?: P
     if (nueva !== "nuevo") {
       setConditionDetail(MOTIVOS_POR_CONDICION[nueva][0]);
       if (esEdicion === false && sku && !sku.endsWith("-U1")) setSku(`${sku}-U1`);
+    }
+  }
+
+  async function elegirSubcategoria(nuevaSubcategoryId: string) {
+    setSubcategoryId(nuevaSubcategoryId);
+    if (!esEdicion || !groupId || !nuevaSubcategoryId) return;
+    const resultado = await obtenerAtributosDeCategoriaAction(groupId, nuevaSubcategoryId);
+    if (resultado.ok) {
+      setAtributos(resultado.data);
+      setAttributes({});
     }
   }
 
@@ -63,6 +95,7 @@ export function FormularioProducto({ producto, datosFormulario }: { producto?: P
       status,
       condition,
       conditionDetail: condition !== "nuevo" ? conditionDetail : "",
+      attributes: esEdicion ? attributes : undefined,
     };
     startTransition(async () => {
       const resultado = esEdicion ? await actualizarProductoAction(producto!.id, datos) : await crearProductoAction(datos);
@@ -165,7 +198,7 @@ export function FormularioProducto({ producto, datosFormulario }: { producto?: P
                 </div>
                 <div>
                   <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6, fontFamily: "var(--font-title)", fontWeight: 600, letterSpacing: 0.3, textTransform: "uppercase" }}>② Subcategoría *</label>
-                  <select className="campo" value={subcategoryId} onChange={(e) => setSubcategoryId(e.target.value)} disabled={!groupId}>
+                  <select className="campo" value={subcategoryId} onChange={(e) => elegirSubcategoria(e.target.value)} disabled={!groupId}>
                     <option value="">{groupId ? "Elige una subcategoría…" : "Elige primero un grupo"}</option>
                     {subcategorias.map((s) => (
                       <option key={s.id} value={s.id}>
@@ -235,10 +268,16 @@ export function FormularioProducto({ producto, datosFormulario }: { producto?: P
             </div>
           </div>
         </div>
-      ) : (
+      ) : !esEdicion ? (
         <div className="tarjeta" style={{ padding: 40, textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-          La pestaña «{tab}» sigue la misma especificación de <span className="mono">diseño.md</span> §11.7 — no incluida en esta pasada.
+          Guarda el producto en &ldquo;General&rdquo; primero — {tab === "Fotos" ? "las fotos" : tab === "Documentos" ? "los documentos" : "las especificaciones"} se agregan después, sobre el producto ya creado.
         </div>
+      ) : tab === "Fotos" ? (
+        <GestorFotosProducto productId={producto!.id} sku={producto!.sku} nombreProducto={name || producto!.name} galeriaInicial={galeriaInicial} />
+      ) : tab === "Documentos" ? (
+        <GestorDocumentosProducto productId={producto!.id} sku={producto!.sku} documentosIniciales={documentosIniciales} />
+      ) : (
+        <EditorEspecificacionesProducto atributos={atributos} valores={attributes} onCambiar={(key, valor) => setAttributes((a) => ({ ...a, [key]: valor }))} />
       )}
 
       {error && <p style={{ marginTop: 18, fontSize: 14, color: "var(--danger-text)" }}>{error}</p>}

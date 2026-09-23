@@ -3139,3 +3139,76 @@ rediseño móvil de un incremento anterior. Validado con `tsc --noEmit`/
 `eslint` limpios; no se pudo verificar visualmente en un dispositivo
 real en este entorno (sin navegador con DevTools) — pendiente de que
 la dueña confirme en su celular.
+
+### Incremento (2026-09-23): las pestañas Fotos/Especificaciones/
+Documentos del editor de producto, antes placeholder, ya funcionan (F1.4)
+
+La dueña confirmó que quería las tres implementadas de una vez. Las
+tres dependían de tablas que ya existían desde `0003_catalogo.sql`
+(`product_images`, `product_documents`, `products.attributes` jsonb +
+`category_attributes` para definir qué campos filtrar) y de consultas
+de lectura que el lado público ya usaba (`obtenerGaleriaProducto()`,
+`obtenerDocumentosProducto()`, `obtenerAtributosDeCategoria()`,
+`src/server/db/queries/catalogo.ts`) — lo que faltaba era todo el lado
+de ESCRITURA desde el panel.
+
+**Fotos y Documentos** — mismo patrón de dos pasos que comprobantes/
+devoluciones (arquitectura §7.1: el servidor firma un PUT directo
+navegador→R2, nunca pasa el archivo por Next.js), pero sobre el bucket
+PÚBLICO en vez del privado, porque estos sí se muestran en la tienda:
+- `firmar.ts` gana `firmarSubidaPublica()` (antes solo existía la
+  versión privada).
+- `r2.ts` gana `borrarObjetoR2()`, para no dejar el archivo huérfano en
+  R2 cuando se elimina una foto/documento desde el panel.
+- `archivosProducto.ts` (dominio nuevo): fotos solo JPG/PNG/WebP (nunca
+  HEIC — a diferencia del comprobante, que solo ve el admin, esta foto
+  se sirve directo en la tienda y casi ningún navegador renderiza
+  HEIC), documentos solo PDF (evita que el bucket público sirva
+  HTML/scripts con el `Content-Type` equivocado). Magic bytes
+  verificados igual que el comprobante (C2.2), nunca solo la extensión.
+- La foto de `position` más baja es la "principal" (mismo criterio que
+  ya usaba el lado público) — la pestaña deja marcarla con un botón
+  "Principal" por foto, que reordena el resto.
+- **Simplificación documentada**: `modelo-datos.md` §6 pedía
+  `productos/{sku}/{n}.webp` (conversión a WebP); convertir requeriría
+  `sharp` (procesamiento de imágenes), que este proyecto no tiene —
+  se guarda la extensión real del archivo subido (jpg/png/webp), igual
+  que ya se documentó para `.xlsx` en el importador.
+
+**Especificaciones** — un campo por cada fila de `category_attributes`
+del grupo/subcategoría del producto (texto con opciones = `<select>`,
+número, booleano = checkbox). A diferencia de Fotos/Documentos, sus
+valores viven en el mismo `products.attributes` (jsonb) que el resto
+del producto, así que NO tiene su propia acción de guardado — viajan
+en el mismo objeto que manda el botón "Guardar" general (diseño.md
+§11.7 solo dibuja una barra de guardar para todo el formulario) vía un
+parámetro nuevo `p_attributes` en `actualizar_producto()` (migración
+`0025_atributos_producto_admin.sql`; se **elimina y recrea** la
+función en vez de `create or replace`, porque agregar un parámetro
+cambia su firma/identidad en Postgres — un simple `create or replace`
+habría dejado dos versiones sobrepuestas de la función). Si se cambia
+de grupo/subcategoría a media edición, la pestaña vuelve a pedir los
+atributos de la nueva categoría (acción
+`obtenerAtributosDeCategoriaAction`) y limpia los valores anteriores,
+para no dejar claves de la categoría vieja mezcladas.
+
+**Gate común a las tres**: solo se pueden usar sobre un producto YA
+GUARDADO (`product_images`/`product_documents` tienen FK a
+`products.id`, y Especificaciones depende de la categoría elegida en
+"General") — al crear un producto nuevo, las tres pestañas muestran
+"Guarda el producto en 'General' primero" en vez de su contenido, igual
+que ya avisaba la tarjeta "Foto principal" de esa pestaña.
+
+Archivos nuevos: `src/server/domain/archivosProducto.ts`,
+`src/server/db/mutations/admin/productoArchivos.ts`,
+`src/server/actions/admin/productoArchivos.ts`,
+`src/components/organisms/admin/{GestorFotosProducto,
+GestorDocumentosProducto,EditorEspecificacionesProducto}.tsx`,
+`supabase/migrations/0025_atributos_producto_admin.sql`.
+
+**Pendiente, acción de la dueña**: correr `0025_atributos_producto_
+admin.sql` en Supabase Studio → SQL Editor (mismo procedimiento que las
+migraciones anteriores). Validado con `tsc --noEmit`/`eslint` limpios y
+la migración con `pglast`; no se pudo probar contra R2/Supabase reales
+en este entorno — conviene que la dueña pruebe subir una foto y un PDF
+a un producto real antes de darlo por cerrado.

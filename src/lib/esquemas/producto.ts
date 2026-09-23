@@ -16,6 +16,11 @@ export const esquemaProducto = z
     condition: z.enum(["nuevo", "caja_abierta", "usado"]),
     conditionDetail: z.string().trim().optional().or(z.literal("")),
     stock: z.coerce.number().int().min(0).optional(),
+    // F1.4, pestaña "Especificaciones" — un valor por cada `category_
+    // attributes` del grupo/subcategoría elegido (D1); solo existe en
+    // edición (D1.4/diseño.md §11.7: se guarda "tras guardar el
+    // producto", igual que fotos y documentos).
+    attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
   })
   .refine((d) => d.condition === "nuevo" || d.conditionDetail, {
     message: "Escribe el motivo visible al cliente para esta condición.",
