@@ -40,7 +40,7 @@ export function AccionesPedido({ orderId, folio, status }: { orderId: string; fo
       if (modal === "validar") resultado = await validarPagoAction(orderId, folio);
       else if (modal === "rechazar") resultado = await rechazarComprobanteAction(orderId, folio, motivo);
       else if (modal === "cancelar") resultado = await cancelarPedidoAction(orderId, folio, motivo || undefined);
-      else if (modal === "enviar") resultado = await marcarEnviadoAction(orderId, folio, Number(costoEnvio));
+      else if (modal === "enviar") resultado = await marcarEnviadoAction(orderId, folio, costoEnvio.trim() ? Number(costoEnvio) : null);
       else if (modal === "entregar") resultado = await marcarEntregadoAction(orderId, folio);
       else return;
 
@@ -81,12 +81,12 @@ export function AccionesPedido({ orderId, folio, status }: { orderId: string; fo
               type="number"
               min={0}
               step="0.01"
-              placeholder="Costo de envío"
+              placeholder="Costo de envío (opcional)"
               value={costoEnvio}
               onChange={(e) => setCostoEnvio(e.target.value)}
               style={{ flex: 1 }}
             />
-            <button className="btn btn-primario cut cut-12" onClick={() => setModal("enviar")} disabled={!costoEnvio}>
+            <button className="btn btn-primario cut cut-12" onClick={() => setModal("enviar")}>
               Marcar enviado
             </button>
           </div>

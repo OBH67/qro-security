@@ -66,7 +66,7 @@ export async function cancelarPedido(params: { orderId: string; changedBy: strin
   return data as unknown as OrderRow;
 }
 
-export async function marcarEnviado(params: { orderId: string; changedBy: string; costoEnvio: number }): Promise<OrderRow> {
+export async function marcarEnviado(params: { orderId: string; changedBy: string; costoEnvio: number | null }): Promise<OrderRow> {
   const admin = crearClienteAdmin();
   const { data, error } = await admin.rpc("marcar_enviado", { p_order_id: params.orderId, p_shipping_cost: params.costoEnvio, p_changed_by: params.changedBy, p_source: "panel" });
   if (error) throw new Error(traducirError(error.message));

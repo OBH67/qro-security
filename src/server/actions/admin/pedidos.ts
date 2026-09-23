@@ -39,9 +39,9 @@ export async function cancelarPedidoAction(orderId: string, folio: string, motiv
   });
 }
 
-export async function marcarEnviadoAction(orderId: string, folio: string, costoEnvio: number): Promise<ResultadoAction<OrderRow>> {
+export async function marcarEnviadoAction(orderId: string, folio: string, costoEnvio: number | null): Promise<ResultadoAction<OrderRow>> {
   return conSesionStaff(["admin"], async (sesion) => {
-    if (!Number.isFinite(costoEnvio) || costoEnvio < 0) throw new Error("Escribe un costo de envío válido.");
+    if (costoEnvio !== null && (!Number.isFinite(costoEnvio) || costoEnvio < 0)) throw new Error("Escribe un costo de envío válido.");
     const pedido = await mutations.marcarEnviado({ orderId, changedBy: sesion.userId, costoEnvio });
     revalidarPedido(folio);
     return pedido;
