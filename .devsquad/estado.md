@@ -2,7 +2,7 @@
 
 Carpeta de trabajo: `/home/user/qro-security`
 Rama: `claude/sg-queretaro-sales-platform-6a7359`
-Última actualización: 2026-09-21
+Última actualización: 2026-09-23
 
 ## Fase actual
 **Implementación en curso — decimonoveno incremento (2026-09-21): la
@@ -2433,6 +2433,9 @@ de `0022_generar_folio_search_path.sql` directo en Supabase Studio → SQL
 Editor → Run). No se pudo aplicar ni probar en este entorno (sin acceso
 al proyecto real).
 
+**RESUELTO (2026-09-23, confirmado por la dueña):** migración 0022
+aplicada en el proyecto de Supabase alojado.
+
 ### Incremento (2026-09-22): vista previa del comprobante, monto con
 separador de miles, y el `NetworkError` al subir es CORS de R2 sin
 configurar (no es bug de código)
@@ -2478,6 +2481,10 @@ La dueña, ya con un pedido de prueba generado, pidió tres cosas sobre
    en desarrollo + el dominio real de producción), método `PUT`, y el
    header `Content-Type`. No se pudo aplicar ni probar contra el bucket
    real en este entorno (sin acceso a la cuenta de Cloudflare).
+
+**RESUELTO (2026-09-23, confirmado por la dueña):** el permiso de R2
+para subir comprobantes ya funciona. Hizo una carga de prueba y el
+comprobante aparece en el bucket privado.
 
 Validado por lectura del código y `npx tsc --noEmit` limpio; la lógica
 de `formatearMontoInput()` se probó aparte con casos de borde (entero
@@ -2688,3 +2695,12 @@ errores. No se pudo probar contra la base real ni ver el resultado
 visual (logos de terceros, tamaño/proporción real en la marquesina)
 desde este entorno — pendiente que la dueña corra
 `seed_marcas_reales.sql` y confirme cómo se ven.
+
+### Pendientes resueltos (2026-09-23, confirmado por la dueña)
+1. Migración `0022_generar_folio_search_path.sql` aplicada en Supabase
+   alojado.
+2. Permiso/CORS de Cloudflare R2 para comprobantes funcionando (carga
+   de prueba visible en el bucket privado).
+
+Con esto ya se puede probar el flujo de compra completo de punta a
+punta.
