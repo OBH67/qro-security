@@ -281,6 +281,9 @@ export interface OrderRow {
   /** 0011: llave de idempotencia generada por el cliente en /pagar. Nula
    * para pedidos previos a este incremento o llamadas internas sin llave. */
   idempotency_key: string | null;
+  /** 0023: motivo que capturó el admin al cancelar (liberar_apartado).
+   * Nulo si el pedido no está cancelado. */
+  cancellation_reason: string | null;
 }
 
 export interface OrderItemRow {

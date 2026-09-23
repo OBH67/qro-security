@@ -2704,3 +2704,32 @@ desde este entorno — pendiente que la dueña corra
 
 Con esto ya se puede probar el flujo de compra completo de punta a
 punta.
+
+### Incremento (2026-09-23): historial no mostraba la cancelación, y el
+motivo de cancelación no llegaba al cliente en el sitio
+
+Dos hallazgos de la dueña probando el panel real:
+
+1. **"Historial" (detalle de pedido, panel admin) no registraba un
+   pedido cancelado.** La lista de pasos (`PASOS_HISTORIAL`) solo tenía
+   los del flujo normal (generado → comprobante → listo envío → enviado
+   → entregado); "cancelado" nunca estaba ahí, aunque el evento sí se
+   guarda en `order_status_history`. Ahora, si el pedido está cancelado,
+   se agrega ese paso a la lista con un punto rojo.
+2. **El cliente no podía ver el motivo que el admin escribe al
+   cancelar.** Ese motivo solo vivía en `order_status_history.note`,
+   tabla que el cliente no puede leer por RLS (solo admin) — sí llegaba
+   por correo (`construirPedidoCancelado`), pero no en el sitio.
+   **Pendiente, acción de la dueña**: correr en Supabase Studio → SQL
+   Editor el contenido de
+   `supabase/migrations/0023_motivo_cancelacion_visible_cliente.sql`.
+   Agrega la columna `orders.cancellation_reason` y actualiza
+   `liberar_apartado()` para copiar ahí el motivo al cancelar. No se
+   pudo aplicar ni probar en este entorno (sin acceso al proyecto real).
+   Mientras no se aplique, `/mi-cuenta/pedidos/[folio]` simplemente no
+   muestra el bloque de motivo (columna inexistente → siempre nula), no
+   truena.
+
+Validado por lectura del código; no se pudo correr `npx tsc --noEmit`
+en este entorno (`node_modules` no está instalado aquí) ni probar
+contra Postgres real.
