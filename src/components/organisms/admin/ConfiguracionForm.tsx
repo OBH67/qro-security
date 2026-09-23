@@ -187,10 +187,13 @@ export function ConfiguracionForm({
             </div>
             <div>
               <label style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>WhatsApp para avisos</label>
-              <input className="campo mono" value={adminWhatsapp} onChange={(e) => setAdminWhatsapp(e.target.value)} />
+              <input className="campo mono" placeholder="+5214420000000" value={adminWhatsapp} onChange={(e) => setAdminWhatsapp(e.target.value)} />
             </div>
           </div>
-          <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>Aquí llegan los avisos de comprobante recibido y las solicitudes de servicio.</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>
+            Aquí llegan los avisos de comprobante recibido y las solicitudes de servicio. El WhatsApp debe llevar &quot;+&quot; y la clave del país
+            (ej. +52...), sin espacios ni guiones.
+          </div>
           {errorContacto && <p style={{ fontSize: 13, color: "var(--danger-text)", marginBottom: 12 }}>{errorContacto}</p>}
           {okContacto && !errorContacto && <p style={{ fontSize: 13, color: "var(--success)", marginBottom: 12 }}>Contacto guardado.</p>}
           {pruebaEnviada && <p style={{ fontSize: 13, color: "var(--success)", marginBottom: 12 }}>Correo de prueba enviado a {adminEmail}.</p>}

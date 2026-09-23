@@ -2841,3 +2841,57 @@ este incremento — no relacionado con botones); `next build` exitoso;
 capturas en Chromium contra `next start` confirmando que el spinner
 conserva el color de cada variante (no se pone gris) y que sí gira al
 hacer clic real.
+
+### Incremento (2026-09-23): aviso por WhatsApp al admin, con Twilio Sandbox
+
+PA-5 (proveedor de WhatsApp) quedaba pendiente — la dueña decidió Twilio
+en vez de Meta Cloud API directo (evita el trámite de verificación de
+negocio de Meta por ahora) y ya probó su Sandbox con éxito: le llegó un
+mensaje de prueba al número que dio de alta.
+
+Se implementó `crearCanalWhatsapp()` (`src/server/notifications/canales/
+whatsapp.ts`) contra la API REST de Twilio (`POST /Messages.json` con
+autenticación básica `accountSid:authToken`), mandando texto libre
+(`Body`), no una plantilla de contenido aprobada (`ContentSid`): en el
+Sandbox de Twilio el texto libre llega sin restricción a cualquier
+número que ya se haya unido, así que no hace falta crear/aprobar ninguna
+plantilla en la consola — es un aviso interno, solo lo ve la dueña.
+Cubre el único evento que hoy se encola por WhatsApp: `comprobante.
+recibido` (`apartar_pedido()`, 0008/0013) — folio, total y aviso de
+entrar al panel.
+
+`env.ts` gana `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`,
+`TWILIO_WHATSAPP_FROM` (separadas de `WHATSAPP_PHONE_NUMBER_ID`/
+`WHATSAPP_ACCESS_TOKEN`, que son de Meta) y la app ya no arranca con
+`WHATSAPP_PROVIDER=twilio` si falta cualquiera de las tres — mismo
+criterio de "falla temprano con un mensaje claro" que ya tenía Meta.
+
+El campo "WhatsApp para avisos" de Configuración ahora trae un
+`placeholder` (`+5214420000000`) y una nota exigiendo formato E.164 con
+"+" — el canal ya rechazaba explícitamente (en vez de fallar en
+silencio contra Twilio) un número sin "+" antes de este cambio de
+copy, pero el campo seguía sin decirlo.
+
+**Pendiente, acción de la dueña**: agregar en Vercel (Project Settings
+→ Environment Variables) las tres variables de Twilio — `Account SID` y
+`Auth Token` están en el Twilio Console → Account → API keys & tokens;
+`TWILIO_WHATSAPP_FROM=whatsapp:+14155238886` mientras siga en Sandbox
+(el número que usó en su prueba) — y cambiar `WHATSAPP_PROVIDER=none` a
+`WHATSAPP_PROVIDER=twilio`. Después, confirmar en Configuración → Mi
+cuenta admin que su número de WhatsApp está guardado en formato
+`+52...`. No se pudo probar un envío real en este entorno (sin acceso a
+la cuenta de Twilio ni a un proyecto de Supabase real).
+
+Validado: `tsc --noEmit` y `eslint` limpios; `next build` exitoso con
+`WHATSAPP_PROVIDER=twilio` y las tres variables presentes; y por
+separado, el build falla con el mensaje esperado si `WHATSAPP_PROVIDER=
+twilio` se deja sin las credenciales — confirma que la validación de
+arranque funciona en ambos sentidos.
+
+**Advertencia que se le explicó a la dueña**: el Sandbox de Twilio está
+pensado para pruebas, no trae garantía de servicio a largo plazo. Es una
+elección razonable para un solo número (ella misma) y avisos internos,
+pero si en algún momento quiere algo con garantía real necesitaría un
+número de WhatsApp Business propio — eso sigue requiriendo verificación
+de negocio ante Meta, aunque Twilio acompaña el trámite. Mientras tanto
+el correo (ya activo) sigue siendo el respaldo si el WhatsApp fallara.
