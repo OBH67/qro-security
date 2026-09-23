@@ -3001,3 +3001,45 @@ tampoco crear un producto de verdad para confirmar el resultado —
 validado por lectura del código, `tsc --noEmit`/`eslint` limpios,
 `next build` exitoso, y la sintaxis de la migración confirmada válida
 con `pglast` (parser real de Postgres, sin conexión a una base).
+
+### Corrección (2026-09-23): la migración 0024 chocaba con una tabla
+`import_jobs` que ya existía desde el día 1
+
+La dueña corrió `0024_import_jobs.sql` y Supabase respondió `relation
+"import_jobs" already exists` — se me había pasado por completo que
+`import_jobs` ya estaba definida desde `0003_catalogo.sql` (adición de
+arquitectura §9.5, prevista desde el arranque del proyecto aunque nada
+la usaba todavía) y con su RLS desde `0007_rls_policies.sql`, con un
+diseño de columnas real y bien pensado (`file_url`, `mode`, `status`,
+`total_rows`, `valid_rows`, `error_rows`, `processed_rows`,
+`errors_report`) que nunca revisé antes de escribir la migración del
+incremento anterior — hice una tabla nueva con nombres inventados
+(`filas`, `total`, `modo`, `siguiente_indice`, `fallas`) que duplicaba
+la existente en vez de completarla.
+
+Como el `CREATE TABLE` fue la primera línea del script, nunca llegó a
+crear nada — no hubo que deshacer nada en Supabase. Se reescribió
+`0024_import_jobs.sql` para **completar** la tabla original en vez de
+reemplazarla: agrega `filas`/`nuevos`/`actualizados` (lo único que de
+verdad le faltaba — dónde guardar las filas ya validadas del paso 2 y
+los contadores del resumen) y suma `'detenido'` al check de `status`
+(el diseño original no contemplaba que alguien detuviera la
+importación a medias). `file_url` ahora guarda el NOMBRE del archivo,
+no una clave de R2 — el CSV no se sube a R2 en esta implementación
+(documentado en el propio comentario de la columna), simplificación ya
+explicada en el incremento anterior.
+
+El código de `src/server/db/mutations/admin/importador.ts` se
+reescribió para hablar el vocabulario real de la tabla
+(`mode`/`status` en inglés con sus propios valores) traduciéndolo en
+la frontera con la base — el resto del código (Server Actions, UI)
+sigue exactamente igual, sin tocar, porque se conservaron los mismos
+nombres de campo que ya usaban (`total`, `siguiente_indice`,
+`aplicados`, `fallidos`, etc.).
+
+**Pendiente, acción de la dueña**: correr el `0024_import_jobs.sql`
+corregido en Supabase Studio → SQL Editor (ahora son solo `ALTER
+TABLE`, no debería toparse con el mismo error). No se pudo probar
+contra un Postgres real en este entorno — validado con `tsc --noEmit`/
+`eslint`/`next build` limpios y la sintaxis de la migración confirmada
+con `pglast`.
