@@ -17,8 +17,13 @@ const ESTADOS: { valor: EstadoPedido | "todos"; label: string }[] = [
   { valor: "cancelado", label: "Cancelado" },
 ];
 
+// pago_en_proceso (Épica P, 0028): sin color propio en diseño.md todavía
+// (riesgo ya anotado en arquitectura-pagos-stripe.md §10) — se reutiliza
+// el estilo de pendiente_pago hasta que el Diseñador lo defina junto con
+// la UI de checkout con Stripe.
 const ESTILO_ESTADO: Record<EstadoPedido, { label: string; estilo: React.CSSProperties }> = {
   pendiente_pago: { label: "Pendiente de pago", estilo: { background: "transparent", border: "1px solid var(--warning)", color: "var(--warning)" } },
+  pago_en_proceso: { label: "Pago en proceso", estilo: { background: "transparent", border: "1px solid var(--warning)", color: "var(--warning)" } },
   comprobante_recibido: { label: "Comprobante recibido", estilo: { background: "var(--accent)", color: "#07111C" } },
   listo_envio: { label: "Listo para envío", estilo: { background: "transparent", border: "1px solid var(--accent)", color: "var(--accent)" } },
   enviado: { label: "Enviado", estilo: { background: "transparent", border: "1px solid var(--accent)", color: "var(--accent)" } },

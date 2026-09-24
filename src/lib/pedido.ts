@@ -5,6 +5,11 @@ import type { EstadoPedido } from "@/types/database";
  * fecha de creación, no un estado aparte). */
 export const ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
   pendiente_pago: "Pendiente de pago",
+  // Épica P (0028): pago con tarjeta/OXXO/SPEI en curso, esperando el
+  // webhook de Stripe — no aparece en PASOS_FLUJO (abajo) a propósito,
+  // sigue el mismo criterio que "cancelado": no es un paso del progreso
+  // normal del pedido, es un estado de espera.
+  pago_en_proceso: "Pago en proceso",
   comprobante_recibido: "Comprobante recibido",
   listo_envio: "Listo para envío",
   enviado: "Enviado",

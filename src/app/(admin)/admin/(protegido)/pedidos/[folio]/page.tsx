@@ -14,8 +14,14 @@ export async function generateMetadata({ params }: { params: Promise<{ folio: st
   return { title: `${folio} — Panel SG Querétaro` };
 }
 
+// pago_en_proceso (Épica P, 0028): mismo estilo que pendiente_pago
+// (ambos son "esperando algo, todavía no hay nada que revisar") — no hay
+// color propio definido en diseño.md para este estado nuevo, así que se
+// reutiliza el existente en vez de inventar uno (pendiente de que el
+// Diseñador lo confirme cuando llegue la UI de checkout con Stripe).
 const ESTILO_ESTADO: Record<EstadoPedido, React.CSSProperties> = {
   pendiente_pago: { background: "transparent", border: "1px solid var(--warning)", color: "var(--warning)" },
+  pago_en_proceso: { background: "transparent", border: "1px solid var(--warning)", color: "var(--warning)" },
   comprobante_recibido: { background: "var(--accent)", color: "#07111C" },
   listo_envio: { background: "transparent", border: "1px solid var(--accent)", color: "var(--accent)" },
   enviado: { background: "transparent", border: "1px solid var(--accent)", color: "var(--accent)" },
@@ -24,6 +30,7 @@ const ESTILO_ESTADO: Record<EstadoPedido, React.CSSProperties> = {
 };
 const ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
   pendiente_pago: "Pendiente de pago",
+  pago_en_proceso: "Pago en proceso",
   comprobante_recibido: "Comprobante recibido",
   listo_envio: "Listo para envío",
   enviado: "Enviado",

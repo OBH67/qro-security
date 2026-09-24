@@ -18,8 +18,11 @@ const FILTROS_MOVIL: { estado: EstadoPedido | null; label: string }[] = [
   { estado: "entregado", label: "Entregado" },
 ];
 
+// pago_en_proceso (Épica P, 0028): mismo tono que pendiente_pago — sin
+// color propio en diseño.md todavía (ver nota en admin/pedidos/page.tsx).
 const TONO_MOVIL: Record<EstadoPedido, string> = {
   pendiente_pago: "#FFB547",
+  pago_en_proceso: "#FFB547",
   comprobante_recibido: "#45E39A",
   listo_envio: "#3CE7FF",
   enviado: "#3CE7FF",
