@@ -59,9 +59,12 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Corre en todo excepto assets estáticos y `_next` — mismo criterio
-     * estándar recomendado por Supabase para Next.js App Router.
+     * Corre en todo excepto assets estáticos, `_next` (mismo criterio
+     * estándar recomendado por Supabase para Next.js App Router) y el
+     * webhook de Stripe (arquitectura-pagos-stripe.md §5: Stripe nunca
+     * manda cookies de sesión — el refresco que hace este proxy no le
+     * aplica, y agregarlo solo sumaría trabajo a cada evento entrante).
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/webhooks/stripe|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
