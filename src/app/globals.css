@@ -201,6 +201,16 @@
     box-shadow: 0 0 0 10px rgba(255, 181, 71, 0);
   }
 }
+/* diseño-pagos-stripe.md §5.1: anillo del paso "Pago en proceso" en
+ * PasosPedido — gira en vez de pulsar (pulso = "te toca a ti", giro =
+ * "estamos esperando a alguien más"; distinto en forma Y movimiento, no
+ * solo en color, para daltonismo). Respeta la regla global de
+ * prefers-reduced-motion de arriba, que ya apaga toda animación. */
+@keyframes sgSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 @keyframes sgRec {
   0%,
   100% {

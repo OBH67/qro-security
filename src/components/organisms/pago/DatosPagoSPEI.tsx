@@ -29,6 +29,7 @@ export function DatosPagoSPEI({
   mensajeError,
   onReintentar,
   contexto,
+  pagoParcial,
 }: {
   folio: string;
   montoCents: number;
@@ -38,6 +39,10 @@ export function DatosPagoSPEI({
   mensajeError?: string | null;
   onReintentar?: () => void;
   contexto: "post-pago" | "detalle-pedido";
+  /** P4.4/diseño §4, fila "Pago parcial o de más": Stripe recibió un monto
+   * distinto al esperado — el pedido no avanza solo, un asesor lo resuelve.
+   * Nulo cuando no aplica (caso normal). */
+  pagoParcial?: { recibidoCents: number; esperadoCents: number } | null;
 }) {
   const { mostrarToast } = useToast();
   const [ahora, setAhora] = useState(() => Date.now());
@@ -152,6 +157,15 @@ export function DatosPagoSPEI({
           </>
         )}
       </div>
+
+      {pagoParcial && !vencida && (
+        <div role="alert" style={{ marginTop: 18, padding: "14px 18px", border: "1px solid var(--warning)", background: "var(--warning-tint)" }}>
+          <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.55, color: "var(--text-primary)" }}>
+            Recibimos {formatearPrecio(pagoParcial.recibidoCents / 100)} y tu pedido es de {formatearPrecio(pagoParcial.esperadoCents / 100)}. Lo estamos
+            revisando; te contactaremos para resolverlo.
+          </p>
+        </div>
+      )}
 
       {vencida && (
         <div role="alert" style={{ marginTop: 18, padding: "14px 18px", border: "1px solid var(--danger-text)", background: "rgba(255,77,94,.07)" }}>

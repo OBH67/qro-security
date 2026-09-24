@@ -44,3 +44,15 @@ export function venceEnMenosDeSeisHoras(expiresAtIso: string, ahoraMs: number): 
 export function yaVencio(expiresAtIso: string, ahoraMs: number): boolean {
   return new Date(expiresAtIso).getTime() <= ahoraMs;
 }
+
+/** arquitectura-pagos-stripe.md §4.1 / diseño-pagos-stripe.md §3 "Pagada
+ * tarde (ya liberada)": no hay una bandera propia en `payments` para este
+ * caso — se detecta comparando la última vez que se tocó el pago
+ * (`updatedAtIso`, que queda en `now()` justo cuando el webhook lo marca
+ * `pagado`) contra su fecha límite original. Si el pago se confirmó
+ * DESPUÉS de vencer, es que el apartado ya se había liberado cuando llegó
+ * el dinero. */
+export function seConfirmoDespuesDeVencer(expiresAtIso: string | null, updatedAtIso: string): boolean {
+  if (!expiresAtIso) return false;
+  return new Date(updatedAtIso).getTime() > new Date(expiresAtIso).getTime();
+}
