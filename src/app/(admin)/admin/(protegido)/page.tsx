@@ -77,7 +77,7 @@ export default async function PaginaTableroAdmin({ searchParams }: { searchParam
     { cifra: atencion.devolucionesPendientes, etiqueta: "DEVOLUCIONES POR RESOLVER", accion: "Resolver →", tipo: "ambar" as const, href: "/admin/devoluciones" },
     { cifra: atencion.solicitudesSinContactar, etiqueta: "SOLICITUDES SIN CONTACTAR", accion: "Contactar →", tipo: "ambar" as const, href: "/admin/solicitudes" },
     { cifra: atencion.pedidosPorVencer, etiqueta: "PEDIDOS POR VENCER", accion: "Ver →", tipo: "rojo" as const, href: "/admin/pedidos?estado=pendiente_pago" },
-    { cifra: atencion.productosAgotados, etiqueta: "PRODUCTOS AGOTADOS", accion: "Ver →", tipo: "ambar" as const, href: "/admin/catalogo?estado=agotado" },
+    { cifra: atencion.productosAgotados, etiqueta: "PRODUCTOS AGOTADOS", accion: "Ver →", tipo: "ambar" as const, href: "/admin/catalogo?sinStock=1" },
   ];
   const estiloPorTipo = {
     urgente: { tarjeta: "padding:16px;background:var(--accent);border-color:var(--accent)", cifra: { fontSize: 28, fontWeight: 500, color: "#07111C" }, etq: "#07111C", acc: "#07111C" },

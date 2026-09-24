@@ -7,6 +7,12 @@ export interface FiltrosProductosAdmin {
   grupoId?: string;
   estado?: EstadoProducto;
   condicion?: CondicionProducto;
+  /** Distinto de `estado: "agotado"` (ese es el status manual del
+   * producto) — este filtra por `stock <= 0` sin importar el status,
+   * que es lo que de verdad cuenta la tarjeta "Productos agotados" del
+   * tablero (Inicio). Un producto puede quedarse sin stock sin que
+   * nadie le haya cambiado el status a "Agotado" a mano. */
+  sinStock?: boolean;
 }
 
 export interface FilaProductoAdmin {
@@ -29,6 +35,7 @@ export async function obtenerProductosAdmin(filtros: FiltrosProductosAdmin): Pro
   if (filtros.grupoId) consulta = consulta.eq("group_id", filtros.grupoId);
   if (filtros.estado) consulta = consulta.eq("status", filtros.estado);
   if (filtros.condicion) consulta = consulta.eq("condition", filtros.condicion);
+  if (filtros.sinStock) consulta = consulta.lte("stock", 0);
   if (filtros.busqueda) consulta = consulta.or(`name.ilike.%${filtros.busqueda}%,sku.ilike.%${filtros.busqueda}%`);
 
   const { data, error, count } = await consulta;

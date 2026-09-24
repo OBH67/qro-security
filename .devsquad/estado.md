@@ -3527,3 +3527,64 @@ Validado con `tsc --noEmit`/`eslint` limpios; no se pudo confirmar
 visualmente en un dispositivo real en este entorno — igual que en el
 incremento anterior de responsive, sería bueno que la dueña confirme
 en su celular.
+
+### Corrección (2026-09-24): agrupado de los filtros de Analítica
+
+La dueña pidió mejorar cómo se agrupan los filtros de Analítica en
+móvil — con una captura mostrando "7 días/30 días/Este mes",
+"Personalizado", "Grupo: Todos" y "Subcategoría: Todas" apilados sin
+ningún orden visual (period, fecha personalizada y categoría todos
+mezclados en el mismo `flex-wrap`, cada uno cayendo en su propia línea
+por casualidad según el ancho, no por agrupación real).
+
+`FiltrosAnalitica.tsx` se reorganiza en 3 grupos explícitos, cada uno
+con su etiqueta ("Periodo", "Categoría", "Ordenar por", mismo estilo
+de etiqueta uppercase que ya usa el resto del panel):
+- **Periodo**: los chips de 7/30/mes/personalizado, con el rango de
+  fechas personalizado apareciendo debajo (no en la misma línea) solo
+  cuando aplica.
+- **Categoría**: Grupo + Subcategoría, usando `.admin-grid-2` (2
+  columnas en escritorio, apiladas en móvil — misma clase ya usada en
+  el resto del panel).
+- **Ordenar por**: los chips de Unidades/Importe.
+
+Validado con `tsc --noEmit`/`eslint` limpios; no se pudo confirmar
+visualmente en un dispositivo real en este entorno.
+
+### Corrección (2026-09-24): "Productos agotados" de Inicio llevaba a
+un filtro que nunca encontraba nada, y el botón "Nuevo producto" se
+desbordaba en móvil
+
+La dueña reportó que la tarjeta "Productos agotados" (2, en su
+captura) al hacer clic llevaba a Catálogo filtrado y no encontraba
+nada.
+
+**Causa**: son dos conceptos distintos que comparten la misma palabra.
+La tarjeta del tablero (`obtenerTarjetasAtencion()`) cuenta productos
+con `status = 'activo'` y `stock <= 0` — productos que siguen
+"Activos" mientras siguen a la venta pero ya no hay pieza. El enlace,
+en cambio, mandaba a `?estado=agotado`, que filtra por
+`products.status = 'agotado'` — un status MANUAL que nadie pone solo
+(no hay ningún trigger ni función que lo cambie automáticamente al
+llegar a 0 piezas). Un producto puede quedarse sin stock sin que su
+status cambie nunca — exactamente el caso que la tarjeta quiere
+avisar, y exactamente el caso que el filtro de Catálogo no sabía
+buscar.
+
+Se agrega un filtro nuevo e independiente del status: `sinStock`
+(`stock <= 0`, sin importar el status) — checkbox "Sin stock" junto al
+resto de filtros de Catálogo, y el enlace del tablero ahora manda a
+`?sinStock=1` en vez de `?estado=agotado`.
+
+De paso, la fila de botones "Categorías / Importar CSV / Nuevo
+producto" del encabezado de Catálogo no tenía `flexWrap`, así que en
+un teléfono se desbordaba horizontalmente en vez de acomodarse en más
+de una línea (captura de la dueña, "Nuevo producto" cortado a la
+mitad) — se agregó.
+
+Archivos: `src/server/db/queries/admin/catalogo.ts` (filtro
+`sinStock`), `catalogo/page.tsx` (checkbox + `flexWrap` del
+encabezado), `admin/(protegido)/page.tsx` (enlace de la tarjeta).
+
+Validado con `tsc --noEmit`/`eslint` limpios; no se pudo confirmar
+visualmente en un dispositivo real en este entorno.
