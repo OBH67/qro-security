@@ -3692,12 +3692,45 @@ adaptador común `PasarelaStripe`, tablas `payments`/
 min que vence apartados). `perfil.md` ya refleja tarjeta+OXXO+SPEI,
 sin suscripciones.
 
-**No quedan ambigüedades de negocio pendientes.** Sigue: diseño de las
-pantallas nuevas (selector de 4 métodos de pago, ficha de pago OXXO
-con voucher, pantalla de datos SPEI con CLABE copiable, estado "pago
-en proceso" en Mis pedidos/`PasosPedido`, detalle del pago en la
-bandeja del admin, aviso "Quedan X", campo de porcentaje en
-devoluciones) — ninguna existe en las maquetas HTML originales, así
-que por la regla de traducción literal del perfil necesitan
-aprobación de la dueña antes de escribirse en código. No se ha escrito
-código todavía.
+**No quedan ambigüedades de negocio pendientes.** El diseñador entregó
+`.devsquad/diseño-pagos-stripe.md` v1 con las 7 pantallas/estados
+nuevos (selector de 4 métodos de pago, ficha de pago OXXO con
+voucher, pantalla de datos SPEI con CLABE copiable, estado "pago en
+proceso" en Mis pedidos/`PasosPedido`, detalle del pago en la bandeja
+del admin, aviso "Quedan X" reutilizando "Últimas N piezas", campo de
+porcentaje de devolución 10-100%) y una lista de 8 decisiones
+(D-P1 a D-P8) que requerían aprobación de la dueña.
+
+**Diseño aprobado en su totalidad.** De las 8 decisiones, la dueña
+confirmó explícitamente las 2 que sí requerían su palabra y no
+aprobó las otras 6 por no objetar los valores recomendados
+(consistente con su forma de trabajar en esta épica):
+
+- **D-P4 (confirmado por la dueña): OXXO sí le cobra una comisión
+  aparte al cliente al pagar en tienda.** El texto de la ficha OXXO
+  pasa de condicional ("OXXO puede cobrarte...") a afirmativo ("OXXO
+  cobra una comisión aparte al cliente."). Esta comisión la paga el
+  cliente en caja — es distinta de la comisión de Stripe que absorbe
+  el negocio (documentada en `arquitectura-pagos-stripe.md`).
+- **D-P6 (autorizado por la dueña): cambio puntual de texto en
+  `index.html`**, archivo protegido por la regla de traducción
+  literal. Alcance exacto, sin excepción: únicamente las dos frases
+  "100% sellado" y "70% abierto" (relacionadas con el % de devolución
+  fijo, que ya no aplica porque el % ahora lo decide el admin al
+  revisar) — ningún otro texto, estructura o estilo de ese archivo se
+  toca. Redacción propuesta en el diseño: "El porcentaje de tu saldo
+  a favor lo define nuestro equipo al revisar tu devolución."
+- D-P1 (violeta para "pago en proceso"), D-P2 ("Pago recibido" para
+  el cliente en pedidos Stripe), D-P3 (recuadro blanco para el código
+  de barras OXXO), D-P5 (reutilizar "Últimas N piezas" para "Quedan
+  X"), D-P7 (descargar ficha OXXO = abrir el voucher oficial de
+  Stripe, sin PDF propio), D-P8 (atajos 100%/70%/50% en devoluciones)
+  quedan aprobados por defecto.
+
+**Épica P lista para pasar a la fase de implementación (`coder`)**,
+pendiente de que la dueña dé la autorización explícita para empezar a
+escribir código (requerimientos, arquitectura y diseño ya aprobados;
+no se ha escrito código todavía). La cuenta de Stripe sigue
+**pendiente, acción de la dueña** — no bloquea seguir preparando la
+implementación (migraciones, estructura de `src/server/pagos/`), pero
+sí bloquea probar contra la API real de Stripe.
