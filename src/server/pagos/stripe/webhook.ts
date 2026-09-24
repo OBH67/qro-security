@@ -37,9 +37,9 @@ function extraerInstrucciones(paymentIntent: Stripe.PaymentIntent): Instruccione
   if (transferencia && direccionMx?.spei) {
     return {
       metodo: "spei",
-      clabe: direccionMx.spei.clabe,
-      banco: direccionMx.spei.bank_name,
-      beneficiario: direccionMx.spei.account_holder_name,
+      clabe: direccionMx.spei.clabe ?? "",
+      banco: direccionMx.spei.bank_name ?? "",
+      beneficiario: direccionMx.spei.account_holder_name ?? "",
       referencia: transferencia.reference ?? "",
     };
   }

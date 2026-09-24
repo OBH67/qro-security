@@ -76,7 +76,17 @@ export async function obtenerPedidosAdmin(filtros: { estado?: EstadoPedido; busq
       creditApplied: p.credit_applied,
       status: p.status,
       metodo: p.payment_method,
-      banderaRevision: !idsConRevision.has(p.id) ? null : p.status === "pendiente_pago" ? "pagado_sin_inventario" : "monto_distinto",
+      // `monto_distinto` solo es correcto para el sub-caso real de
+      // registrar_pago_stripe() (0029): pago con monto distinto llegado
+      // mientras el pedido seguía en `pago_en_proceso`. Cualquier otro
+      // estado con la bandera prendida (pedido ya avanzado a
+      // listo_envio/enviado/cancelado, webhook duplicado fuera de orden)
+      // no es ninguno de los dos casos con copy propio — se etiqueta
+      // como `pagado_sin_inventario` (el genérico, sin dato de monto
+      // esperado que mostrar) en vez de mentir con "monto distinto".
+      // El botón de abonar sigue protegido por `liberar_apartado()`, que
+      // rechaza cancelar un pedido `enviado`/`entregado`.
+      banderaRevision: !idsConRevision.has(p.id) ? null : p.status === "pago_en_proceso" ? "monto_distinto" : "pagado_sin_inventario",
     };
   });
 
