@@ -3831,8 +3831,40 @@ tope. **Pendiente: definir con arquitecto/dueña de dónde sale ese tope**
 vivo?) antes de que haga falta en el siguiente incremento (§3 sí
 menciona el tope en la ficha OXXO).
 
-Siguen: pantallas OXXO/SPEI (**en curso**), estado "pago en proceso"
-en Mis pedidos, detalle de pago en el admin, porcentaje de devolución
-libre, "Quedan X" en catálogo público. La cuenta de Stripe sigue
-**pendiente, acción de la dueña** — no bloquea seguir escribiendo
-código, solo bloquea probar contra la API real.
+Pantallas OXXO/SPEI (P3, P4) — **listo, commits `8719111`/`d4e67b7`/
+`a673aa3`.** Al pulsar el botón, `confirmOxxoPayment()`/
+`confirmCustomerBalancePayment()` (patrón oficial de Stripe para
+confirmar sin Payment Element) regresan las instrucciones del voucher/
+CLABE, que se muestran en la misma pantalla del checkout
+(`FichaPagoOXXO`/`DatosPagoSPEI`) y también en el detalle del pedido
+en Mis pedidos mientras siga en `pago_en_proceso` — misma tarjeta
+reutilizada en los dos lugares (P3.2). **D-P4 verificado a mano: el
+paso 02 dice en afirmativo "OXXO cobra una comisión aparte al
+cliente"**, tal como confirmó la dueña. Recuadro de código de barras
+en `--voucher-paper` (única superficie clara del sitio), referencia
+agrupada de 4 en 4 en IBM Plex Mono, fecha límite en ámbar con ⚠,
+banner violeta de apartado, botón que abre la ficha oficial de Stripe
+(`hosted_voucher_url`) en pestaña nueva — nunca un PDF propio (D-P7).
+`npx tsc --noEmit`, lint y `npm run build` limpios (el build solo
+falla después por faltar las variables reales de Stripe/Supabase/R2
+en este sandbox, no por el código).
+
+**2 pendientes que el coder reportó en vez de inventar (no bloquean,
+quedan para el siguiente incremento):**
+1. El estado "pagada tarde / ya liberada" (cuando OXXO confirma el
+   pago después de que el apartado ya venció) no se implementó — es
+   parte de la integración de `pago_en_proceso` en Mis pedidos/
+   tablero/admin que sigue.
+2. **P4.4 SPEI, pago parcial o de más**: no se implementó porque el
+   monto recibido / si necesita revisión (`amount_received_cents`,
+   `needs_review` de la tabla `payments`) no está expuesto todavía en
+   ninguna consulta con RLS del lado del cliente. Se resuelve junto
+   con el siguiente incremento.
+
+Siguen: estado "pago en proceso" en Mis pedidos/`PasosPedido`/tablero/
+filtros del admin, detalle de pago en la bandeja de revisión del
+admin, porcentaje de devolución libre, "Quedan X" en catálogo
+público. La cuenta de Stripe sigue **pendiente, acción de la dueña**
+— no bloquea seguir escribiendo código, solo bloquea probar contra la
+API real (la prueba real necesita tarjetas/OXXO/SPEI de prueba de
+Stripe en modo test, según sugirió el coder).
