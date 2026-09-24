@@ -3313,3 +3313,54 @@ debería funcionar. No se pudo aplicar ni probar contra el bucket real
 en este entorno (sin acceso a la cuenta de Cloudflare).
 
 Validado con `tsc --noEmit`/`eslint` limpios.
+
+### Corrección (2026-09-24): CORS del bucket público ya quedó bien
+(la dueña confirmó fotos subiendo), pero "Guardar" al editar truena con
+".omit() cannot be used on object schemas containing refinements"
+
+Con CORS ya configurado, la dueña pudo subir 3 fotos sin problema
+(pantalla con capturas que lo confirman) — pero al presionar "Guardar"
+en la pestaña "General" del editor, la pantalla mostró literalmente el
+error interno de Zod: `.omit() cannot be used on object schemas
+containing refinements`.
+
+**Causa real**: `esquemaProducto` (Zod, `src/lib/esquemas/producto.ts`)
+tiene dos `.refine()` encadenados (motivo obligatorio para condición
+usada, stock obligatorio para condición nueva). Zod 4 **prohíbe**
+llamar `.omit()`/`.pick()`/`.partial()` sobre un esquema que ya tiene
+refinamientos — lanza esa excepción en cuanto se llama `.omit(...)`,
+no hasta el `.parse()`. `actualizarProductoAction()` llamaba
+`esquemaProducto.omit({ sku: true }).parse(...)` porque el editor
+nunca manda el SKU (es de solo lectura ahí) — y el asistente de alta
+hacía lo mismo del lado del cliente al volver al paso 1 después de
+crear el producto.
+
+Este bug es **anterior a todo el trabajo de esta semana**: el
+`.omit({sku:true})` en `actualizarProductoAction` ya existía desde la
+implementación original de F1.2 (edición de producto), con el
+`.refine()` del motivo de condición ya puesto desde entonces — nunca
+se había disparado porque, hasta ahora, nadie había completado un
+`guardar()` real desde la pestaña General de un producto en edición
+(el `.refine()` del stock que se agregó esta semana solo hizo el
+choque más fácil de topar, no lo causó).
+
+**Arreglo**: en vez de omitir el SKU del esquema, se manda el SKU
+ACTUAL del producto (inmutable, campo deshabilitado) junto con el
+resto de los datos, y se valida siempre con el esquema completo — sin
+`.omit()` en ningún lado. `actualizarProductoAdmin()` de todas formas
+nunca reenvía el SKU al RPC `actualizar_producto()` (no tiene ese
+parámetro), así que es inofensivo, solo sirve para pasar la
+validación. Cambios en `FormularioProducto.tsx` (agrega `sku:
+producto.sku` a los datos que manda "Guardar"),
+`AsistenteNuevoProducto.tsx` (misma idea, ya lo mandaba) y
+`actualizarProductoAction` (`catalogo.ts`, quita el `.omit()`).
+
+Confirmado el error real reproduciendo el mismo esquema con la versión
+instalada de Zod (`node -e "..."` contra `node_modules/zod`, no
+adivinado) antes de aplicar el arreglo, y vuelto a correr después para
+confirmar que `.parse()` sobre el esquema completo sí funciona.
+Revisado el resto de esquemas Zod del proyecto (`servicio.ts`,
+`registro.ts`) — ninguno combina `.refine()` con `.omit()`/`.pick()`,
+este era el único caso.
+
+Validado con `tsc --noEmit`/`eslint` limpios.
