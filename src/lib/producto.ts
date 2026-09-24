@@ -1,5 +1,6 @@
 import {
   barrasStock,
+  etiquetaAvisoQuedan,
   etiquetaStock,
   formatearPrecio,
   nivelStock,
@@ -40,6 +41,9 @@ export interface ProductoTarjeta {
   disponible: number;
   nivel: NivelStock;
   etiquetaStock: string;
+  /** Texto de la etiqueta ámbar sobre la foto (P8, §7); `null` si no hay
+   * refuerzo que mostrar (0, 3+ piezas, o disponible desconocido). */
+  avisoQuedan: string | null;
   barras: boolean[];
   imagenUrl: string | null;
   condicion: CondicionProducto;
@@ -74,6 +78,7 @@ export function mapearTarjetaProducto(
     disponible,
     nivel: nivelStock(disponible),
     etiquetaStock: etiquetaStock(disponible),
+    avisoQuedan: etiquetaAvisoQuedan(disponible),
     barras: barrasStock(disponible),
     imagenUrl: opciones.imagenUrl ? urlImagenPublica(opciones.imagenUrl) : null,
     condicion: fila.condition,

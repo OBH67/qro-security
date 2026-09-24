@@ -42,11 +42,32 @@ export function stockDisponible(stock: number, reserved: number): number {
   return Math.max(0, stock - reserved);
 }
 
-/** index.html:2037 — reglas de etiqueta de stock (hallazgo #18 de modelo-datos.md). */
+/** Piezas disponibles que activan el refuerzo "¡Quedan X!" (P8,
+ * diseño-pagos-stripe.md §7). Mismo umbral "bajo" que ya usa el resto del
+ * sitio (`REGLAS_STOCK_BAJO`, l. 2032 del demo, y el widget "Se te va a
+ * acabar" del tablero admin: `disponible <= 3`), acotado a 1–2 porque 3
+ * sigue diciendo "Últimas 3 piezas" sin cambio (§7, tabla). */
+const REGLAS_STOCK_URGENTE = 2;
+
+/** index.html:2037 — reglas de etiqueta de stock (hallazgo #18 de modelo-datos.md).
+ * P8 (diseño-pagos-stripe.md §7): refuerza el texto a "¡Queda 1!" / "¡Quedan 2!"
+ * cuando el disponible es 1 o 2; 3 piezas conserva "Últimas 3 piezas". */
 export function etiquetaStock(disponible: number): string {
   if (disponible === 0) return "Agotado";
+  if (disponible <= REGLAS_STOCK_URGENTE) {
+    return disponible === 1 ? "¡Queda 1!" : `¡Quedan ${disponible}!`;
+  }
   if (disponible <= REGLAS_STOCK_BAJO) return `Últimas ${disponible} piezas`;
   return `${disponible} disponibles`;
+}
+
+/** Texto de la etiqueta ámbar sobre la foto del producto (P8,
+ * diseño-pagos-stripe.md §7, `AvisoQuedan`): solo existe para 1–2 piezas
+ * disponibles; `null` en cualquier otro caso (incluye "sin dato de stock",
+ * que el llamador debe tratar como "ocultar el aviso", §7). */
+export function etiquetaAvisoQuedan(disponible: number): string | null {
+  if (disponible <= 0 || disponible > REGLAS_STOCK_URGENTE) return null;
+  return disponible === 1 ? "QUEDA 1" : `QUEDAN ${disponible}`;
 }
 
 export type NivelStock = "agotado" | "bajo" | "normal";
