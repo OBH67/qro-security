@@ -66,7 +66,7 @@ export default async function PaginaDetallePedidoAdmin({ params }: { params: Pro
         </span>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16 }}>
+      <div className="admin-grid-2-ancho" style={{ gap: 16 }}>
         {esRN11 ? (
           <div className="tarjeta" style={{ padding: 18, height: "fit-content" }}>
             <h3 style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 15, margin: "0 0 8px" }}>Pagado con saldo a favor</h3>

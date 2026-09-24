@@ -102,7 +102,7 @@ export default async function PaginaAnaliticaAdmin({
 
       {!rangoInvalido && analitica && analitica.kpis.pedidos > 0 && (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 22 }}>
+          <div className="admin-grid-kpis" style={{ gap: 14, marginBottom: 22 }}>
             <TarjetaKpi valor={String(analitica.kpis.piezas)} etiqueta="Piezas" />
             <TarjetaKpi valor={formatearPrecio(analitica.kpis.importe)} etiqueta="Importe" />
             <TarjetaKpi valor={String(analitica.kpis.pedidos)} etiqueta="Pedidos" />
@@ -115,7 +115,7 @@ export default async function PaginaAnaliticaAdmin({
             </div>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div className="admin-grid-2" style={{ gap: 16 }}>
             <RankingProductos titulo="Más vendidos" productos={analitica.masVendidos} color="var(--accent)" orden={orden} />
             <RankingProductos titulo="Menos vendidos" productos={analitica.menosVendidos} color="var(--warning)" orden={orden} />
           </div>

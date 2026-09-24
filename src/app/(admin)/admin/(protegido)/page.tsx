@@ -125,7 +125,7 @@ export default async function PaginaTableroAdmin({ searchParams }: { searchParam
       <h2 style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 14, letterSpacing: 1, color: "var(--text-muted)", textTransform: "uppercase", margin: "0 0 12px" }}>
         Lo que necesita tu atención hoy
       </h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 12, marginBottom: 32 }}>
+      <div className="admin-grid-atencion" style={{ gap: 12, marginBottom: 32 }}>
         {tarjetas.map((t) => {
           const st = estiloPorTipo[t.tipo];
           return (
@@ -143,7 +143,7 @@ export default async function PaginaTableroAdmin({ searchParams }: { searchParam
       <h2 style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 14, letterSpacing: 1, color: "var(--text-muted)", textTransform: "uppercase", margin: "0 0 12px" }}>
         Cómo va el negocio · {periodoLabel}
       </h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 16 }}>
+      <div className="admin-grid-kpis" style={{ gap: 12, marginBottom: 16 }}>
         {kpisMostrar.map((k) => (
           <div key={k.etiqueta} className="tarjeta" style={{ padding: 18 }}>
             <div className="mono" style={{ fontSize: 28, fontWeight: 500 }}>
@@ -160,7 +160,7 @@ export default async function PaginaTableroAdmin({ searchParams }: { searchParam
         ⓘ Los KPI cuentan solo pedidos con pago validado (Listo para envío en adelante), no pedidos pendientes.
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16, marginBottom: 20 }}>
+      <div className="admin-grid-2-ancho" style={{ gap: 16, marginBottom: 20 }}>
         <div className="tarjeta" style={{ padding: 20 }}>
           <h3 style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 16, margin: 0 }}>Ventas por día</h3>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 14 }}>¿Cómo va este periodo contra el anterior?</div>
@@ -254,7 +254,7 @@ export default async function PaginaTableroAdmin({ searchParams }: { searchParam
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+      <div className="admin-grid-2" style={{ gap: 16, marginBottom: 20 }}>
         <div className="tarjeta" style={{ padding: 20 }}>
           <h3 style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 16, margin: 0 }}>Más vendidos</h3>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 14 }}>¿Qué debo reabastecer?</div>
@@ -340,7 +340,7 @@ export default async function PaginaTableroAdmin({ searchParams }: { searchParam
         )}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+      <div className="admin-grid-2" style={{ gap: 16, marginBottom: 20 }}>
         <div className="tarjeta" style={{ padding: 20 }}>
           <h3 style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 16, margin: 0 }}>Saldo a favor comprometido</h3>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 14 }}>Dinero que ya debes en mercancía</div>
