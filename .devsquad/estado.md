@@ -3527,3 +3527,26 @@ Validado con `tsc --noEmit`/`eslint` limpios; no se pudo confirmar
 visualmente en un dispositivo real en este entorno — igual que en el
 incremento anterior de responsive, sería bueno que la dueña confirme
 en su celular.
+
+### Corrección (2026-09-24): agrupado de los filtros de Analítica
+
+La dueña pidió mejorar cómo se agrupan los filtros de Analítica en
+móvil — con una captura mostrando "7 días/30 días/Este mes",
+"Personalizado", "Grupo: Todos" y "Subcategoría: Todas" apilados sin
+ningún orden visual (period, fecha personalizada y categoría todos
+mezclados en el mismo `flex-wrap`, cada uno cayendo en su propia línea
+por casualidad según el ancho, no por agrupación real).
+
+`FiltrosAnalitica.tsx` se reorganiza en 3 grupos explícitos, cada uno
+con su etiqueta ("Periodo", "Categoría", "Ordenar por", mismo estilo
+de etiqueta uppercase que ya usa el resto del panel):
+- **Periodo**: los chips de 7/30/mes/personalizado, con el rango de
+  fechas personalizado apareciendo debajo (no en la misma línea) solo
+  cuando aplica.
+- **Categoría**: Grupo + Subcategoría, usando `.admin-grid-2` (2
+  columnas en escritorio, apiladas en móvil — misma clase ya usada en
+  el resto del panel).
+- **Ordenar por**: los chips de Unidades/Importe.
+
+Validado con `tsc --noEmit`/`eslint` limpios; no se pudo confirmar
+visualmente en un dispositivo real en este entorno.
