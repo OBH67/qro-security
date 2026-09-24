@@ -4000,9 +4000,31 @@ Vercel, y dar de alta su usuario del Stripe Dashboard con rol
 restringido (sin llaves API ni configuración de cuenta) para ver
 transacciones/clientes ahí en vez de un panel propio.
 
-**Recomendado antes de mezclar esta rama a producción:** una revisión
-de código completa de todo el diff de la épica (`/code-review` o
-similar) y, cuando la dueña tenga su cuenta de Stripe en modo test,
-probar el flujo real de punta a punta (tarjeta de prueba, voucher
-OXXO de prueba, CLABE de prueba) antes de activar Stripe con dinero
-real.
+**Revisión de código completa hecha (commit `71ed7f0`).** Se corrió
+`/code-review --level high` sobre todo el diff de la épica contra
+`main` (los 8 incrementos). 4 hallazgos, verificados uno por uno antes
+de tocar nada:
+- **2 reales, corregidos:** (1) `webhook.ts` mostraba el texto literal
+  "null" si Stripe regresaba el banco/beneficiario de SPEI vacío (le
+  faltaba el mismo `?? ""` que ya tenía su gemelo del lado cliente);
+  (2) la bandeja del admin etiquetaba como "monto distinto" cualquier
+  pago con revisión pendiente que no estuviera en `pendiente_pago`,
+  aunque el único caso real de "monto distinto" en el SQL es
+  `pago_en_proceso` — un webhook duplicado sobre un pedido ya
+  avanzado quedaba con la causa equivocada en pantalla (el botón de
+  abonar en sí siempre estuvo protegido: `liberar_apartado()` rechaza
+  cancelar un pedido `enviado`/`entregado`, así que nunca hubo riesgo
+  de cancelar un envío ya hecho, solo un letrero engañoso).
+- **2 descartados tras verificar el código real:** una supuesta llamada
+  "innecesaria" a `despacharPendientes()` en un webhook idempotente
+  (en realidad es un no-op seguro si no hay nada pendiente, mismo
+  patrón que el resto del proyecto) y un supuesto problema de espacios
+  en blanco al armar el nombre del cliente para Stripe (los campos son
+  `string` no nulos en el tipo, `.trim()` ya cubre el caso vacío).
+
+`npx tsc --noEmit` limpio después de las 2 correcciones.
+
+**Recomendado antes de mezclar esta rama a producción:** cuando la
+dueña tenga su cuenta de Stripe en modo test, probar el flujo real de
+punta a punta (tarjeta de prueba, voucher OXXO de prueba, CLABE de
+prueba) antes de activar Stripe con dinero real.
