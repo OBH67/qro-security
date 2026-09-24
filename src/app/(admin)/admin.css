@@ -445,6 +445,25 @@
     grid-template-columns: 1fr;
   }
 }
+/* Inicio (tablero, `admin/(protegido)/page.tsx`) — tarjetas pequeñas de
+ * cifras ("atención hoy", KPIs): a diferencia de las de arriba, estas SÍ
+ * caben de a 2 en móvil (son solo un número + una etiqueta corta), así
+ * que colapsan a 2 columnas en vez de apilarse en 1 — evita el scroll
+ * horizontal cortado que reportó la dueña en un teléfono real. */
+.admin-grid-atencion {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+}
+.admin-grid-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+@media (max-width: 780px) {
+  .admin-grid-atencion,
+  .admin-grid-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 .admin-root .modal-overlay {
   position: fixed;
   inset: 0;

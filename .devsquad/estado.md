@@ -3482,3 +3482,48 @@ puede pedir un `UPDATE` puntual para esos casos.
 Validado con `tsc --noEmit` limpio (no hay cambios de TypeScript en
 este incremento, solo SQL) y la migración con `pglast`; no se pudo
 probar contra Supabase real en este entorno.
+
+### Corrección (2026-09-24): "Inicio" del panel (y otras 2 pantallas)
+quedaron fuera de la pasada de responsive del 23 de septiembre
+
+La dueña probó "Inicio" en un teléfono real (Chrome DevTools, Galaxy
+S10, 360px) y mandó capturas: la fila de 6 tarjetas de "Lo que necesita
+tu atención hoy" se corta a la mitad (texto truncado, sin scroll
+visible), y más abajo "Ventas por día" / "¿Dónde están mis pedidos?"
+se aprietan cada una a la mitad del ancho en vez de apilarse — la
+gráfica queda ilegible.
+
+**Causa**: la pasada de responsive de todo el panel (incremento
+anterior, "Hacer responsive todo el panel de admin") se armó
+buscando `gridTemplateColumns` solo dentro de
+`src/components/organisms/admin/**` — las páginas del tablero,
+analítica y detalle de pedido viven en `src/app/(admin)/admin/
+(protegido)/**` y quedaron completamente fuera de esa búsqueda. Un
+`grep` amplio a todo `src/app/(admin)` encontró 5 grids más sin tocar:
+la fila de 6 tarjetas y la de 4 KPIs de "Inicio", los pares "Ventas
+por día"/embudo, "Más vendidos"/"Se te va a acabar" y "Saldo"/
+"Analítica" de esa misma pantalla, más 2 grids en Analítica (KPIs y
+"Más vendidos"/"Menos vendidos") y uno en el detalle de pedido admin
+(comprobante/timeline junto al panel lateral de acciones).
+
+Se agregan dos clases nuevas a `admin.css`, distintas de las ya
+existentes (`.admin-grid-2` etc., que colapsan a **1** columna): las
+tarjetas de cifras de "Inicio"/Analítica son compactas (un número +
+una etiqueta corta) y sí caben de a 2 en un teléfono, así que
+`.admin-grid-atencion`/`.admin-grid-kpis` colapsan a **2** columnas en
+vez de a 1 — exactamente lo que pidió la dueña ("mover estos elementos
+a un orden de 2 columnas"). Las secciones más complejas (gráfica,
+tablas, listas largas) usan las clases `.admin-grid-2`/`.admin-grid-
+2-ancho` ya existentes, que sí colapsan a 1 columna completa — mismo
+criterio que ya pidió para "Ventas por día"/"¿Dónde están mis
+pedidos?": "si es demasiado grande... moverlo a 1 columna".
+
+Archivos: `src/app/(admin)/admin.css` (clases nuevas),
+`admin/(protegido)/page.tsx` (Inicio, 4 grids),
+`admin/(protegido)/analitica/page.tsx` (2 grids),
+`admin/(protegido)/pedidos/[folio]/page.tsx` (1 grid).
+
+Validado con `tsc --noEmit`/`eslint` limpios; no se pudo confirmar
+visualmente en un dispositivo real en este entorno — igual que en el
+incremento anterior de responsive, sería bueno que la dueña confirme
+en su celular.
