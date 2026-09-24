@@ -3882,9 +3882,24 @@ siguiente tarea. `npx tsc --noEmit`, lint y `npm run build` limpios.
 
 Sigue: detalle de pago de Stripe en la bandeja de revisión del admin
 (§6 — ID de pago, marca/últimos 4, decline codes, casos de revisión
-especiales; el chip de filtro de esta tarea fue solo funcional, el
-diseño pulido de §6.1 queda para ahí), porcentaje de devolución
-libre, "Quedan X" en catálogo público. La cuenta de Stripe sigue
-**pendiente, acción de la dueña** — no bloquea seguir escribiendo
-código, solo bloquea probar contra la API real (la prueba real
-necesita tarjetas/OXXO/SPEI de prueba de Stripe en modo test).
+especiales; el chip de filtro de esa tarea fue solo funcional, el
+diseño pulido de §6.1 queda para ahí) — **en curso, en paralelo con lo
+siguiente**, y porcentaje de devolución libre — pendiente.
+
+**"Quedan X" en catálogo público (P8) — listo, commits `cae0af3`/
+`4ded661`.** Etiqueta ámbar sobre la foto ("QUEDA 1"/"QUEDAN 2") en
+la tarjeta del catálogo y en la ficha de producto, para 1-2 piezas
+disponibles — umbral verificado contra el propio widget "Se te va a
+acabar" del tablero admin (`obtenerStockCritico`), no inventado. El
+texto de existencias también se refuerza ("¡Quedan 2!" en vez de
+"Últimas 2 piezas"). D-P5 respetado: no se creó un aviso aparte, se
+reforzó el patrón `etiquetaStock` ya existente. `npx tsc --noEmit` y
+lint limpios. Nota menor sin bloquear: en la ficha de producto el chip
+nuevo se traslapa con una esquina decorativa del demo en la foto
+grande (mismo `top:10;left:10`) — cosmético, un ajuste de una línea
+si se prefiere otra posición.
+
+La cuenta de Stripe sigue **pendiente, acción de la dueña** — no
+bloquea seguir escribiendo código, solo bloquea probar contra la API
+real (la prueba real necesita tarjetas/OXXO/SPEI de prueba de Stripe
+en modo test).
