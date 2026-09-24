@@ -9,7 +9,7 @@ import {
   obtenerRelacionados,
 } from "@/server/db/queries/catalogo";
 import { construirFilasEspecificaciones, mapearTarjetaProducto } from "@/lib/producto";
-import { formatearPrecio, stockDisponible, etiquetaStock, barrasStock, nivelStock } from "@/lib/formato";
+import { formatearPrecio, stockDisponible, etiquetaStock, etiquetaAvisoQuedan, barrasStock, nivelStock } from "@/lib/formato";
 import { PRODUCTOS_RELACIONADOS } from "@/lib/constantes";
 import { Migas } from "@/components/molecules/Migas";
 import { GaleriaProducto } from "@/components/organisms/GaleriaProducto";
@@ -92,7 +92,12 @@ export default async function PaginaProducto({
       />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 44, alignItems: "start" }}>
-        <GaleriaProducto sku={producto.sku} nombre={producto.name} imagenes={imagenes} />
+        <GaleriaProducto
+          sku={producto.sku}
+          nombre={producto.name}
+          imagenes={imagenes}
+          avisoQuedan={etiquetaAvisoQuedan(disponible)}
+        />
 
         <div style={{ maxWidth: 620 }}>
           <div className="font-data" style={{ display: "flex", gap: 14, alignItems: "center", fontSize: 12, color: "var(--text-muted)" }}>

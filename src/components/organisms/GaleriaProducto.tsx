@@ -4,11 +4,25 @@ import { useState } from "react";
 import Image from "next/image";
 import type { ProductImageRow } from "@/types/database";
 import { urlImagenPublica } from "@/lib/imagenes";
+import { AvisoQuedan } from "@/components/molecules/AvisoQuedan";
 
 /** index.html:712-728 — galería de la ficha de producto: foto grande +
  * miniaturas. Sin fotos reales todavía (catálogo por cargar, PA-20), se
- * muestra el mismo placeholder con el SKU y las esquinas del demo. */
-export function GaleriaProducto({ sku, nombre, imagenes }: { sku: string; nombre: string; imagenes: ProductImageRow[] }) {
+ * muestra el mismo placeholder con el SKU y las esquinas del demo.
+ * `avisoQuedan` (P8, diseño-pagos-stripe.md §7): etiqueta ámbar sobre la
+ * foto grande cuando quedan 1-2 piezas — mismo refuerzo que en la tarjeta
+ * de catálogo (`TarjetaProducto`). */
+export function GaleriaProducto({
+  sku,
+  nombre,
+  imagenes,
+  avisoQuedan,
+}: {
+  sku: string;
+  nombre: string;
+  imagenes: ProductImageRow[];
+  avisoQuedan?: string | null;
+}) {
   const [activa, setActiva] = useState(0);
   const imagenActiva = imagenes[activa];
 
@@ -25,6 +39,7 @@ export function GaleriaProducto({ sku, nombre, imagenes }: { sku: string; nombre
           padding: 36,
         }}
       >
+        {avisoQuedan && <AvisoQuedan texto={avisoQuedan} />}
         {imagenActiva ? (
           <Image
             src={urlImagenPublica(imagenActiva.url)}
