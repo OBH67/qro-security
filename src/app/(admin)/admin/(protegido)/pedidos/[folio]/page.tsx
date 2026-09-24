@@ -14,14 +14,14 @@ export async function generateMetadata({ params }: { params: Promise<{ folio: st
   return { title: `${folio} — Panel SG Querétaro` };
 }
 
-// pago_en_proceso (Épica P, 0028): mismo estilo que pendiente_pago
-// (ambos son "esperando algo, todavía no hay nada que revisar") — no hay
-// color propio definido en diseño.md para este estado nuevo, así que se
-// reutiliza el existente en vez de inventar uno (pendiente de que el
-// Diseñador lo confirme cuando llegue la UI de checkout con Stripe).
+// diseño-pagos-stripe.md §1 (D-P1, violeta `--processing`, aprobado):
+// reemplaza el placeholder que reutilizaba el ámbar de pendiente_pago. El
+// bloque de información del pago de Stripe (§6.2: ID, marca/últimos 4,
+// decline codes) y los casos de revisión especiales (§6.3) son la
+// siguiente tarea, no esta — aquí solo se corrige el color/etiqueta.
 const ESTILO_ESTADO: Record<EstadoPedido, React.CSSProperties> = {
   pendiente_pago: { background: "transparent", border: "1px solid var(--warning)", color: "var(--warning)" },
-  pago_en_proceso: { background: "transparent", border: "1px solid var(--warning)", color: "var(--warning)" },
+  pago_en_proceso: { background: "transparent", border: "1px solid var(--processing)", color: "var(--processing)" },
   comprobante_recibido: { background: "var(--accent)", color: "#07111C" },
   listo_envio: { background: "transparent", border: "1px solid var(--accent)", color: "var(--accent)" },
   enviado: { background: "transparent", border: "1px solid var(--accent)", color: "var(--accent)" },

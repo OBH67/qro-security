@@ -67,6 +67,11 @@ export async function obtenerPedidosAdmin(filtros: { estado?: EstadoPedido; busq
 export interface ConteosPorEstado {
   todos: number;
   pendiente_pago: number;
+  // Épica P (0028): se cuenta aquí aunque hoy ningún chip de filtro lo
+  // muestre todavía (§6.1, siguiente tarea) — sin este conteo, "todos"
+  // (usado en "Mostrando N de X" y en el chip "Todos") quedaba por debajo
+  // del total real en cuanto existiera un pedido en pago_en_proceso.
+  pago_en_proceso: number;
   comprobante_recibido: number;
   listo_envio: number;
   enviado: number;
@@ -76,7 +81,7 @@ export interface ConteosPorEstado {
 
 export async function obtenerConteosPedidosPorEstado(): Promise<ConteosPorEstado> {
   const supabase = await crearClienteServidor();
-  const estados: EstadoPedido[] = ["pendiente_pago", "comprobante_recibido", "listo_envio", "enviado", "entregado", "cancelado"];
+  const estados: EstadoPedido[] = ["pendiente_pago", "pago_en_proceso", "comprobante_recibido", "listo_envio", "enviado", "entregado", "cancelado"];
   const resultados = await Promise.all(estados.map((e) => supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", e)));
   const conteos = Object.fromEntries(estados.map((e, i) => [e, resultados[i].count ?? 0])) as Omit<ConteosPorEstado, "todos">;
   return { todos: Object.values(conteos).reduce((s, n) => s + n, 0), ...conteos };

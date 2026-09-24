@@ -10,6 +10,11 @@ export const dynamic = "force-dynamic";
 const ESTADOS: { valor: EstadoPedido | "todos"; label: string }[] = [
   { valor: "todos", label: "Todos" },
   { valor: "pendiente_pago", label: "Pendiente de pago" },
+  // Épica P: chip funcional mínimo para poder filtrar/enlazar desde el
+  // tablero (§10 de la arquitectura). El tratamiento visual final — punto
+  // violeta, SIN contador, SIN pulso, porque no es trabajo del admin
+  // (RN-15) — es diseño-pagos-stripe.md §6.1, siguiente tarea.
+  { valor: "pago_en_proceso", label: "Pago en proceso" },
   { valor: "comprobante_recibido", label: "Comprobante recibido" },
   { valor: "listo_envio", label: "Listo para envío" },
   { valor: "enviado", label: "Enviado" },
@@ -17,13 +22,13 @@ const ESTADOS: { valor: EstadoPedido | "todos"; label: string }[] = [
   { valor: "cancelado", label: "Cancelado" },
 ];
 
-// pago_en_proceso (Épica P, 0028): sin color propio en diseño.md todavía
-// (riesgo ya anotado en arquitectura-pagos-stripe.md §10) — se reutiliza
-// el estilo de pendiente_pago hasta que el Diseñador lo defina junto con
-// la UI de checkout con Stripe.
+// diseño-pagos-stripe.md §1 (D-P1, violeta `--processing`, aprobado):
+// reemplaza el placeholder que reutilizaba el ámbar de pendiente_pago. El
+// chip de método (OXXO/SPEI/Tarjeta) y el resto de la bandeja de revisión
+// (§6.1/§6.2) son la siguiente tarea, no esta.
 const ESTILO_ESTADO: Record<EstadoPedido, { label: string; estilo: React.CSSProperties }> = {
   pendiente_pago: { label: "Pendiente de pago", estilo: { background: "transparent", border: "1px solid var(--warning)", color: "var(--warning)" } },
-  pago_en_proceso: { label: "Pago en proceso", estilo: { background: "transparent", border: "1px solid var(--warning)", color: "var(--warning)" } },
+  pago_en_proceso: { label: "Pago en proceso", estilo: { background: "transparent", border: "1px solid var(--processing)", color: "var(--processing)" } },
   comprobante_recibido: { label: "Comprobante recibido", estilo: { background: "var(--accent)", color: "#07111C" } },
   listo_envio: { label: "Listo para envío", estilo: { background: "transparent", border: "1px solid var(--accent)", color: "var(--accent)" } },
   enviado: { label: "Enviado", estilo: { background: "transparent", border: "1px solid var(--accent)", color: "var(--accent)" } },

@@ -164,7 +164,12 @@ export interface EtapaEmbudo {
  * etapa abierta del flujo. */
 export async function obtenerEmbudo(): Promise<EtapaEmbudo[]> {
   const supabase = await crearClienteServidor();
-  const estados = ["pendiente_pago", "comprobante_recibido", "listo_envio", "enviado"] as const;
+  // Épica P: pago_en_proceso entra entre pendiente_pago y
+  // comprobante_recibido — es un tramo real del embudo para pedidos con
+  // Stripe (RN-15 mantiene que NO cuenta como "necesita tu atención", por
+  // eso no está en `obtenerTarjetasAtencion()`, solo aquí como foto
+  // informativa de "dónde están mis pedidos").
+  const estados = ["pendiente_pago", "pago_en_proceso", "comprobante_recibido", "listo_envio", "enviado"] as const;
   const resultados = await Promise.all(estados.map((e) => supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", e)));
   return estados.map((estado, i) => ({ estado, cifra: resultados[i].count ?? 0 }));
 }
