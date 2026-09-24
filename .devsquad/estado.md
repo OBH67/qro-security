@@ -3933,9 +3933,76 @@ bloquean):**
 
 **Con esto, todos los incrementos de la Épica P que dependían
 directamente de Stripe están completos** (backend, checkout, OXXO/
-SPEI, integración de `pago_en_proceso`, bandeja admin). Solo falta el
-porcentaje de devolución libre 10-100% (no es específico de Stripe,
-independiente) — **en curso**. La cuenta de Stripe sigue **pendiente,
-acción de la dueña** — no bloquea seguir escribiendo código, solo
-bloquea probar contra la API real (la prueba real necesita tarjetas/
-OXXO/SPEI de prueba de Stripe en modo test).
+SPEI, integración de `pago_en_proceso`, bandeja admin).
+
+**Porcentaje de devolución libre 10-100% (P9, RN-6 modificada) —
+listo, commit `1400074`.** Migración `0031_devolucion_porcentaje_libre.sql`:
+`return_items.percentage_suggested` (guarda el sugerido de forma
+inmutable, para poder comparar después), `returns.percentage_overridden`
+(auditoría de "el admin lo eligió a propósito", P9), y
+`resolver_devolucion()` ahora EXIGE el porcentaje entero 10-100 con los
+3 mensajes de error exactos del diseño — validado en SQL, no solo en
+el cliente. UI: campo numérico + deslizador + chips 100/70/50 (D-P8),
+nota ámbar si difiere del sugerido, modal de confirmación con el
+importe real (el flujo anterior no tenía modal de confirmación pese a
+que `diseño.md` §11.10 ya lo pedía — se agregó de una vez).
+
+**Caso no cubierto por el diseño, resuelto sin inventar en silencio:**
+para devoluciones con condición "otro" (sin estimado automático, el
+asesor decide), el sugerido antiguo era 0%, incompatible con el nuevo
+piso de 10%. El coder prellenó el campo con 10 (el mínimo permitido) y
+cambió el texto a "Esta condición no tiene un porcentaje automático —
+elige tú cuánto otorgar", sin la nota ámbar de "difiere del sugerido"
+porque no hay una sugerencia real que comparar. **Pendiente opcional:
+confirmar con la dueña/Diseñador si prefieren otro texto o valor por
+defecto para este caso** — es un ajuste de una línea si no.
+
+`npx tsc --noEmit`, lint y `npm run build` limpios en los 8 incrementos
+de esta épica.
+
+---
+
+## Épica P — CIERRE: todos los incrementos de código completos
+
+Con esto, los 8 incrementos de implementación de Pagos con Stripe
+quedan terminados y revisados uno por uno antes de seguir con el
+siguiente: (1) migraciones + Strategy pattern + webhook, (2) checkout
+con selector de 4 métodos + Payment Element, (3) fichas OXXO/SPEI,
+(4) `pago_en_proceso` en Mis pedidos/PasosPedido/tablero, (5) detalle
+de pago en la bandeja de revisión del admin, (6) porcentaje de
+devolución libre, (7) aviso "Quedan X" en catálogo público, (8) el
+cambio de texto autorizado en `index.html` (D-P6).
+
+**Pendientes reales que quedaron fuera de alcance a propósito, sin
+inventarse, documentados arriba en cada sección — para revisar con
+BSA/arquitecto cuando convenga (ninguno bloquea usar la app hoy):**
+- Cron `vencer_pagos_stripe()` que libere automáticamente los
+  apartados de tarjeta a los 30 min (OXXO/SPEI ya se liberan solos vía
+  webhook).
+- Plantilla de correo propia para "tu intento de pago no se completó"
+  (hoy se omite el correo en vez de mandar uno con el texto incorrecto
+  de comprobante).
+- Tope de monto de OXXO (P1.6) — de dónde sale ese número.
+- Caso "no se pudo cancelar en Stripe" (arquitectura §4.2).
+- 3 ocurrencias más del texto fijo "100%/70%" en `index.html` que el
+  diseñador no citó explícitamente (banner, badge visual de las
+  tarjetas de devoluciones, FAQ del chat) — dejadas sin tocar por
+  disciplina sobre un archivo protegido.
+- Texto/valor por defecto para devoluciones con condición "otro" bajo
+  el nuevo esquema de porcentaje libre.
+
+**Sigue pendiente, acción de la dueña (no bloquea nada de lo anterior,
+solo bloquea probar contra la API real de Stripe):** crear la cuenta
+de Stripe, activar OXXO y SPEI/transferencias, capturar
+`STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET`/
+`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` en las variables de entorno de
+Vercel, y dar de alta su usuario del Stripe Dashboard con rol
+restringido (sin llaves API ni configuración de cuenta) para ver
+transacciones/clientes ahí en vez de un panel propio.
+
+**Recomendado antes de mezclar esta rama a producción:** una revisión
+de código completa de todo el diff de la épica (`/code-review` o
+similar) y, cuando la dueña tenga su cuenta de Stripe en modo test,
+probar el flujo real de punta a punta (tarjeta de prueba, voucher
+OXXO de prueba, CLABE de prueba) antes de activar Stripe con dinero
+real.
