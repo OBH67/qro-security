@@ -3862,9 +3862,29 @@ quedan para el siguiente incremento):**
    con el siguiente incremento.
 
 Siguen: estado "pago en proceso" en Mis pedidos/`PasosPedido`/tablero/
-filtros del admin, detalle de pago en la bandeja de revisión del
-admin, porcentaje de devolución libre, "Quedan X" en catálogo
-público. La cuenta de Stripe sigue **pendiente, acción de la dueña**
-— no bloquea seguir escribiendo código, solo bloquea probar contra la
-API real (la prueba real necesita tarjetas/OXXO/SPEI de prueba de
-Stripe en modo test, según sugirió el coder).
+filtros del admin (§5, §10) — **listo, commits `6a23467`/`bda3fb8`/
+`f834e1e`.** Migración `0030_pagos_monto_recibido.sql` (persiste
+`payments.amount_received_cents`, que el webhook ya recibía pero
+nunca guardaba); `PasosPedido` con el paso "Pago en proceso" en
+violeta real; Mis pedidos con chip/color correcto, "Pago recibido"
+para el cliente en pedidos Stripe (D-P2), banners de "confirmando con
+tu banco" / "pagada tarde" (heurística: `updated_at > expires_at` con
+método Stripe, documentada) / ficha vencida; SPEI ahora avisa si llegó
+un monto parcial o de más (P4.4); tablero y filtros del admin con el
+color real y un bug real corregido de paso (el conteo "todos" no
+sumaba `pago_en_proceso`). Verificado a mano: la consulta
+`obtenerPagoStripeDelPedido()` que expone datos al CLIENTE hace
+`select` explícito de solo 8 columnas (instructions, expires_at,
+montos, needs_review, updated_at, status, card_last4) — nunca expone
+`stripe_payment_intent_id`, `card_brand` ni el payload crudo del
+webhook, dejando esos datos sensibles solo para el admin en la
+siguiente tarea. `npx tsc --noEmit`, lint y `npm run build` limpios.
+
+Sigue: detalle de pago de Stripe en la bandeja de revisión del admin
+(§6 — ID de pago, marca/últimos 4, decline codes, casos de revisión
+especiales; el chip de filtro de esta tarea fue solo funcional, el
+diseño pulido de §6.1 queda para ahí), porcentaje de devolución
+libre, "Quedan X" en catálogo público. La cuenta de Stripe sigue
+**pendiente, acción de la dueña** — no bloquea seguir escribiendo
+código, solo bloquea probar contra la API real (la prueba real
+necesita tarjetas/OXXO/SPEI de prueba de Stripe en modo test).
