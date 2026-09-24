@@ -3899,7 +3899,43 @@ nuevo se traslapa con una esquina decorativa del demo en la foto
 grande (mismo `top:10;left:10`) — cosmético, un ajuste de una línea
 si se prefiere otra posición.
 
-La cuenta de Stripe sigue **pendiente, acción de la dueña** — no
-bloquea seguir escribiendo código, solo bloquea probar contra la API
-real (la prueba real necesita tarjetas/OXXO/SPEI de prueba de Stripe
-en modo test).
+**Admin — detalle de pago Stripe en la bandeja de revisión (P6) —
+listo, commits `52554bb`/`4572158`/`13fafd6`.** Chip de método en la
+bandeja, bloque de detalle técnico (`DetallePagoStripe`: ID de pago
+copiable, enlace al Stripe Dashboard, "Consultar estado en Stripe" en
+vivo con decline code — todo esto SOLO visible aquí, nunca al
+cliente), banners de casos de revisión especiales.
+
+**RN-11 verificada, no requirió cambios**: "Validar pago" ya
+funcionaba igual para Stripe que para comprobante (gated solo en
+`status === 'comprobante_recibido'`, sin depender de `payment_proofs`).
+
+**RN-16 aplicada correctamente a un caso nuevo que no estaba escrito
+explícitamente**: "Rechazar" SÍ tenía que divergir, y el coder lo
+razonó bien en vez de copiar el flujo de comprobante — un comprobante
+rechazado no cobró nada, así que regresa a `pendiente_pago` sin más;
+un pago de Stripe rechazado YA fue cobrado de verdad, así que
+`rechazarPagoStripe()` (nueva mutation, sin SQL nuevo: compone
+`aplicar_saldo()` + `liberar_apartado()` ya aprobadas) abona el monto
+como saldo a favor y cancela el pedido — **nunca se llama a la API de
+reembolso de Stripe, nunca vuelve a la tarjeta**, tal como exige RN-16
+también para pagos con tarjeta. Verificado a mano leyendo el código.
+`npx tsc --noEmit`, lint y build limpios.
+
+**2 pendientes que el coder reportó en vez de inventar (no
+bloquean):**
+1. El caso "no se pudo cancelar en Stripe" (arquitectura §4.2) no se
+   implementó — no hay ninguna bandera en el esquema actual para
+   detectarlo.
+2. El reflow de tarjeta en móvil (§10) para la bandeja de pedidos no
+   se construyó — la tabla base nunca tuvo ese patrón, no es un
+   pendiente introducido por este incremento.
+
+**Con esto, todos los incrementos de la Épica P que dependían
+directamente de Stripe están completos** (backend, checkout, OXXO/
+SPEI, integración de `pago_en_proceso`, bandeja admin). Solo falta el
+porcentaje de devolución libre 10-100% (no es específico de Stripe,
+independiente) — **en curso**. La cuenta de Stripe sigue **pendiente,
+acción de la dueña** — no bloquea seguir escribiendo código, solo
+bloquea probar contra la API real (la prueba real necesita tarjetas/
+OXXO/SPEI de prueba de Stripe en modo test).
