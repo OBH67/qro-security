@@ -3424,3 +3424,61 @@ las anteriores).
 
 Validado con `tsc --noEmit`/`eslint` limpios y la migración con
 `pglast`; no se pudo probar contra Supabase real en este entorno.
+
+### Corrección (2026-09-24): un pedido "Enviado" seguía mostrando
+"Comprobante · En revisión" en Mi cuenta
+
+La dueña reportó que un pedido ya en estado "Enviado" (comprobante
+aprobado hace rato, avanzó todo el camino: recibido → listo para envío
+→ enviado) seguía mostrando la tarjeta de comprobante como "En
+revisión" en la pantalla del cliente.
+
+**Causa real, bug preexistente (no de esta semana)**: `payment_proofs`
+tiene columnas `status`/`reviewed_by`/`reviewed_at`/`rejection_reason`
+desde el día 1 (`0004_pedidos.sql`), pensadas exactamente para esto —
+pero ni `validar_pago()` (0015, aprobar) ni `liberar_apartado()` (0008,
+usada también para rechazar un comprobante) las escribían nunca. Las
+dos únicas funciones solo tocaban `orders.status`. Como
+`obtenerPedidoPorFolio()` (lado cliente) lee el comprobante DIRECTO de
+esa tabla, se quedaba pegado en `'pendiente'` (→ "En revisión" en
+pantalla) para siempre, sin importar qué tan lejos avanzara el pedido
+por dentro. El panel de admin nunca lo notó porque su propia pantalla
+de aprobar/rechazar se guía por `orders.status`, no por
+`payment_proofs.status` — el bug era invisible desde ese lado.
+
+Migración `0027_sincronizar_estado_comprobante.sql` (`create or
+replace`, misma firma que antes en las dos funciones — a diferencia de
+0025/0026 aquí no hace falta eliminar y recrear):
+- `validar_pago()` ahora también marca el comprobante en revisión como
+  `'validado'` (con `reviewed_by`/`reviewed_at`). Un pedido RN-11
+  (pagado 100% con saldo, sin comprobante) simplemente no tiene
+  ninguna fila que actualizar — el `UPDATE` no encuentra nada y no
+  hace nada, no es un error.
+- `liberar_apartado()` marca el comprobante como `'rechazado'` (con el
+  motivo) **solo cuando** `p_target_status = 'pendiente_pago'` (rechazo
+  de comprobante) — nunca cuando es `'cancelado'`: cancelar un pedido
+  no es lo mismo que rechazar un comprobante que puede seguir siendo
+  válido, así que una cancelación nunca debe tocar el estado del
+  comprobante.
+
+**Nota al margen, no corregida aquí (fuera de alcance de este
+incremento)**: al leer `liberar_apartado()` se notó que el `insert` en
+`order_status_history` usa `v_order.status` como `from_status`
+DESPUÉS de que ya se sobreescribió con el nuevo estado en el `update`
+de arriba — el historial probablemente registra `from_status =
+to_status` en cada cancelación/rechazo en vez del estado anterior real.
+Es un bug distinto, preexistente desde `0008_funciones_
+transaccionales.sql`, y no es lo que la dueña reportó — se deja
+documentado aquí para no perderlo, sin tocarlo en este cambio.
+
+**Pendiente, acción de la dueña**: correr `0027_sincronizar_estado_
+comprobante.sql` en Supabase Studio → SQL Editor. Esto solo corrige
+pedidos que se aprueben/rechacen DE AQUÍ EN ADELANTE — los pedidos ya
+aprobados antes de este cambio (como el que reportó) se quedarán con
+su comprobante en "En revisión" para siempre a menos que alguien
+actualice esa fila a mano; si quiere corregir el historial existente
+puede pedir un `UPDATE` puntual para esos casos.
+
+Validado con `tsc --noEmit` limpio (no hay cambios de TypeScript en
+este incremento, solo SQL) y la migración con `pglast`; no se pudo
+probar contra Supabase real en este entorno.
