@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { urlImagenPublica } from "@/lib/imagenes";
 import type { ProductDocumentRow } from "@/types/database";
 
 type Pestana = "descripcion" | "especificaciones" | "descargas" | "incluye";
@@ -83,7 +84,7 @@ export function PestanasProducto({
               {descargas.map((doc) => (
                 <a
                   key={doc.id}
-                  href={doc.url}
+                  href={urlImagenPublica(doc.url)}
                   target="_blank"
                   rel="noreferrer"
                   style={{ display: "flex", gap: 12, alignItems: "center", padding: "14px 16px", border: "1px solid var(--border)", background: "var(--bg-card)" }}

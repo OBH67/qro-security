@@ -3364,3 +3364,63 @@ Revisado el resto de esquemas Zod del proyecto (`servicio.ts`,
 este era el único caso.
 
 Validado con `tsc --noEmit`/`eslint` limpios.
+
+### Incremento (2026-09-24): tres pendientes reportados al probar el
+editor con las fotos ya funcionando
+
+Con CORS y el bug de Zod resueltos, la dueña probó a fondo el editor
+de un producto real y reportó tres cosas más en el mismo mensaje:
+
+1. **El PDF de "Ficha técnica" daba 404 al abrirlo** desde la ficha
+   pública del producto. Causa: `PestanasProducto.tsx` usaba
+   `doc.url` (la CLAVE cruda del objeto en R2, ej. `productos/SGQ-YY-
+   0001/docs/<uuid>.pdf`) directo como `href`, sin resolverlo contra el
+   dominio del CDN — exactamente el mismo tipo de bug que ya se evitó
+   en las fotos con `urlImagenPublica()`, pero aquí nadie lo aplicó.
+   Al ser una ruta relativa, el navegador la resolvía contra la URL
+   *actual* de la página (`/producto/<slug>/...`), de ahí el 404 con
+   una URL sin sentido. Arreglado con el mismo `urlImagenPublica(doc.
+   url)` que ya usan las imágenes.
+
+2. **La tarjeta "Foto principal" de la pestaña General no tenía
+   sentido al crear un producto** (todavía no hay dónde subir nada) y,
+   además, en edición SIEMPRE mostraba el mismo texto estático aunque
+   el producto ya tuviera fotos — nunca mostraba la foto real.
+   - `CamposGeneralesProducto` gana dos props: `mostrarFotoPrincipal`
+     (el asistente de alta la pone en `false`: la tarjeta desaparece
+     por completo en el paso 1, ya no estorba) y `fotoPrincipalUrl`
+     (cuando hay valor, se renderiza la foto real con `next/image` en
+     vez del aviso).
+   - Para que el editor sepa la foto principal EN VIVO (sin esperar un
+     refresh de página después de subir/cambiar/borrar una foto en la
+     pestaña "Fotos"), `GestorFotosProducto` deja de tener su propio
+     `useState` interno con `galeriaInicial` — ahora es un componente
+     controlado (`fotos`/`onCambiarFotos`), y quien lo usa
+     (`FormularioProducto`/`AsistenteNuevoProducto`) es dueño del
+     estado de la galería y puede derivar `fotos[0]?.url` para la
+     pestaña General sin ningún efecto ni sincronización adicional.
+
+3. **No existía ninguna forma de capturar "Qué incluye"** — la pestaña
+   pública siempre decía "El administrador todavía no capturó qué
+   incluye este producto", porque `products.includes` (columna `text[]`
+   que ya existía desde el día 1) nunca se agregó a `crear_producto()`
+   ni a `actualizar_producto()`, ni había ningún campo en el editor
+   para llenarla. Se agrega:
+   - Migración `0026_includes_producto_admin.sql` — mismo patrón que
+     `0025` (agregar un parámetro cambia la firma de la función en
+     Postgres, así que se elimina y recrea cada una en vez de `create
+     or replace`), suma `p_includes text[]` a ambas funciones.
+   - `esquemaProducto` (Zod), `DatosProducto`, las Server Actions y las
+     mutations ya lo pasan de extremo a extremo.
+   - Campo nuevo en "General": una caja de texto "Qué incluye (uno por
+     línea)" — se guarda como texto plano en el estado del formulario
+     y se convierte a `string[]` (una línea = un elemento, líneas
+     vacías descartadas) solo al momento de guardar, para no complicar
+     el campo con un editor de lista.
+
+**Pendiente, acción de la dueña**: correr `0026_includes_producto_
+admin.sql` en Supabase Studio → SQL Editor (mismo procedimiento que
+las anteriores).
+
+Validado con `tsc --noEmit`/`eslint` limpios y la migración con
+`pglast`; no se pudo probar contra Supabase real en este entorno.

@@ -35,6 +35,7 @@ export async function crearProductoAction(datosCrudos: unknown): Promise<Resulta
       // existencia siempre es 1 — de solo lectura en la pantalla, forzado
       // aquí.
       stock: datos.condition !== "nuevo" ? 1 : datos.stock,
+      includes: datos.includes,
     });
     revalidarCatalogo(producto.id);
     return producto;
@@ -64,6 +65,7 @@ export async function actualizarProductoAction(productId: string, datosCrudos: u
       conditionDetail: datos.condition !== "nuevo" ? datos.conditionDetail || null : null,
       stock: datos.condition !== "nuevo" ? 1 : datos.stock,
       attributes: datos.attributes,
+      includes: datos.includes,
     });
     revalidarCatalogo(productId);
     return producto;

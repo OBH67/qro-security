@@ -12,7 +12,7 @@ import { GestorFotosProducto } from "@/components/organisms/admin/GestorFotosPro
 import { GestorDocumentosProducto } from "@/components/organisms/admin/GestorDocumentosProducto";
 import { EditorEspecificacionesProducto } from "@/components/organisms/admin/EditorEspecificacionesProducto";
 import type { DatosFormularioProducto } from "@/server/db/queries/admin/catalogo";
-import type { CondicionProducto, ProductRow, CategoryAttributeRow } from "@/types/database";
+import type { CondicionProducto, ProductRow, ProductImageRow, CategoryAttributeRow } from "@/types/database";
 
 const PASOS = ["General", "Fotos", "Especificaciones", "Documentos"] as const;
 
@@ -39,6 +39,7 @@ export function AsistenteNuevoProducto({ datosFormulario }: { datosFormulario: D
   const [sku, setSku] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState<string | null>("");
+  const [includesTexto, setIncludesTexto] = useState("");
   const [brandId, setBrandId] = useState<string | null>("");
   const [groupId, setGroupId] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
@@ -48,6 +49,7 @@ export function AsistenteNuevoProducto({ datosFormulario }: { datosFormulario: D
   const [condition, setCondition] = useState<CondicionProducto>("nuevo");
   const [conditionDetail, setConditionDetail] = useState(MOTIVOS_POR_CONDICION.usado[0]);
   const [atributos, setAtributos] = useState<CategoryAttributeRow[]>([]);
+  const [fotos, setFotos] = useState<ProductImageRow[]>([]);
   const [attributes, setAttributes] = useState<Record<string, string | number | boolean>>({});
 
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +88,10 @@ export function AsistenteNuevoProducto({ datosFormulario }: { datosFormulario: D
       status,
       condition,
       conditionDetail: condition !== "nuevo" ? conditionDetail : "",
+      includes: includesTexto
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean),
     };
   }
 
@@ -172,6 +178,8 @@ export function AsistenteNuevoProducto({ datosFormulario }: { datosFormulario: D
           onCambiarName={setName}
           description={description}
           onCambiarDescription={setDescription}
+          includesTexto={includesTexto}
+          onCambiarIncludesTexto={setIncludesTexto}
           brandId={brandId}
           onCambiarBrandId={setBrandId}
           groupId={groupId}
@@ -193,10 +201,10 @@ export function AsistenteNuevoProducto({ datosFormulario }: { datosFormulario: D
           conditionDetail={conditionDetail}
           onCambiarConditionDetail={setConditionDetail}
           datosFormulario={datosFormulario}
-          notaFotoPrincipal='Sube fotos en el siguiente paso, "Fotos".'
+          mostrarFotoPrincipal={false}
         />
       )}
-      {paso === 2 && producto && <GestorFotosProducto productId={producto.id} sku={producto.sku} nombreProducto={name || producto.name} galeriaInicial={[]} />}
+      {paso === 2 && producto && <GestorFotosProducto productId={producto.id} sku={producto.sku} nombreProducto={name || producto.name} fotos={fotos} onCambiarFotos={setFotos} />}
       {paso === 3 && producto && <EditorEspecificacionesProducto atributos={atributos} valores={attributes} onCambiar={(key, valor) => setAttributes((a) => ({ ...a, [key]: valor }))} />}
       {paso === 4 && producto && <GestorDocumentosProducto productId={producto.id} sku={producto.sku} documentosIniciales={[]} />}
 

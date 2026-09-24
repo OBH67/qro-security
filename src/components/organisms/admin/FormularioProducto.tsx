@@ -38,6 +38,7 @@ export function FormularioProducto({
   const [tab, setTab] = useState<(typeof PESTAÑAS)[number]>("General");
   const [name, setName] = useState(producto.name);
   const [description, setDescription] = useState(producto.description);
+  const [includesTexto, setIncludesTexto] = useState((producto.includes ?? []).join("\n"));
   const [brandId, setBrandId] = useState(producto.brand_id);
   const [groupId, setGroupId] = useState(producto.group_id);
   const [subcategoryId, setSubcategoryId] = useState(producto.subcategory_id);
@@ -48,6 +49,7 @@ export function FormularioProducto({
   const [conditionDetail, setConditionDetail] = useState(producto.condition_detail ?? MOTIVOS_POR_CONDICION.usado[0]);
   const [atributos, setAtributos] = useState<CategoryAttributeRow[]>(atributosDeCategoria);
   const [attributes, setAttributes] = useState<Record<string, string | number | boolean>>((producto.attributes as Record<string, string | number | boolean>) ?? {});
+  const [fotos, setFotos] = useState<ProductImageRow[]>([...galeriaInicial].sort((a, b) => a.position - b.position));
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -83,6 +85,10 @@ export function FormularioProducto({
       condition,
       conditionDetail: condition !== "nuevo" ? conditionDetail : "",
       attributes,
+      includes: includesTexto
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean),
     };
     startTransition(async () => {
       const resultado = await actualizarProductoAction(producto.id, datos);
@@ -128,6 +134,8 @@ export function FormularioProducto({
           onCambiarName={setName}
           description={description}
           onCambiarDescription={setDescription}
+          includesTexto={includesTexto}
+          onCambiarIncludesTexto={setIncludesTexto}
           brandId={brandId}
           onCambiarBrandId={setBrandId}
           groupId={groupId}
@@ -149,9 +157,10 @@ export function FormularioProducto({
           conditionDetail={conditionDetail}
           onCambiarConditionDetail={setConditionDetail}
           datosFormulario={datosFormulario}
+          fotoPrincipalUrl={fotos[0]?.url ?? null}
         />
       ) : tab === "Fotos" ? (
-        <GestorFotosProducto productId={producto.id} sku={producto.sku} nombreProducto={name || producto.name} galeriaInicial={galeriaInicial} />
+        <GestorFotosProducto productId={producto.id} sku={producto.sku} nombreProducto={name || producto.name} fotos={fotos} onCambiarFotos={setFotos} />
       ) : tab === "Documentos" ? (
         <GestorDocumentosProducto productId={producto.id} sku={producto.sku} documentosIniciales={documentosIniciales} />
       ) : (

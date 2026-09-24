@@ -19,6 +19,7 @@ export interface DatosProducto {
   condition: CondicionProducto;
   conditionDetail?: string | null;
   attributes?: Record<string, unknown>;
+  includes?: string[];
 }
 
 export async function crearProductoAdmin(datos: DatosProducto): Promise<ProductRow> {
@@ -36,6 +37,7 @@ export async function crearProductoAdmin(datos: DatosProducto): Promise<ProductR
     p_status: datos.status ?? "activo",
     p_condition: datos.condition,
     p_condition_detail: datos.conditionDetail ?? null,
+    p_includes: datos.includes ?? null,
   });
   if (error) throw new Error(traducirError(error.message));
   return data as unknown as ProductRow;
@@ -57,6 +59,7 @@ export async function actualizarProductoAdmin(productId: string, changedBy: stri
     p_condition: datos.condition ?? null,
     p_condition_detail: datos.conditionDetail ?? null,
     p_attributes: datos.attributes ?? null,
+    p_includes: datos.includes ?? null,
   });
   if (error) throw new Error(traducirError(error.message));
   return data as unknown as ProductRow;

@@ -1,3 +1,5 @@
+import Image from "next/image";
+import { urlImagenPublica } from "@/lib/imagenes";
 import type { DatosFormularioProducto } from "@/server/db/queries/admin/catalogo";
 import type { CondicionProducto, GroupRow, SubcategoryRow } from "@/types/database";
 
@@ -21,6 +23,8 @@ export function CamposGeneralesProducto({
   onCambiarName,
   description,
   onCambiarDescription,
+  includesTexto,
+  onCambiarIncludesTexto,
   brandId,
   onCambiarBrandId,
   groupId,
@@ -39,7 +43,8 @@ export function CamposGeneralesProducto({
   conditionDetail,
   onCambiarConditionDetail,
   datosFormulario,
-  notaFotoPrincipal = 'Sube fotos desde la pestaña "Fotos" tras guardar el producto.',
+  mostrarFotoPrincipal = true,
+  fotoPrincipalUrl = null,
 }: {
   esEdicion: boolean;
   sku: string;
@@ -48,6 +53,10 @@ export function CamposGeneralesProducto({
   onCambiarName: (v: string) => void;
   description: string | null;
   onCambiarDescription: (v: string) => void;
+  /** Texto crudo, un ítem por línea — se parte a `string[]` (`products.
+   * includes`) hasta el momento de guardar, no en cada tecleo. */
+  includesTexto: string;
+  onCambiarIncludesTexto: (v: string) => void;
   brandId: string | null;
   onCambiarBrandId: (v: string) => void;
   groupId: string;
@@ -66,7 +75,11 @@ export function CamposGeneralesProducto({
   conditionDetail: string | null;
   onCambiarConditionDetail: (v: string) => void;
   datosFormulario: { grupos: GroupRow[]; marcas: DatosFormularioProducto["marcas"] };
-  notaFotoPrincipal?: string;
+  /** F1.4: al crear (wizard) todavía no hay dónde subir fotos — se oculta
+   * la tarjeta entera en vez de mostrar un aviso vacío; al editar sí
+   * aplica, mostrando la foto principal real cuando ya existe. */
+  mostrarFotoPrincipal?: boolean;
+  fotoPrincipalUrl?: string | null;
 }) {
   return (
     <div className="admin-grid-2-ancho" style={{ gap: 20 }}>
@@ -142,15 +155,35 @@ export function CamposGeneralesProducto({
           <label style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>Descripción</label>
           <textarea className="campo" style={{ height: 88, paddingTop: 10 }} value={description ?? ""} onChange={(e) => onCambiarDescription(e.target.value)} placeholder="Descripción larga para la ficha del producto" />
         </div>
+
+        <div>
+          <label style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>Qué incluye (uno por línea)</label>
+          <textarea
+            className="campo"
+            style={{ height: 72, paddingTop: 10 }}
+            value={includesTexto}
+            onChange={(e) => onCambiarIncludesTexto(e.target.value)}
+            placeholder={"Fuente de poder\nCable HDMI 2m\nManual impreso"}
+          />
+          <div style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 4 }}>Se muestra en la pestaña &ldquo;Qué incluye&rdquo; de la ficha del producto. Déjalo vacío si no aplica.</div>
+        </div>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div className="tarjeta" style={{ padding: 18 }}>
-          <div style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>Foto principal</div>
-          <div style={{ background: "var(--bg-inset)", border: "1px dashed var(--border-input)", height: 150, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-dim)", fontSize: 12, textAlign: "center", padding: 10 }}>
-            {notaFotoPrincipal}
+        {mostrarFotoPrincipal && (
+          <div className="tarjeta" style={{ padding: 18 }}>
+            <div style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>Foto principal</div>
+            {fotoPrincipalUrl ? (
+              <div style={{ position: "relative", width: "100%", height: 150, background: "var(--bg-inset)" }}>
+                <Image src={urlImagenPublica(fotoPrincipalUrl)} alt="Foto principal" fill sizes="280px" style={{ objectFit: "cover" }} />
+              </div>
+            ) : (
+              <div style={{ background: "var(--bg-inset)", border: "1px dashed var(--border-input)", height: 150, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-dim)", fontSize: 12, textAlign: "center", padding: 10 }}>
+                Sube fotos desde la pestaña &ldquo;Fotos&rdquo;.
+              </div>
+            )}
           </div>
-        </div>
+        )}
         <div className="tarjeta" style={{ padding: 18 }}>
           <div style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>Condición (D6)</div>
           <div style={{ display: "flex", gap: 18, fontSize: 14, marginBottom: 4 }}>
