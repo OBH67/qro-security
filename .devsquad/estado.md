@@ -3727,10 +3727,57 @@ aprobó las otras 6 por no objetar los valores recomendados
   Stripe, sin PDF propio), D-P8 (atajos 100%/70%/50% en devoluciones)
   quedan aprobados por defecto.
 
-**Épica P lista para pasar a la fase de implementación (`coder`)**,
-pendiente de que la dueña dé la autorización explícita para empezar a
-escribir código (requerimientos, arquitectura y diseño ya aprobados;
-no se ha escrito código todavía). La cuenta de Stripe sigue
-**pendiente, acción de la dueña** — no bloquea seguir preparando la
-implementación (migraciones, estructura de `src/server/pagos/`), pero
-sí bloquea probar contra la API real de Stripe.
+**La dueña dio luz verde para implementar.** Arranca la fase de
+`coder`, en incrementos secuenciales (cada uno se revisa antes de
+seguir con el siguiente):
+
+**Incremento 1 — backend (listo, commits `020e727`/`6e207cc`):**
+migraciones `0028_pagos_stripe_esquema.sql` (tablas `payments` con
+`instructions jsonb`, `stripe_webhook_events` con PK `event_id` para
+idempotencia, `profiles.stripe_customer_id`, nuevo valor
+`pago_en_proceso` en `order_status`, RLS) y
+`0029_pagos_stripe_funciones.sql` (`apartar_pedido()` con nuevo
+parámetro `p_target_status` vía DROP+CREATE, retrocompatible;
+`liberar_apartado()` acepta `pago_en_proceso` como origen **y corrige
+el bug de `from_status` documentado en el incremento del 24 de
+septiembre** — se capturaba después del `UPDATE`, quedando siempre
+igual a `to_status`; `iniciar_pago_stripe()`, `registrar_pago_stripe()`).
+Verificado a mano: el webhook nunca transiciona un pedido pagado
+directo a "Listo para envío" — `registrar_pago_stripe()` lo manda a
+`comprobante_recibido` (misma cola de revisión manual que hoy),
+cumpliendo la regla confirmada dos veces por la dueña. `src/server/pagos/`
+con el patrón Strategy (`tipos.ts`, `registro.ts`, adaptador
+`PasarelaStripe`, estrategias `tarjeta`/`oxxo`/`spei`/`comprobante`),
+webhook en `src/app/api/webhooks/stripe/route.ts` (runtime Node,
+cuerpo crudo, verifica firma). Paquete `stripe` instalado. Variables
+de entorno `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET`/
+`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` documentadas como placeholders en
+`.env.example` (la dueña las captura cuando tenga su cuenta Stripe).
+`npx tsc --noEmit` y lint limpios.
+
+Decisiones técnicas del coder que quedan anotadas (no bloquean, pero
+conviene que arquitecto/dueña las vean más adelante):
+- Falta el cron que libera automáticamente los apartados de **tarjeta**
+  a los 30 min (`vencer_pagos_stripe()` de la arquitectura) — no
+  estaba en el alcance de este incremento. OXXO/SPEI ya se liberan
+  solos vía el webhook `canceled` cuando Stripe cancela el
+  PaymentIntent al vencer voucher/CLABE. **Pendiente para el próximo
+  incremento backend.**
+- Cuando `liberar_apartado()` se dispara automáticamente por Stripe
+  (tarjeta vencida, OXXO/SPEI cancelado), se omite el correo de
+  "pago rechazado" porque su plantilla actual dice literalmente
+  "rechazamos el comprobante que subiste" — texto incorrecto para un
+  intento de pago con tarjeta. Falta una plantilla propia ("tu intento
+  de pago no se completó, puedes reintentar"). **Pendiente, es
+  contenido/copy, no se inventó.**
+- El aviso de "pago Stripe confirmado" reutiliza literalmente los
+  `event_type` `comprobante.recibido` — sus plantillas dicen
+  "comprobante" en el texto. Mismo pendiente que el punto anterior.
+
+Siguen los incrementos de frontend: checkout (selector de 4 métodos +
+Payment Element), pantallas OXXO/SPEI, estado "pago en proceso" en
+Mis pedidos, detalle de pago en el admin, porcentaje de devolución
+libre, "Quedan X" en catálogo público, y el cambio de texto autorizado
+en `index.html` (D-P6). La cuenta de Stripe sigue **pendiente, acción
+de la dueña** — no bloquea seguir escribiendo código, solo bloquea
+probar contra la API real.
