@@ -3774,10 +3774,35 @@ conviene que arquitecto/dueña las vean más adelante):
   `event_type` `comprobante.recibido` — sus plantillas dicen
   "comprobante" en el texto. Mismo pendiente que el punto anterior.
 
+**D-P6 (commit `4626752`) — hecho, pero con alcance reducido a lo
+inequívocamente autorizado.** Se cambiaron únicamente las dos frases
+tal como estaban en las líneas 1309 y 1978 de `index.html`: "Las
+devoluciones se abonan... 100%/70%..." y la respuesta del FAQ "¿Cómo
+funcionan las devoluciones?", por un texto que dice que el porcentaje
+lo define el equipo al revisar. **Se encontraron 3 lugares más con la
+misma afirmación de 100%/70% que el diseñador NO citó explícitamente
+en `diseño-pagos-stripe.md` §8 (que solo mencionaba l. 1309, 1978 y
+"tarjetas de devoluciones") y que por lo tanto NO se tocaron, para no
+exceder la autorización sobre un archivo protegido:**
+1. Un banner cerca de l. 774 ("Devoluciones en saldo a favor: 100% si
+   el producto está sellado, 70% si está abierto.") — mismo tipo de
+   cambio de texto que los dos ya hechos, técnicamente trivial.
+2. Las **tarjetas de devoluciones** (`devCards`, l. 2498-2500): cada
+   tarjeta muestra un **porcentaje fijo como badge visual grande**
+   (46px, "100%" / "70%"), no solo texto de párrafo — esto sí requiere
+   una decisión de diseño real (¿se quita el badge? ¿dice "Hasta
+   100%"? ¿se rediseña la tarjeta?), no es un simple cambio de texto.
+3. Una entrada del FAQ del chat de ayuda (l. 2532) con la misma
+   afirmación fija.
+**Pendiente: decidir con la dueña/diseñador si estos 3 también se
+corrigen** (dejarlos así generaría mensajes contradictorios en el
+sitio — unos dicen "depende de la revisión", otros siguen prometiendo
+100%/70% fijo) y, para el caso 2, cómo debe verse la tarjeta sin un
+porcentaje fijo que mostrar.
+
 Siguen los incrementos de frontend: checkout (selector de 4 métodos +
-Payment Element), pantallas OXXO/SPEI, estado "pago en proceso" en
-Mis pedidos, detalle de pago en el admin, porcentaje de devolución
-libre, "Quedan X" en catálogo público, y el cambio de texto autorizado
-en `index.html` (D-P6). La cuenta de Stripe sigue **pendiente, acción
-de la dueña** — no bloquea seguir escribiendo código, solo bloquea
-probar contra la API real.
+Payment Element) — **en curso**, pantallas OXXO/SPEI, estado "pago en
+proceso" en Mis pedidos, detalle de pago en el admin, porcentaje de
+devolución libre, "Quedan X" en catálogo público. La cuenta de Stripe
+sigue **pendiente, acción de la dueña** — no bloquea seguir
+escribiendo código, solo bloquea probar contra la API real.
