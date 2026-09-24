@@ -3,8 +3,7 @@
 import { useState, useTransition } from "react";
 import { BotonAdmin } from "@/components/atoms/BotonAdmin";
 import { DatoCopiable } from "@/components/molecules/DatoCopiable";
-import { formatearPrecio } from "@/lib/formato";
-import { agruparDigitos } from "@/lib/formato";
+import { formatearPrecio, agruparDigitos } from "@/lib/formato";
 import { formatearFechaLimite } from "@/lib/pagos/fechaLimite";
 import { BADGE_ESTADO_PAGO } from "@/lib/pagos/estadoAdmin";
 import { consultarEstadoPagoStripeAction } from "@/server/actions/admin/pedidos";
