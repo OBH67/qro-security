@@ -18,6 +18,7 @@ export interface DatosProducto {
   status?: "activo" | "agotado" | "descontinuado";
   condition: CondicionProducto;
   conditionDetail?: string | null;
+  attributes?: Record<string, unknown>;
 }
 
 export async function crearProductoAdmin(datos: DatosProducto): Promise<ProductRow> {
@@ -55,6 +56,7 @@ export async function actualizarProductoAdmin(productId: string, changedBy: stri
     p_status: datos.status ?? null,
     p_condition: datos.condition ?? null,
     p_condition_detail: datos.conditionDetail ?? null,
+    p_attributes: datos.attributes ?? null,
   });
   if (error) throw new Error(traducirError(error.message));
   return data as unknown as ProductRow;

@@ -24,11 +24,9 @@ export default async function LayoutAdminProtegido({ children }: { children: Rea
   const contadores = await obtenerContadoresPanel();
 
   return (
-    <div style={{ width: "100%", minHeight: "100vh", display: "flex", background: "var(--bg-base)" }}>
+    <div className="admin-shell">
       <SidebarAdmin rutaActual={rutaActual} nombre={sesion.nombre} rol={sesion.rol} contadores={contadores} />
-      <div style={{ flex: 1, minWidth: 0, padding: "28px 32px 64px", maxWidth: 1400 }}>
-        {permitido ? children : <PantallaAccesoDenegado />}
-      </div>
+      <div className="admin-main">{permitido ? children : <PantallaAccesoDenegado />}</div>
     </div>
   );
 }

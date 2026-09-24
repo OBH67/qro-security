@@ -255,7 +255,7 @@ export function ImportadorCatalogo() {
         {resultado.nombreArchivo} · {resultado.totalFilas} filas
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 20 }}>
+      <div className="admin-grid-3" style={{ gap: 14, marginBottom: 20 }}>
         <div className="tarjeta cut cut-12" style={{ padding: 18, textAlign: "center", borderColor: "var(--success)" }}>
           <div className="mono" style={{ fontSize: 36, color: "var(--success)", fontWeight: 500 }}>
             {resultado.correctas}

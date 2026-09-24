@@ -55,6 +55,7 @@ export async function actualizarProductoAction(productId: string, datosCrudos: u
       condition: datos.condition,
       conditionDetail: datos.condition !== "nuevo" ? datos.conditionDetail || null : null,
       stock: datos.condition !== "nuevo" ? 1 : datos.stock,
+      attributes: datos.attributes,
     });
     revalidarCatalogo(productId);
     return producto;

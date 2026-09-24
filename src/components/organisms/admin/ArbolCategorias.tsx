@@ -183,7 +183,7 @@ export function ArbolCategorias({ grupos }: { grupos: NodoGrupo[] }) {
           Nuevo grupo
         </button>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 16 }}>
+      <div className="admin-grid-arbol" style={{ gap: 16 }}>
       <div className="tarjeta" style={{ padding: "10px 0", maxHeight: 640, overflow: "auto" }}>
         {grupos.map((g) => {
           const abierto = abiertos.has(g.id);

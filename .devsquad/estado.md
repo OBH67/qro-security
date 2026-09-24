@@ -3043,3 +3043,172 @@ TABLE`, no debería toparse con el mismo error). No se pudo probar
 contra un Postgres real en este entorno — validado con `tsc --noEmit`/
 `eslint`/`next build` limpios y la sintaxis de la migración confirmada
 con `pglast`.
+
+### Corrección (2026-09-23): "Nuevo producto" guardaba todo producto
+condición "nuevo" con stock 0, sin manera de corregirlo desde el panel
+
+La dueña probó a fondo el alta manual de un producto y reportó, con
+capturas: (a) problemas de responsive en la tabla de catálogo en
+móvil, (b) la pestaña "Precio y stock" es un placeholder que contradice
+a "General", que ya pide el precio, y (c) su impresión general de que
+"ninguna funcionalidad de cargar el producto no está implementada".
+
+Se confirmó con lectura de código un bug real, no solo de percepción:
+para la condición por defecto "Nuevo", el formulario (`FormularioProducto.tsx`)
+nunca mostraba un campo de stock — el stock editable solo existía
+(hardcoded a "1, pieza única") para "Caja abierta"/"Usado", correcto
+según D6 pero dejando "Nuevo" sin ninguna forma de fijar existencia. El
+objeto `datos` de `guardar()` nunca incluía `stock`, así que
+`crearProductoAction` → `crearProductoAdmin` caía siempre en su valor
+por defecto (`p_stock: datos.stock ?? 0`): **todo producto nuevo se
+guardaba con stock = 0**, invisible en el catálogo público
+(`disponible = stock - reserved`) sin ningún aviso de error ni en
+pantalla ni en la validación de Zod (`stock` era `optional()`).
+
+Corregido:
+- Se agregó un campo "Stock inicial \*" editable en la tarjeta
+  "Condición (D6)" de la pestaña General, visible solo cuando
+  `condition === "nuevo"` (espejo del campo de solo-lectura que ya
+  existía para las otras condiciones), y se conectó al objeto que
+  manda `guardar()`.
+- Se quitó la pestaña "Precio y stock" de `PESTAÑAS` — era 100%
+  placeholder y duplicaba lo que "General" ya pedía (precio) más lo
+  que ahora también pide (stock); quedan como placeholder documentado
+  solo "Fotos", "Especificaciones" y "Documentos", que sí son trabajo
+  pendiente real de una pasada futura (diseño.md §11.7).
+- `esquemaProducto` (Zod) ahora exige `stock` cuando `condition ===
+  "nuevo"` con un `.refine()`, para que el error se vea en el
+  formulario en vez de guardarse en silencio con 0.
+
+No se tocó el importador CSV (`ImportadorCatalogo`) — ese flujo ya
+lee `stock` de una columna dedicada de la plantilla y nunca tuvo este
+problema.
+
+Queda sin resolver, y sin decidir el alcance con la dueña, el punto
+(a) — el panel de admin (tabla de catálogo y el resto de las
+pantallas) no tiene prácticamente ningún CSS responsive (`grep` de
+`@media`/`overflow-x`/`min-width` en `admin.css` no encontró nada
+relevante) a diferencia del rediseño móvil que ya se hizo para "Mi
+cuenta" del lado del cliente. Es un trabajo de mayor alcance (todo el
+panel, no solo esta tabla) — pendiente de confirmar prioridad con la
+dueña antes de emprenderlo.
+
+Validado con `tsc --noEmit` y `eslint` limpios (no se pudo compilar
+`next build` completo en este entorno por falta de red hacia Google
+Fonts, limitación ya documentada en incrementos anteriores).
+
+### Corrección (2026-09-23): panel de admin sin CSS responsive — el sidebar
+fijo aplastaba el contenido en móvil
+
+La dueña confirmó (alcance "todo el panel") el problema de responsive
+que había quedado pendiente del incremento anterior. La causa raíz era
+una sola: el layout protegido (`admin/(protegido)/layout.tsx`) y
+`SidebarAdmin.tsx` solo tenían las medidas de escritorio de la
+maqueta — un sidebar de 248px fijo, siempre visible, sin ningún
+`@media` — así que en una pantalla de ~390px de ancho el sidebar por sí
+solo ocupaba más de la mitad, y el resto del panel (tablas, formularios
+de dos columnas) nunca tuvo ninguna regla para apilarse.
+
+Cambios:
+- **Sidebar → panel deslizable en móvil** (`admin.css` `.admin-sidebar`,
+  `.admin-menutoggle`, `.admin-sidebar-overlay`, breakpoint 860px).
+  `SidebarAdmin.tsx` pasó a client component: agrega el botón ☰, el
+  overlay para cerrar tocando fuera, y se cierra solo al cambiar de
+  ruta (comparando `pathname` contra su valor anterior durante el
+  render — no con un `useEffect`, para no disparar el lint de
+  "setState síncrono en un efecto" que ya se había visto antes en este
+  proyecto).
+- **Tablas** (catálogo, pedidos, devoluciones, solicitudes,
+  importador): todas viven dentro de una `.tarjeta`, así que se le dio
+  `overflow-x: auto` a esa clase globalmente en vez de tocar cada
+  componente — y un `min-width` a `table` bajo 700px para que las
+  columnas hagan scroll horizontal en vez de aplastarse hasta ser
+  ilegibles.
+- **Formularios de 2-3 columnas fijas** (`FormularioProducto`,
+  `ConfiguracionForm`, `ImportadorCatalogo`, `ArbolCategorias`): las
+  `gridTemplateColumns` inline (que no se pueden envolver en un
+  `@media` desde `style`) se movieron a 5 clases utilitarias nuevas
+  (`.admin-grid-2`, `.admin-grid-2-ancho`, `.admin-grid-3`,
+  `.admin-grid-lateral`, `.admin-grid-arbol`) que colapsan a una sola
+  columna bajo 780px.
+- **Modal genérico** (`.modal`): `max-width: 92vw` para que no se corte
+  en pantallas angostas de 460px o menos.
+
+No se tocó el sitio público ni "Mi cuenta" — ya tenían su propio
+rediseño móvil de un incremento anterior. Validado con `tsc --noEmit`/
+`eslint` limpios; no se pudo verificar visualmente en un dispositivo
+real en este entorno (sin navegador con DevTools) — pendiente de que
+la dueña confirme en su celular.
+
+### Incremento (2026-09-23): las pestañas Fotos/Especificaciones/
+Documentos del editor de producto, antes placeholder, ya funcionan (F1.4)
+
+La dueña confirmó que quería las tres implementadas de una vez. Las
+tres dependían de tablas que ya existían desde `0003_catalogo.sql`
+(`product_images`, `product_documents`, `products.attributes` jsonb +
+`category_attributes` para definir qué campos filtrar) y de consultas
+de lectura que el lado público ya usaba (`obtenerGaleriaProducto()`,
+`obtenerDocumentosProducto()`, `obtenerAtributosDeCategoria()`,
+`src/server/db/queries/catalogo.ts`) — lo que faltaba era todo el lado
+de ESCRITURA desde el panel.
+
+**Fotos y Documentos** — mismo patrón de dos pasos que comprobantes/
+devoluciones (arquitectura §7.1: el servidor firma un PUT directo
+navegador→R2, nunca pasa el archivo por Next.js), pero sobre el bucket
+PÚBLICO en vez del privado, porque estos sí se muestran en la tienda:
+- `firmar.ts` gana `firmarSubidaPublica()` (antes solo existía la
+  versión privada).
+- `r2.ts` gana `borrarObjetoR2()`, para no dejar el archivo huérfano en
+  R2 cuando se elimina una foto/documento desde el panel.
+- `archivosProducto.ts` (dominio nuevo): fotos solo JPG/PNG/WebP (nunca
+  HEIC — a diferencia del comprobante, que solo ve el admin, esta foto
+  se sirve directo en la tienda y casi ningún navegador renderiza
+  HEIC), documentos solo PDF (evita que el bucket público sirva
+  HTML/scripts con el `Content-Type` equivocado). Magic bytes
+  verificados igual que el comprobante (C2.2), nunca solo la extensión.
+- La foto de `position` más baja es la "principal" (mismo criterio que
+  ya usaba el lado público) — la pestaña deja marcarla con un botón
+  "Principal" por foto, que reordena el resto.
+- **Simplificación documentada**: `modelo-datos.md` §6 pedía
+  `productos/{sku}/{n}.webp` (conversión a WebP); convertir requeriría
+  `sharp` (procesamiento de imágenes), que este proyecto no tiene —
+  se guarda la extensión real del archivo subido (jpg/png/webp), igual
+  que ya se documentó para `.xlsx` en el importador.
+
+**Especificaciones** — un campo por cada fila de `category_attributes`
+del grupo/subcategoría del producto (texto con opciones = `<select>`,
+número, booleano = checkbox). A diferencia de Fotos/Documentos, sus
+valores viven en el mismo `products.attributes` (jsonb) que el resto
+del producto, así que NO tiene su propia acción de guardado — viajan
+en el mismo objeto que manda el botón "Guardar" general (diseño.md
+§11.7 solo dibuja una barra de guardar para todo el formulario) vía un
+parámetro nuevo `p_attributes` en `actualizar_producto()` (migración
+`0025_atributos_producto_admin.sql`; se **elimina y recrea** la
+función en vez de `create or replace`, porque agregar un parámetro
+cambia su firma/identidad en Postgres — un simple `create or replace`
+habría dejado dos versiones sobrepuestas de la función). Si se cambia
+de grupo/subcategoría a media edición, la pestaña vuelve a pedir los
+atributos de la nueva categoría (acción
+`obtenerAtributosDeCategoriaAction`) y limpia los valores anteriores,
+para no dejar claves de la categoría vieja mezcladas.
+
+**Gate común a las tres**: solo se pueden usar sobre un producto YA
+GUARDADO (`product_images`/`product_documents` tienen FK a
+`products.id`, y Especificaciones depende de la categoría elegida en
+"General") — al crear un producto nuevo, las tres pestañas muestran
+"Guarda el producto en 'General' primero" en vez de su contenido, igual
+que ya avisaba la tarjeta "Foto principal" de esa pestaña.
+
+Archivos nuevos: `src/server/domain/archivosProducto.ts`,
+`src/server/db/mutations/admin/productoArchivos.ts`,
+`src/server/actions/admin/productoArchivos.ts`,
+`src/components/organisms/admin/{GestorFotosProducto,
+GestorDocumentosProducto,EditorEspecificacionesProducto}.tsx`,
+`supabase/migrations/0025_atributos_producto_admin.sql`.
+
+**Pendiente, acción de la dueña**: correr `0025_atributos_producto_
+admin.sql` en Supabase Studio → SQL Editor (mismo procedimiento que las
+migraciones anteriores). Validado con `tsc --noEmit`/`eslint` limpios y
+la migración con `pglast`; no se pudo probar contra R2/Supabase reales
+en este entorno — conviene que la dueña pruebe subir una foto y un PDF
+a un producto real antes de darlo por cerrado.

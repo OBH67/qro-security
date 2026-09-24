@@ -1,5 +1,5 @@
 import "server-only";
-import { S3Client, HeadObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, HeadObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { env } from "@/server/config/env";
 
 /**
@@ -40,4 +40,12 @@ export async function leerPrimerosBytes(bucket: string, key: string, bytes = 32)
   );
   const cuerpo = await resultado.Body?.transformToByteArray();
   return Buffer.from(cuerpo ?? []);
+}
+
+/** Borra un objeto de R2 — usado al eliminar una foto o documento de
+ * producto desde el panel (F1.4), para no dejar el archivo huérfano en el
+ * bucket cuando su fila se borra de la base. */
+export async function borrarObjetoR2(bucket: string, key: string): Promise<void> {
+  const cliente = crearClienteR2();
+  await cliente.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
 }

@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { cerrarSesionStaffAction } from "@/server/actions/admin/auth";
 import type { RolStaff } from "@/server/auth/roles";
 import type { ContadoresPanel } from "@/server/db/queries/admin/panel";
@@ -7,7 +11,14 @@ import type { ContadoresPanel } from "@/server/db/queries/admin/panel";
  * el bloque "VISTA DE DEMOSTRACIÓN" (chips Admin/Inventario): esos chips
  * simulan cambiar de rol dentro de la propia maqueta para presentarla sin
  * dos cuentas reales — aquí el rol viene de la sesión real (H2), no hay
- * nada que "cambiar" con un botón. Omitido a propósito, no en silencio. */
+ * nada que "cambiar" con un botón. Omitido a propósito, no en silencio.
+ *
+ * `"use client"` (2026-09-23): se agregó el estado `abierto` para el
+ * panel deslizable en móvil (< 860px, ver admin.css `.admin-sidebar`) —
+ * se cierra solo al navegar porque este layout persiste entre rutas
+ * (App Router) y un `<Link>` normal no lo desmonta; el cierre se ajusta
+ * durante el render comparando `pathname` contra su valor anterior, no
+ * en un `useEffect` (evita el doble render que dispara el lint). */
 
 const NAV_CONFIG: { id: string; href: string; label: string; roles: RolStaff[] }[] = [
   { id: "tablero", href: "/admin", label: "Inicio", roles: ["admin"] },
@@ -38,6 +49,13 @@ export function SidebarAdmin({
   contadores: ContadoresPanel;
 }) {
   const items = NAV_CONFIG.filter((n) => n.roles.includes(rol));
+  const pathname = usePathname();
+  const [abierto, setAbierto] = useState(false);
+  const [pathnameAnterior, setPathnameAnterior] = useState(pathname);
+  if (pathname !== pathnameAnterior) {
+    setPathnameAnterior(pathname);
+    setAbierto(false);
+  }
 
   const contadorPorId: Record<string, number> = {
     pedidos: contadores.comprobantesPorValidar,
@@ -46,7 +64,12 @@ export function SidebarAdmin({
   };
 
   return (
-    <div style={{ width: 248, flex: "0 0 248px", background: "var(--bg-surface)", borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh" }}>
+    <>
+      <button type="button" className="admin-menutoggle" onClick={() => setAbierto(true)} aria-label="Abrir menú" aria-expanded={abierto}>
+        ☰
+      </button>
+      {abierto && <div className="admin-sidebar-overlay visible" onClick={() => setAbierto(false)} />}
+      <div className={`admin-sidebar${abierto ? " abierta" : ""}`}>
       <div style={{ padding: "20px 16px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--accent-wash)", border: "1px solid var(--accent)", display: "grid", placeItems: "center", color: "var(--accent)", fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 12, flex: "0 0 auto" }}>
           SG
@@ -90,6 +113,7 @@ export function SidebarAdmin({
           Cerrar sesión
         </button>
       </form>
-    </div>
+      </div>
+    </>
   );
 }
