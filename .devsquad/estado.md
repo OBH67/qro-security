@@ -3270,3 +3270,46 @@ termina de llenar después editándolo normal.
 
 Validado con `tsc --noEmit`/`eslint` limpios; no se pudo probar el
 flujo completo en un navegador real en este entorno.
+
+### Corrección (2026-09-24): "No se pudo subir" al agregar una foto en
+el paso 2 del asistente — falta CORS del bucket público de R2
+
+La dueña probó el asistente y en el paso "Fotos" la subida falló con
+"No se pudo subir 'Screenshot....png'. Intenta de nuevo." — el mismo
+mensaje (con "Intenta de nuevo.") que ya se vio una vez con el
+comprobante de pago (incremento del 23 de septiembre), y viene del
+mismo lugar: el `catch` que atrapa cuando el `PUT` directo
+navegador→R2 (arquitectura §7.1) **rechaza la promesa** en vez de
+responder con un error normal.
+
+Esta vez el bucket involucrado es el PÚBLICO (`R2_BUCKET_PUBLIC`), no
+el privado — y la política CORS que la dueña configuró el 23 de
+septiembre fue específicamente la del bucket `R2_BUCKET_PRIVATE`
+(comprobantes/devoluciones). El bucket público nunca había recibido
+una subida directa desde el navegador hasta esta funcionalidad (F1.4,
+fotos/documentos de producto), así que casi seguro nunca se le
+configuró su propia política CORS — R2 no trae ninguna por defecto en
+ningún bucket.
+
+Se aplicó el mismo tratamiento que ya se le dio al comprobante: el
+mensaje de error ahora incluye el motivo real que dio el navegador y
+una pista explícita sobre CORS, en vez de un genérico "intenta de
+nuevo" (`GestorFotosProducto.tsx`/`GestorDocumentosProducto.tsx`). De
+paso, se reforzó el `accept` de los `<input type="file">` agregando las
+extensiones además de los tipos MIME (`.jpg,.jpeg,.png,.webp` /
+`.pdf`) — la dueña también reportó que el explorador de Windows
+mostraba archivos que no son imágenes al elegir una foto; eso es el
+diálogo nativo del sistema operativo, no algo que la aplicación
+controle del todo, pero declarar también las extensiones ayuda a que
+Chrome/Windows filtren mejor en ese diálogo.
+
+**Pendiente, acción de la dueña**: configurar la política CORS del
+bucket `R2_BUCKET_PUBLIC` en Cloudflare (R2 → el bucket → Settings →
+CORS Policy) — mismo permiso que ya tiene `R2_BUCKET_PRIVATE`: el
+origen del sitio (`https://qro-security.vercel.app` en producción,
+`http://localhost:3000` si prueba en local), método `PUT`, y el header
+`Content-Type`. Con eso, subir una foto o un PDF en el asistente
+debería funcionar. No se pudo aplicar ni probar contra el bucket real
+en este entorno (sin acceso a la cuenta de Cloudflare).
+
+Validado con `tsc --noEmit`/`eslint` limpios.

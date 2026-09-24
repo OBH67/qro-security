@@ -41,8 +41,15 @@ export function GestorFotosProducto({ productId, sku, nombreProducto, galeriaIni
           continue;
         }
         setFotos((f) => [...f, confirmacion.data]);
-      } catch {
-        setError(`No se pudo subir "${archivo.name}". Intenta de nuevo.`);
+      } catch (error) {
+        // Igual que en FormularioComprobante.tsx: el PUT directo navegador→R2
+        // puede RECHAZAR la promesa (no resolver con `ok: false`) por un
+        // bloqueo de CORS del bucket público — sin esta pista, el mensaje
+        // sería indistinguible de cualquier otro fallo de red.
+        setError(
+          `No se pudo subir "${archivo.name}" (${error instanceof Error ? error.message : "error de red"}). ` +
+            "Si el problema sigue, puede ser la política CORS del bucket público de R2 — avísale a soporte.",
+        );
       }
     }
     setSubiendo(false);
@@ -107,7 +114,7 @@ export function GestorFotosProducto({ productId, sku, nombreProducto, galeriaIni
 
       <label className="btn btn-secundario cut cut-10" style={{ display: "inline-flex", cursor: subiendo ? "wait" : "pointer", opacity: subiendo ? 0.7 : 1 }}>
         {subiendo ? "Subiendo…" : "Agregar fotos"}
-        <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={elegirArchivos} disabled={subiendo} style={{ display: "none" }} />
+        <input type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple onChange={elegirArchivos} disabled={subiendo} style={{ display: "none" }} />
       </label>
       {error && <p style={{ marginTop: 12, fontSize: 13, color: "var(--danger-text)" }}>{error}</p>}
     </div>

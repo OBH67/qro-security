@@ -47,8 +47,14 @@ export function GestorDocumentosProducto({ productId, sku, documentosIniciales }
           continue;
         }
         setDocumentos((d) => [...d, confirmacion.data]);
-      } catch {
-        setError(`No se pudo subir "${archivo.name}". Intenta de nuevo.`);
+      } catch (error) {
+        // Ver la misma nota en GestorFotosProducto.tsx sobre por qué el PUT
+        // a R2 puede rechazar la promesa (CORS) en vez de solo fallar con
+        // `ok: false`.
+        setError(
+          `No se pudo subir "${archivo.name}" (${error instanceof Error ? error.message : "error de red"}). ` +
+            "Si el problema sigue, puede ser la política CORS del bucket público de R2 — avísale a soporte.",
+        );
       }
     }
     setSubiendo(false);
@@ -99,7 +105,7 @@ export function GestorDocumentosProducto({ productId, sku, documentosIniciales }
         </select>
         <label className="btn btn-secundario cut cut-10" style={{ display: "inline-flex", cursor: subiendo ? "wait" : "pointer", opacity: subiendo ? 0.7 : 1 }}>
           {subiendo ? "Subiendo…" : "Agregar PDF"}
-          <input type="file" accept="application/pdf" multiple onChange={elegirArchivos} disabled={subiendo} style={{ display: "none" }} />
+          <input type="file" accept="application/pdf,.pdf" multiple onChange={elegirArchivos} disabled={subiendo} style={{ display: "none" }} />
         </label>
       </div>
       {error && <p style={{ marginTop: 12, fontSize: 13, color: "var(--danger-text)" }}>{error}</p>}
