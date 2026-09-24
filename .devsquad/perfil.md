@@ -20,8 +20,10 @@
 - Rama: `claude/sg-queretaro-sales-platform-6a7359`
 - Cliente final: SG Querétaro, distribuidor de equipo de seguridad electrónica,
   Querétaro, México.
-- Tipo: e-commerce B2C/B2B sin pasarela de pago + panel administrativo (ERP ligero:
-  pedidos, inventario, catálogo, analítica, devoluciones, solicitudes de servicio).
+- Tipo: e-commerce B2C/B2B con pagos en línea vía Stripe (tarjeta como método
+  principal, OXXO y SPEI) y transferencia con comprobante (secundario) + panel
+  administrativo (ERP ligero: pedidos, inventario, catálogo, analítica,
+  devoluciones, solicitudes de servicio).
 
 ## Stack
 **DEFINIDO por la dueña del proyecto (2026-09-20):**
@@ -39,6 +41,10 @@
   salida constante. Solo la URL del archivo se guarda en Supabase; el binario
   vive en R2.
 - Despliegue: **Vercel**, confirmado en `arquitectura.md` §1.1.
+- **Pagos en línea (2026-09-24):** **Stripe** con Payment Element embebido
+  (tarjeta, OXXO, SPEI), solo pagos únicos por pedido (nunca suscripciones).
+  Arranca en modo prueba. Detalle en `.devsquad/requerimientos-pagos-stripe.md`
+  y `.devsquad/arquitectura-pagos-stripe.md`.
 
 > **Corrección de costo (arquitectura, 2026-09-20):** la estimación original de
 > "$0/mes" solo aplica **durante el desarrollo**. Para producción, el plan
@@ -48,13 +54,18 @@
 > **~$45–47 USD/mes** (Vercel Pro $20 + Supabase Pro $25 + dominio ~$15/año).
 > R2 y el resto del stack sí se mantienen en $0. Detalle completo y
 > justificación en `.devsquad/arquitectura.md` §11.2 y §14 (AR-1 a AR-3).
+> **Actualización (2026-09-24):** Stripe no tiene cuota mensual fija, pero
+> agrega una comisión por cada pago (tarjeta ~3.6% + $3 MXN + IVA; OXXO/SPEI
+> con tarifa propia), absorbida por el negocio. Ver
+> `.devsquad/arquitectura-pagos-stripe.md` §8.
 
 Restricciones ya conocidas que la arquitectura debe respetar:
 - Catálogo de ~1,000–1,050 SKUs con fotos y especificaciones técnicas.
 - Subida y almacenamiento de archivos (comprobantes de pago y fotos de producto).
 - Integración saliente con WhatsApp (proveedor por definir).
 - Sitio público responsive (no app nativa).
-- Sin pasarela de pago.
+- Pagos: Stripe (tarjeta, OXXO, SPEI) + transferencia con comprobante,
+  desacoplados con patrón Strategy. Ningún dato de tarjeta toca el backend propio.
 
 ## Archivos protegidos
 No modificar sin autorización explícita de la persona:
@@ -82,10 +93,12 @@ runtime, lee el HTML/CSS resultante como referencia exacta de marcado y
 estilo.
 
 ## Reglas de negocio no negociables (resumen)
-1. No hay pasarela de pago: el pago es por transferencia bancaria y se valida
-   manualmente con un comprobante subido por el cliente.
-2. Las devoluciones nunca son en efectivo: generan **saldo a favor** (100% si el
-   producto está sellado de fábrica, 70% si está abierto o sin empaque original).
+1. Métodos de pago (2026-09-24): **tarjeta vía Stripe** (principal,
+   preseleccionado), **OXXO** y **SPEI** vía Stripe, y **transferencia con
+   comprobante** validado manualmente. En todos los casos un humano aprueba el
+   pago antes de pasar a "Listo para envío" (RN-11).
+2. Las devoluciones nunca son en efectivo ni reembolso a tarjeta: generan
+   **saldo a favor**; el admin elige el porcentaje (10%–100%) al aprobar.
 3. Al recibirse un comprobante, el administrador debe ser notificado por WhatsApp
    con la imagen del comprobante y los datos del pedido.
 4. Los servicios (monitoreo, guardias, financiamiento) no se venden en línea: solo

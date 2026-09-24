@@ -3588,3 +3588,116 @@ encabezado), `admin/(protegido)/page.tsx` (enlace de la tarjeta).
 
 Validado con `tsc --noEmit`/`eslint` limpios; no se pudo confirmar
 visualmente en un dispositivo real en este entorno.
+
+## Épica P — Pagos con Stripe (2026-09-24, en descubrimiento/arquitectura)
+
+Feature grande a petición de la dueña: agregar Stripe como método de
+pago en línea, PRINCIPAL en el checkout, manteniendo el comprobante de
+transferencia como segunda opción tal como funciona hoy. Reemplaza la
+**Decisión #1** ("sin pasarela de pago") — ver `perfil.md`, ya
+actualizado.
+
+Documentos nuevos (anexos aparte de `requerimientos.md`/
+`arquitectura.md` por su tamaño — se fusionan más adelante):
+- `.devsquad/requerimientos-pagos-stripe.md` — 8 historias (P1-P8),
+  reglas nuevas RN-12/13/14, PA-7.
+- `.devsquad/arquitectura-pagos-stripe.md` — patrón **Strategy**
+  (`src/server/pagos/`, interfaz `EstrategiaPago` + registro),
+  Checkout hospedado de Stripe en modo `payment` (nunca
+  `subscription`), tabla `payments`, tabla `stripe_webhook_events`
+  (idempotencia por `event_id`), función `registrar_pago_stripe()`.
+  `payment_proofs` no se toca.
+
+**Decisiones de negocio ya cerradas con la dueña** (no volver a
+preguntar):
+- Stripe pasa a revisión manual igual que un comprobante — **NUNCA**
+  pasa solo a "Listo para envío" por el webhook (mantiene RN-11
+  pareja entre los dos métodos). Esto se confirmó dos veces porque su
+  primera respuesta se contradijo a sí misma; la respuesta final y
+  definitiva es esta.
+- El inventario se aparta al INICIAR el intento de pago (igual que
+  comprobante hoy), no hasta que se aprueba — un segundo intento sobre
+  la misma pieza ya apartada se cancela.
+- Se puede combinar saldo a favor + Stripe (pago parcial con tarjeta).
+- Reembolsos: siempre a saldo/nota de crédito, nunca efectivo, aunque
+  se haya pagado con tarjeta.
+- Sin facturación/CFDI por ahora (sin cambio).
+- La comisión de Stripe (~4.18% + $3.48 MXN por cobro, IVA incluido)
+  la absorbe el negocio como costo operativo, no se refleja en el
+  precio al cliente.
+- Solo tarjeta por ahora; diseñado con Strategy para poder agregar
+  OXXO/SPEI después sin tocar lo existente.
+- Modo prueba primero (tarjetas de prueba de Stripe, sin mover dinero
+  real); a producción hasta confirmar que el flujo funciona bien.
+
+**Dos historias nuevas, pedidas en la misma conversación, no
+específicas de Stripe pero incluidas en la épica**:
+- P6: aviso "Quedan X" en la tarjeta/ficha de producto del catálogo
+  PÚBLICO cuando el stock disponible es menor a 3 (hoy solo existe
+  esa alerta en el panel admin, "Se te va a acabar").
+- P7: en devoluciones, el admin podrá elegir CUALQUIER porcentaje de
+  10% a 100% al aprobar (hoy son valores fijos) — sigue yendo a saldo,
+  nunca efectivo.
+
+**Decisión de arquitectura pendiente de aprobar por la dueña**: un
+estado nuevo `pago_en_proceso` para pedidos con Stripe apartado pero
+aún sin confirmar — evita que aparezcan en la bandeja de "comprobante
+recibido" del admin antes de que el pago sea real. Implica ajustar
+`apartar_pedido()`/`liberar_apartado()` para aceptar el estado
+destino (sin duplicar la lógica de candado/concurrencia), y de paso
+corregir el bug ya documentado de `from_status` en
+`liberar_apartado()` (incremento del 24 de septiembre, "Sincronizar
+payment_proofs.status").
+
+**Los 5 pendientes de la primera ronda ya se resolvieron**, más una
+segunda ronda que amplió el alcance (la dueña pegó una segunda versión
+del documento de investigación de mercado, otra vez con una
+"mensualidad de monitoreo" que se le preguntó directo y confirmó que
+NO aplica — sigue siendo solo pagos únicos por pedido):
+
+- **Checkout**: Stripe **Payment Element embebido** dentro del sitio
+  (nunca redirige a una página externa de Stripe) — reemplaza la
+  recomendación inicial de Checkout hospedado.
+- **OXXO y SPEI se agregan en esta misma fase**, junto con tarjeta —
+  ya no quedan para después. Confirmación asíncrona (minutos u horas).
+- **Sin panel propio de transacciones**: se usa el Stripe Dashboard
+  directamente, dando de alta a la dueña (y después a quien ella
+  decida) con un rol restringido — sin llaves API ni configuración de
+  cuenta.
+- Reembolso de un pago con tarjeta ya cobrado: siempre a saldo a
+  favor, nunca se regresa a la tarjeta (RN-16).
+- Tiempo de apartado: **30 minutos** para tarjeta (confirmado por la
+  dueña); **2 días, configurable de 1 a 3** para OXXO/SPEI (decisión
+  técnica del arquitecto, justificada — cabe dentro de la cancelación
+  automática de 3 días; evitar "no apartar hasta confirmar" porque
+  dejaría vender la misma pieza dos veces sin ningún camino de
+  reembolso a tarjeta).
+- Corrección técnica encontrada por el arquitecto: los eventos
+  `checkout.session.async_payment_succeeded/failed` que mencionaba el
+  documento de la dueña solo existen con Stripe Checkout — como se
+  eligió Payment Element, los eventos reales a manejar son
+  `payment_intent.succeeded/processing/requires_action/payment_failed/
+  canceled/partially_funded` (nombres exactos de OXXO/SPEI por
+  verificar en la documentación vigente antes de programar).
+- Cuenta de Stripe: sigue **pendiente, acción de la dueña** (crearla,
+  activar OXXO y transferencias, capturar las llaves) — no bloquea
+  seguir con diseño, solo bloquea escribir código contra la API real.
+
+**Documentos actualizados a v2**: `requerimientos-pagos-stripe.md`
+(historias P1-P10, RN-15/RN-16, tareas de configuración de la dueña
+separadas de las de código), `arquitectura-pagos-stripe.md` (Payment
+Element, 3 estrategias — tarjeta/OXXO/SPEI — compartiendo un
+adaptador común `PasarelaStripe`, tablas `payments`/
+`stripe_webhook_events`, `profiles.stripe_customer_id`, cron cada 5
+min que vence apartados). `perfil.md` ya refleja tarjeta+OXXO+SPEI,
+sin suscripciones.
+
+**No quedan ambigüedades de negocio pendientes.** Sigue: diseño de las
+pantallas nuevas (selector de 4 métodos de pago, ficha de pago OXXO
+con voucher, pantalla de datos SPEI con CLABE copiable, estado "pago
+en proceso" en Mis pedidos/`PasosPedido`, detalle del pago en la
+bandeja del admin, aviso "Quedan X", campo de porcentaje en
+devoluciones) — ninguna existe en las maquetas HTML originales, así
+que por la regla de traducción literal del perfil necesitan
+aprobación de la dueña antes de escribirse en código. No se ha escrito
+código todavía.
