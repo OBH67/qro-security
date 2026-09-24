@@ -21,6 +21,9 @@ export const esquemaProducto = z
     // edición (D1.4/diseño.md §11.7: se guarda "tras guardar el
     // producto", igual que fotos y documentos).
     attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
+    // "Qué incluye" en la ficha pública (products.includes, text[]) — una
+    // caja en el producto (ej. "Fuente de poder", "Cable HDMI 2m").
+    includes: z.array(z.string().trim().min(1)).optional(),
   })
   .refine((d) => d.condition === "nuevo" || d.conditionDetail, {
     message: "Escribe el motivo visible al cliente para esta condición.",

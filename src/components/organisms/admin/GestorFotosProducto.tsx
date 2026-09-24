@@ -9,9 +9,26 @@ import type { ProductImageRow } from "@/types/database";
 
 /** F1.4, pestaña "Fotos" (diseño.md §11.7: "FOTO PRINCIPAL" + galería
  * `[▣][▣][▣][+]`) — la foto con `position` más baja es la principal
- * (mismo criterio que `obtenerImagenesPrincipales()`, lado público). */
-export function GestorFotosProducto({ productId, sku, nombreProducto, galeriaInicial }: { productId: string; sku: string; nombreProducto: string; galeriaInicial: ProductImageRow[] }) {
-  const [fotos, setFotos] = useState<ProductImageRow[]>([...galeriaInicial].sort((a, b) => a.position - b.position));
+ * (mismo criterio que `obtenerImagenesPrincipales()`, lado público).
+ *
+ * `fotos`/`onCambiarFotos` son controlados (no un estado propio con
+ * `galeriaInicial`): quien use este componente necesita saber cuál es
+ * la foto principal ahora mismo para poder mostrarla en la pestaña
+ * "General" (`CamposGeneralesProducto`) sin esperar a un refresh de
+ * página. */
+export function GestorFotosProducto({
+  productId,
+  sku,
+  nombreProducto,
+  fotos,
+  onCambiarFotos,
+}: {
+  productId: string;
+  sku: string;
+  nombreProducto: string;
+  fotos: ProductImageRow[];
+  onCambiarFotos: (fotos: ProductImageRow[]) => void;
+}) {
   const [subiendo, setSubiendo] = useState(false);
   const [enCurso, setEnCurso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +40,10 @@ export function GestorFotosProducto({ productId, sku, nombreProducto, galeriaIni
     setError(null);
     setSubiendo(true);
 
+    // Variable local (no el prop `fotos`, que no se actualiza dentro de
+    // este mismo ciclo) para poder subir varios archivos en secuencia y
+    // que cada `onCambiarFotos` mande la lista completa hasta ese punto.
+    let listaActual = fotos;
     for (const archivo of archivos) {
       try {
         const firma = await iniciarSubidaFotoProductoAction({ sku, nombreArchivo: archivo.name, contentType: archivo.type });
@@ -40,7 +61,8 @@ export function GestorFotosProducto({ productId, sku, nombreProducto, galeriaIni
           setError(confirmacion.error);
           continue;
         }
-        setFotos((f) => [...f, confirmacion.data]);
+        listaActual = [...listaActual, confirmacion.data];
+        onCambiarFotos(listaActual);
       } catch (error) {
         // Igual que en FormularioComprobante.tsx: el PUT directo navegador→R2
         // puede RECHAZAR la promesa (no resolver con `ok: false`) por un
@@ -64,7 +86,7 @@ export function GestorFotosProducto({ productId, sku, nombreProducto, galeriaIni
       setError(resultado.error);
       return;
     }
-    setFotos((f) => f.filter((foto) => foto.id !== id));
+    onCambiarFotos(fotos.filter((foto) => foto.id !== id));
   }
 
   async function hacerPrincipal(id: string) {
@@ -77,7 +99,7 @@ export function GestorFotosProducto({ productId, sku, nombreProducto, galeriaIni
       setError(resultado.error);
       return;
     }
-    setFotos((f) => nuevoOrden.map((idOrdenado, indice) => ({ ...f.find((foto) => foto.id === idOrdenado)!, position: indice })).sort((a, b) => a.position - b.position));
+    onCambiarFotos(nuevoOrden.map((idOrdenado, indice) => ({ ...fotos.find((foto) => foto.id === idOrdenado)!, position: indice })));
   }
 
   return (
