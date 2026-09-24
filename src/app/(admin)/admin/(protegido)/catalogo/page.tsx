@@ -11,14 +11,15 @@ export const dynamic = "force-dynamic";
 export default async function PaginaCatalogoAdmin({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; grupo?: string; estado?: string; condicion?: string }>;
+  searchParams: Promise<{ q?: string; grupo?: string; estado?: string; condicion?: string; sinStock?: string }>;
 }) {
   const sp = await searchParams;
   const estado = sp.estado as EstadoProducto | undefined;
   const condicion = sp.condicion as CondicionProducto | undefined;
+  const sinStock = sp.sinStock === "1";
 
   const [{ productos, total }, datosFormulario] = await Promise.all([
-    obtenerProductosAdmin({ busqueda: sp.q, grupoId: sp.grupo, estado, condicion }),
+    obtenerProductosAdmin({ busqueda: sp.q, grupoId: sp.grupo, estado, condicion, sinStock }),
     obtenerDatosFormularioProducto(),
   ]);
 
@@ -28,7 +29,7 @@ export default async function PaginaCatalogoAdmin({
         <h1 className="title" style={{ fontSize: 28, margin: 0 }}>
           Catálogo
         </h1>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <Link href="/admin/catalogo/categorias" className="btn btn-fantasma cut cut-10">
             Categorías
           </Link>
@@ -63,6 +64,10 @@ export default async function PaginaCatalogoAdmin({
           <option value="caja_abierta">Caja abierta</option>
           <option value="usado">Usado</option>
         </select>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: "var(--text-secondary)" }}>
+          <input type="checkbox" name="sinStock" value="1" defaultChecked={sinStock} />
+          Sin stock
+        </label>
         <button type="submit" className="btn btn-fantasma cut cut-10">
           Filtrar
         </button>
