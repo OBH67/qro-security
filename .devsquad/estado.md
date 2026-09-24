@@ -3801,8 +3801,38 @@ sitio — unos dicen "depende de la revisión", otros siguen prometiendo
 porcentaje fijo que mostrar.
 
 Siguen los incrementos de frontend: checkout (selector de 4 métodos +
-Payment Element) — **en curso**, pantallas OXXO/SPEI, estado "pago en
-proceso" en Mis pedidos, detalle de pago en el admin, porcentaje de
-devolución libre, "Quedan X" en catálogo público. La cuenta de Stripe
-sigue **pendiente, acción de la dueña** — no bloquea seguir
-escribiendo código, solo bloquea probar contra la API real.
+Payment Element) — **listo, commits `6959d43`/`bcdf1c2`.** Selector
+de 4 métodos (`OpcionMetodoPago`, `SelectorMetodoPago`) con tarjeta
+preseleccionada; `<Elements mode="payment">` con PaymentIntent
+diferido (patrón oficial de Stripe: el pedido y el intento de pago se
+crean hasta que el cliente pulsa "Pagar", no antes); Payment Element
+themeado con Stripe Appearance API (paleta oscura/cian, nunca el azul
+default de Stripe); saldo a favor combinable sin remontar el
+formulario (`elements.update()`); todos los estados de diseño §2.6;
+pantalla de éxito que dice "Recibimos tu pago" y explica que se
+revisa antes de enviarse — **nunca "confirmado"**, cumpliendo RN-11/
+RN-12. `npx tsc --noEmit` y lint limpios. Verificado a mano leyendo
+`CheckoutForm.tsx` completo.
+
+**Alcance de este incremento, tal como se pidió:** para OXXO/SPEI el
+botón aparta inventario y crea el PaymentIntent (RN-13 cumplido), pero
+todavía no genera el voucher/CLABE ni la pantalla siguiente — por
+ahora redirige al detalle del pedido ya existente. Es un paso
+intermedio esperado, no un bug: la pantalla "ficha OXXO"/"datos SPEI"
+es el siguiente incremento (en curso).
+
+**Ambigüedad que el coder reportó en vez de inventar (P1.6):** el
+diseño dice que el tope de monto de OXXO "se toma de la configuración/
+Stripe vigente, nunca fijo", pero no existe ese ajuste en
+`settings` (a diferencia de `oxxo_expires_days`/`spei_expires_days`
+que sí existen). El coder dejó OXXO siempre habilitado sin inventar un
+tope. **Pendiente: definir con arquitecto/dueña de dónde sale ese tope**
+(¿nuevo `settings.oxxo_max_amount_cents`? ¿se consulta a Stripe en
+vivo?) antes de que haga falta en el siguiente incremento (§3 sí
+menciona el tope en la ficha OXXO).
+
+Siguen: pantallas OXXO/SPEI (**en curso**), estado "pago en proceso"
+en Mis pedidos, detalle de pago en el admin, porcentaje de devolución
+libre, "Quedan X" en catálogo público. La cuenta de Stripe sigue
+**pendiente, acción de la dueña** — no bloquea seguir escribiendo
+código, solo bloquea probar contra la API real.
