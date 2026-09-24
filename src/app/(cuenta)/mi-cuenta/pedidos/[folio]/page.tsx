@@ -2,11 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { obtenerSesionActual } from "@/server/auth/sesion";
-import { obtenerPedidoPorFolio, obtenerDatosBancarios } from "@/server/db/queries/pedidos";
+import { obtenerPedidoPorFolio, obtenerDatosBancarios, obtenerPagoStripeDelPedido } from "@/server/db/queries/pedidos";
 import { formatearPrecio } from "@/lib/formato";
 import { ETIQUETA_ESTADO } from "@/lib/pedido";
 import { PasosPedido } from "@/components/molecules/PasosPedido";
 import { DatosTransferencia } from "@/components/organisms/DatosTransferencia";
+import { FichaPagoOXXO } from "@/components/organisms/pago/FichaPagoOXXO";
+import { DatosPagoSPEI } from "@/components/organisms/pago/DatosPagoSPEI";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +37,20 @@ export default async function PaginaDetallePedido({ params }: { params: Promise<
 
   const pendienteDeComprobante = pedido.status === "pendiente_pago" && pedido.payment_method === "transferencia";
   const cubiertoConSaldo = pedido.payment_method === "saldo_completo";
+
+  // P3.2/P4.2/§5.3: "con pago_en_proceso, el banner ámbar 'Sube tu
+  // comprobante' se sustituye por la ficha OXXO/los datos SPEI completos" —
+  // misma tarjeta que la pantalla inmediata post-pago (`CheckoutForm.tsx`).
+  // Integrar el resto de "pago en proceso" en el tablero/filtros del admin
+  // y el badge de `PasosPedido` en TODAS las pantallas queda para el
+  // siguiente incremento (arquitectura-pagos-stripe.md §10) — aquí solo se
+  // resuelve que la ficha se vea bien mientras el pedido sigue en este
+  // estado.
+  const pagoStripeEnProceso =
+    pedido.status === "pago_en_proceso" && (pedido.payment_method === "oxxo" || pedido.payment_method === "spei")
+      ? { metodo: pedido.payment_method, pago: await obtenerPagoStripeDelPedido(pedido.id, pedido.payment_method) }
+      : null;
+  const montoPedidoCents = Math.round(Number(pedido.total) * 100);
 
   return (
     <section>
@@ -66,6 +82,28 @@ export default async function PaginaDetallePedido({ params }: { params: Promise<
           datosBancarios={datosBancarios}
           mostrarBotonSubir
           hrefSubir={`/mi-cuenta/pedidos/${pedido.folio}/comprobante`}
+        />
+      )}
+
+      {pagoStripeEnProceso?.metodo === "oxxo" && (
+        <FichaPagoOXXO
+          folio={pedido.folio}
+          montoCents={montoPedidoCents}
+          expiresAt={pagoStripeEnProceso.pago?.expiresAt ?? null}
+          instrucciones={pagoStripeEnProceso.pago?.instructions?.metodo === "oxxo" ? pagoStripeEnProceso.pago.instructions : null}
+          estado={pagoStripeEnProceso.pago?.instructions?.metodo === "oxxo" ? "lista" : "generando"}
+          contexto="detalle-pedido"
+        />
+      )}
+
+      {pagoStripeEnProceso?.metodo === "spei" && (
+        <DatosPagoSPEI
+          folio={pedido.folio}
+          montoCents={montoPedidoCents}
+          expiresAt={pagoStripeEnProceso.pago?.expiresAt ?? null}
+          instrucciones={pagoStripeEnProceso.pago?.instructions?.metodo === "spei" ? pagoStripeEnProceso.pago.instructions : null}
+          estado={pagoStripeEnProceso.pago?.instructions?.metodo === "spei" ? "lista" : "generando"}
+          contexto="detalle-pedido"
         />
       )}
 

@@ -10,7 +10,10 @@ import { obtenerStripePromise } from "@/lib/stripe/clienteNavegador";
 import { aparienciaStripe, fuentesStripe } from "@/lib/stripe/apariencia";
 import { Boton } from "@/components/atoms/Boton";
 import { SelectorMetodoPago, type MetodoCheckout, type EstadoFormularioTarjeta } from "@/components/organisms/pago/SelectorMetodoPago";
-import type { AddressRow, BillingProfileRow, OrderRow } from "@/types/database";
+import { FichaPagoOXXO } from "@/components/organisms/pago/FichaPagoOXXO";
+import { DatosPagoSPEI } from "@/components/organisms/pago/DatosPagoSPEI";
+import { extraerInstruccionesCliente, type NextActionConVoucherOCLABE } from "@/lib/pagos/extraerInstrucciones";
+import type { AddressRow, BillingProfileRow, OrderRow, InstruccionesPago } from "@/types/database";
 import type { CarritoResuelto } from "@/server/actions/carrito";
 
 /** index.html:1026-1101 (`isCheckout`) — traducción literal para la
@@ -119,6 +122,17 @@ function ContenidoCheckout({
   const [estadoFormularioTarjeta, setEstadoFormularioTarjeta] = useState<EstadoFormularioTarjeta>("cargando");
   const [pantallaExito, setPantallaExito] = useState<{ folio: string; total: number } | null>(null);
 
+  /** P3.2/P4.2: pantalla "ficha de pago"/"datos para transferir" que
+   * reemplaza al checkout una vez que `confirmOxxoPayment()` /
+   * `confirmCustomerBalancePayment()` regresan (éxito o error) —
+   * diseño-pagos-stripe.md §3/§4. `instrucciones` viene tipado por método
+   * (nunca se mezclan OXXO y SPEI en el mismo estado). */
+  const [pantallaFicha, setPantallaFicha] = useState<
+    | { metodo: "oxxo"; estado: "lista" | "error_generar"; folio: string; montoCents: number; expiresAt: string | null; instrucciones: Extract<InstruccionesPago, { metodo: "oxxo" }> | null; mensajeError: string | null }
+    | { metodo: "spei"; estado: "lista" | "error_generar"; folio: string; montoCents: number; expiresAt: string | null; instrucciones: Extract<InstruccionesPago, { metodo: "spei" }> | null; mensajeError: string | null }
+    | null
+  >(null);
+
   // §11 "Errores de pago: banner con role=alert y foco programático; nunca
   // solo borde rojo" — mueve el foco de teclado al banner en cuanto
   // aparece, para que un lector de pantalla lo anuncie de inmediato.
@@ -206,6 +220,60 @@ function ContenidoCheckout({
     }
   }
 
+  const MENSAJE_ERROR_OXXO = "No pudimos generar tu ficha de OXXO. No se apartaron tus productos ni se hizo ningún cargo.";
+  const MENSAJE_ERROR_SPEI = "No pudimos generar tus datos de transferencia. No se apartaron tus productos.";
+
+  /** P3.1: confirma el PaymentIntent de OXXO ya creado. Sin Payment Element
+   * montado para este método (ver nota en `pagarConStripe`), así que se usa
+   * el confirm específico de Stripe en vez de `confirmPayment({elements})`.
+   * Nunca deja pasar una excepción hacia `pagarConStripe` — el apartado ya
+   * se hizo; de aquí en adelante un error es "no pudimos generar la
+   * ficha", no "no pudimos apartar tu pedido". */
+  async function confirmarOxxo(folio: string, clientSecret: string, expiresAt: string, montoCents: number) {
+    try {
+      const resultado = await stripe!.confirmOxxoPayment(clientSecret, {
+        payment_method: { billing_details: { name: clienteNombre, email: clienteEmail } },
+      });
+      if (resultado.error) throw new Error(resultado.error.message ?? MENSAJE_ERROR_OXXO);
+
+      const instrucciones = extraerInstruccionesCliente(resultado.paymentIntent?.next_action as unknown as NextActionConVoucherOCLABE | null | undefined);
+      if (!instrucciones || instrucciones.metodo !== "oxxo") {
+        setPantallaFicha({ metodo: "oxxo", estado: "error_generar", folio, montoCents, expiresAt: null, instrucciones: null, mensajeError: MENSAJE_ERROR_OXXO });
+        return;
+      }
+      setPantallaFicha({ metodo: "oxxo", estado: "lista", folio, montoCents, expiresAt, instrucciones, mensajeError: null });
+    } catch (e) {
+      setPantallaFicha({ metodo: "oxxo", estado: "error_generar", folio, montoCents, expiresAt: null, instrucciones: null, mensajeError: e instanceof Error ? e.message : MENSAJE_ERROR_OXXO });
+    }
+  }
+
+  /** P4.1: análogo a `confirmarOxxo()` para SPEI (`customer_balance` +
+   * `mx_bank_transfer`, arquitectura §2/§6). `handleActions: false` es
+   * obligatorio para este método (Stripe no maneja el siguiente paso por
+   * nosotros, arquitectura §1: nunca redirige fuera del sitio). */
+  async function confirmarSpei(folio: string, clientSecret: string, expiresAt: string, montoCents: number) {
+    try {
+      const resultado = await stripe!.confirmCustomerBalancePayment(
+        clientSecret,
+        {
+          payment_method: { customer_balance: {} },
+          payment_method_options: { customer_balance: { funding_type: "bank_transfer", bank_transfer: { type: "mx_bank_transfer" } } },
+        },
+        { handleActions: false },
+      );
+      if (resultado.error) throw new Error(resultado.error.message ?? MENSAJE_ERROR_SPEI);
+
+      const instrucciones = extraerInstruccionesCliente(resultado.paymentIntent?.next_action as unknown as NextActionConVoucherOCLABE | null | undefined);
+      if (!instrucciones || instrucciones.metodo !== "spei") {
+        setPantallaFicha({ metodo: "spei", estado: "error_generar", folio, montoCents, expiresAt: null, instrucciones: null, mensajeError: MENSAJE_ERROR_SPEI });
+        return;
+      }
+      setPantallaFicha({ metodo: "spei", estado: "lista", folio, montoCents, expiresAt, instrucciones, mensajeError: null });
+    } catch (e) {
+      setPantallaFicha({ metodo: "spei", estado: "error_generar", folio, montoCents, expiresAt: null, instrucciones: null, mensajeError: e instanceof Error ? e.message : MENSAJE_ERROR_SPEI });
+    }
+  }
+
   /** P2-P4: tarjeta/OXXO/SPEI — crea el pedido, arranca el intento de pago
    * (aparta inventario + PaymentIntent, RN-13) y, solo para tarjeta,
    * confirma con Stripe sin salir del sitio (arquitectura §1). */
@@ -248,14 +316,28 @@ function ContenidoCheckout({
         return;
       }
 
-      if (metodo !== "tarjeta") {
+      if (metodo === "oxxo" || metodo === "spei") {
         // OXXO/SPEI: el PaymentIntent ya existe y el inventario ya está
-        // apartado. Generar el voucher/CLABE (confirmPayment) y la
-        // pantalla "ficha de pago"/"datos para transferir" son la
-        // siguiente tarea de este incremento (fuera de alcance aquí, ver
-        // resumen) — por ahora se manda al detalle del pedido, que ya
-        // existe.
-        router.push(`/mi-cuenta/pedidos/${pedido.folio}`);
+        // apartado (RN-13). No hay Payment Element montado para estos dos
+        // métodos (§2.2: "OXXO y SPEI expanden una nota de dos líneas", sin
+        // formulario) — por eso NO se usa `stripe.confirmPayment({ elements
+        // })` como con tarjeta (ese `elements` está fijo a
+        // `paymentMethodTypes:["card"]`, arquitectura §1, y no coincide con
+        // el PaymentIntent real de oxxo/customer_balance). Se usa en su
+        // lugar el confirm específico de cada método
+        // (`confirmOxxoPayment`/`confirmCustomerBalancePayment`), el patrón
+        // oficial de Stripe para pagar sin Payment Element. El resultado
+        // trae `next_action.oxxo_display_details` /
+        // `.display_bank_transfer_instructions` — la misma extracción que
+        // hace el webhook (`extraerInstrucciones()`), repetida aquí para el
+        // navegador en `extraerInstruccionesCliente()`.
+        setEstadoEnvio("procesando");
+        if (metodo === "oxxo") {
+          await confirmarOxxo(pedido.folio, inicio.data.clientSecret, inicio.data.expiresAt, totalCentavos);
+        } else {
+          await confirmarSpei(pedido.folio, inicio.data.clientSecret, inicio.data.expiresAt, totalCentavos);
+        }
+        setEstadoEnvio("idle");
         return;
       }
 
@@ -344,6 +426,42 @@ function ContenidoCheckout({
 
   if (pantallaExito) {
     return <PantallaExitoTarjeta folio={pantallaExito.folio} total={pantallaExito.total} />;
+  }
+
+  if (pantallaFicha?.metodo === "oxxo") {
+    return (
+      <FichaPagoOXXO
+        folio={pantallaFicha.folio}
+        montoCents={pantallaFicha.montoCents}
+        expiresAt={pantallaFicha.expiresAt}
+        instrucciones={pantallaFicha.instrucciones}
+        estado={pantallaFicha.estado}
+        mensajeError={pantallaFicha.mensajeError}
+        onReintentar={() => {
+          setPantallaFicha(null);
+          void pagarConStripe();
+        }}
+        contexto="post-pago"
+      />
+    );
+  }
+
+  if (pantallaFicha?.metodo === "spei") {
+    return (
+      <DatosPagoSPEI
+        folio={pantallaFicha.folio}
+        montoCents={pantallaFicha.montoCents}
+        expiresAt={pantallaFicha.expiresAt}
+        instrucciones={pantallaFicha.instrucciones}
+        estado={pantallaFicha.estado}
+        mensajeError={pantallaFicha.mensajeError}
+        onReintentar={() => {
+          setPantallaFicha(null);
+          void pagarConStripe();
+        }}
+        contexto="post-pago"
+      />
+    );
   }
 
   return (
