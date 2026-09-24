@@ -316,6 +316,10 @@
   color: var(--accent);
   background: var(--accent-wash);
 }
+.admin-root button.chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 .admin-root th {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -484,5 +488,74 @@
 @media (max-width: 480px) {
   .admin-root .modal {
     padding: 20px;
+  }
+}
+/* Devoluciones — porcentaje libre 10-100% (P9, diseño-pagos-stripe.md §8):
+ * el deslizador no tiene ningún estilo por defecto reutilizable en el
+ * proyecto, así que se define aquí con los mismos tokens que el resto del
+ * panel (pista `--track`, relleno/control `--accent`). Los navegadores no
+ * comparten pseudo-elementos de rango, de ahí la repetición
+ * webkit/moz. */
+.admin-root input[type="range"].deslizador-porcentaje {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--track);
+  border-radius: 2px;
+  outline: none;
+}
+.admin-root input[type="range"].deslizador-porcentaje::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--track);
+  border-radius: 2px;
+}
+.admin-root input[type="range"].deslizador-porcentaje::-moz-range-track {
+  height: 4px;
+  background: var(--track);
+  border-radius: 2px;
+}
+.admin-root input[type="range"].deslizador-porcentaje::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -8px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+}
+.admin-root input[type="range"].deslizador-porcentaje::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+}
+.admin-root input[type="range"].deslizador-porcentaje:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.admin-root input[type="range"].deslizador-porcentaje:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+@media (max-width: 760px) {
+  /* Móvil (diseño-pagos-stripe.md §10): control de 44px de área táctil y
+   * campo numérico a ancho completo en vez de compartir fila con la
+   * etiqueta y el sufijo "%". */
+  .admin-root input[type="range"].deslizador-porcentaje::-webkit-slider-thumb {
+    width: 44px;
+    height: 44px;
+    margin-top: -20px;
+  }
+  .admin-root input[type="range"].deslizador-porcentaje::-moz-range-thumb {
+    width: 44px;
+    height: 44px;
+  }
+  .admin-root .campo-porcentaje-numero {
+    width: 100% !important;
   }
 }

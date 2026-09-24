@@ -47,7 +47,7 @@ export async function obtenerDevolucionesAdmin(filtros: { estado?: EstadoDevoluc
   const userIds = [...new Set(devoluciones.map((d) => d.user_id))];
 
   const [{ data: items, error: e1 }, { data: pedidos, error: e2 }, { data: perfiles, error: e3 }] = await Promise.all([
-    supabase.from("return_items").select("return_id, order_item_id, condition, percentage, credit_amount").in("return_id", returnIds),
+    supabase.from("return_items").select("return_id, order_item_id, condition, percentage, percentage_suggested, credit_amount").in("return_id", returnIds),
     supabase.from("orders").select("id, folio").in("id", orderIds),
     supabase.from("profiles").select("id, first_name, last_name").in("id", userIds),
   ]);
@@ -77,7 +77,7 @@ export async function obtenerDevolucionesAdmin(filtros: { estado?: EstadoDevoluc
         pedidoFolio: folioPorPedido.get(d.order_id) ?? "—",
         producto: item ? (nombrePorOrderItem.get(item.order_item_id) ?? "—") : "—",
         condicion: item?.condition ?? "—",
-        pctSugerido: item ? Number(item.percentage) : 0,
+        pctSugerido: item ? Number(item.percentage_suggested) : 0,
         monto: d.credit_amount ?? (item?.credit_amount ?? "0"),
         status: d.status,
       };
@@ -95,7 +95,17 @@ export interface DetalleDevolucionAdmin {
   status: EstadoDevolucion;
   saldoActualCliente: number;
   fotos: string[]; // URLs firmadas de lectura
-  items: { id: string; producto: string; sku: string; qty: number; unitPrice: string; condition: string; percentage: string; creditAmount: string }[];
+  items: {
+    id: string;
+    producto: string;
+    sku: string;
+    qty: number;
+    unitPrice: string;
+    condition: string;
+    percentage: string;
+    percentageSuggested: string; // P9: sugerido por la condición, inmutable — base del prellenado y de la nota ámbar
+    creditAmount: string;
+  }[];
 }
 
 export async function obtenerDetalleDevolucionAdmin(returnId: string): Promise<DetalleDevolucionAdmin | null> {
@@ -141,6 +151,7 @@ export async function obtenerDetalleDevolucionAdmin(returnId: string): Promise<D
       unitPrice: orderItemPorId.get(it.order_item_id)?.unit_price ?? "0",
       condition: it.condition,
       percentage: it.percentage,
+      percentageSuggested: it.percentage_suggested,
       creditAmount: it.credit_amount,
     })),
   };

@@ -11,6 +11,7 @@ import {
 } from "@/server/actions/admin/devoluciones";
 import type { DetalleDevolucionAdmin, FilaDevolucionAdmin } from "@/server/db/queries/admin/devoluciones";
 import { BotonAdmin } from "@/components/atoms/BotonAdmin";
+import { CampoPorcentaje } from "@/components/molecules/admin/CampoPorcentaje";
 import type { EstadoDevolucion } from "@/types/database";
 
 const ESTILO_ESTADO: Record<EstadoDevolucion, { label: string; estilo: React.CSSProperties }> = {
@@ -20,21 +21,36 @@ const ESTILO_ESTADO: Record<EstadoDevolucion, { label: string; estilo: React.CSS
   rechazada: { label: "Rechazada", estilo: { background: "transparent", border: "1px solid var(--danger-text)", color: "var(--danger-text)" } },
 };
 
-type PorcentajeElegido = 100 | 70 | "otro";
+/** P9 (RN-6 modificada, diseño-pagos-stripe.md §8): valida el texto crudo
+ * del campo con los 3 mensajes exactos de diseño — vacío, fuera de rango,
+ * decimal — en ese orden. Espejo de la validación de
+ * `aprobarDevolucionAction` (servidor) y de `resolver_devolucion()` (SQL):
+ * nunca basta con validar solo aquí, pero repetir el mensaje exacto en el
+ * cliente evita un viaje al servidor para el caso común. */
+function validarPorcentaje(texto: string): string | null {
+  const limpio = texto.trim();
+  if (limpio === "") return "Escribe un porcentaje entre 10 y 100.";
+  const numero = Number(limpio);
+  if (!Number.isFinite(numero)) return "El porcentaje debe estar entre 10% y 100%.";
+  if (numero < 10 || numero > 100) return "El porcentaje debe estar entre 10% y 100%.";
+  if (!Number.isInteger(numero)) return "Usa un número entero, sin decimales.";
+  return null;
+}
 
 /** panel-admin-maqueta.html:776-849 (`isDevoluciones`) — traducción
- * literal: tabla + cajón de resolución. D2.3: 100%/70%/otro con el monto
- * calculado en vivo; D2.4: rechazo exige motivo. */
+ * literal: tabla + cajón de resolución. P9/RN-6 modificada: porcentaje
+ * libre 10-100% con campo + deslizador + chips (§8, reemplaza los radios
+ * fijos 100%/70%/Otro); D2.4: rechazo exige motivo. */
 export function TablaDevolucionesAdmin({ devoluciones }: { devoluciones: FilaDevolucionAdmin[] }) {
   const router = useRouter();
   const [seleccionId, setSeleccionId] = useState<string | null>(null);
   const [detalle, setDetalle] = useState<DetalleDevolucionAdmin | null>(null);
   const [cargando, setCargando] = useState(false);
-  const [pctElegido, setPctElegido] = useState<PorcentajeElegido>(100);
-  const [pctOtro, setPctOtro] = useState("");
+  const [pctTexto, setPctTexto] = useState("100");
   const [destinoPieza, setDestinoPieza] = useState<"nueva" | "usado" | "no">("nueva");
   const [motivoRechazo, setMotivoRechazo] = useState("");
   const [mostrarRechazo, setMostrarRechazo] = useState(false);
+  const [mostrarConfirmarAprobar, setMostrarConfirmarAprobar] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -42,11 +58,11 @@ export function TablaDevolucionesAdmin({ devoluciones }: { devoluciones: FilaDev
     setSeleccionId(id);
     setDetalle(null);
     setError(null);
-    setPctElegido(100);
-    setPctOtro("");
+    setPctTexto("100");
     setDestinoPieza("nueva");
     setMotivoRechazo("");
     setMostrarRechazo(false);
+    setMostrarConfirmarAprobar(false);
     setCargando(true);
     startTransition(async () => {
       const resultado = await obtenerDetalleDevolucionAction(id);
@@ -56,6 +72,14 @@ export function TablaDevolucionesAdmin({ devoluciones }: { devoluciones: FilaDev
         return;
       }
       setDetalle(resultado.data);
+      // Prellenado (§8): sugerido según la condición declarada del primer
+      // producto — 100% sellado, 70% abierto, mismo criterio que hoy. La
+      // condición "otro" no tiene estimado automático (RN-6 original: "lo
+      // revisa un asesor"), así que ahí se prellena con el mínimo
+      // permitido (10) en vez de inventar un porcentaje.
+      const primerItem = resultado.data?.items[0];
+      const sugeridoCrudo = primerItem ? Number(primerItem.percentageSuggested) : 100;
+      setPctTexto(String(sugeridoCrudo > 0 ? sugeridoCrudo : 10));
     });
   }
 
@@ -71,12 +95,22 @@ export function TablaDevolucionesAdmin({ devoluciones }: { devoluciones: FilaDev
     return Number(item.unitPrice) * item.qty;
   }, [item]);
 
-  const porcentajeNumerico = pctElegido === "otro" ? Number(pctOtro) || 0 : pctElegido;
-  const montoCalculado = Math.round(baseCalculo * (porcentajeNumerico / 100) * 100) / 100;
+  // Sugerido "real" (puede ser 0 para "otro" — ahí no hay estimado
+  // automático que comparar, así que no se muestra como sugerencia ni se
+  // avisa que "difiere").
+  const sugeridoCrudo = item ? Number(item.percentageSuggested) : null;
+  const hayEstimadoAutomatico = sugeridoCrudo !== null && sugeridoCrudo > 0;
+
+  const errorPorcentaje = validarPorcentaje(pctTexto);
+  const numeroCrudo = Number(pctTexto);
+  const porcentajeValido = errorPorcentaje === null;
+  const porcentajeNumerico = porcentajeValido ? numeroCrudo : null;
+  const montoCalculado = Number.isFinite(numeroCrudo) ? Math.round(baseCalculo * (numeroCrudo / 100) * 100) / 100 : 0;
   const saldoResultante = (detalle?.saldoActualCliente ?? 0) + montoCalculado;
+  const difiereDelSugerido = hayEstimadoAutomatico && porcentajeValido && porcentajeNumerico !== sugeridoCrudo;
 
   function confirmarAprobar() {
-    if (!detalle) return;
+    if (!detalle || porcentajeNumerico === null) return;
     setError(null);
     startTransition(async () => {
       const resultado = await aprobarDevolucionAction(detalle.id, porcentajeNumerico, destinoPieza === "nueva");
@@ -84,6 +118,7 @@ export function TablaDevolucionesAdmin({ devoluciones }: { devoluciones: FilaDev
         setError(resultado.error);
         return;
       }
+      setMostrarConfirmarAprobar(false);
       cerrarCajon();
       router.refresh();
     });
@@ -225,43 +260,61 @@ export function TablaDevolucionesAdmin({ devoluciones }: { devoluciones: FilaDev
                   </div>
                 ) : (
                   <>
-                    <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16, marginBottom: 16 }}>
-                      <div style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
+                    <fieldset style={{ border: "none", padding: 0, margin: "0 0 16px", borderTop: "1px solid var(--border)", paddingTop: 16 }}>
+                      <legend
+                        style={{
+                          fontFamily: "var(--font-title)",
+                          fontWeight: 600,
+                          fontSize: 11,
+                          color: "var(--text-muted)",
+                          textTransform: "uppercase",
+                          letterSpacing: 0.5,
+                          padding: 0,
+                          marginBottom: 8,
+                          display: "block",
+                          width: "100%",
+                        }}
+                      >
                         Saldo a favor que se otorga
+                      </legend>
+                      <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
+                        {hayEstimadoAutomatico
+                          ? `Sugerido por la condición declarada: ${sugeridoCrudo}%`
+                          : "Esta condición no tiene un porcentaje automático — elige tú cuánto otorgar."}
                       </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 14, marginBottom: 10 }}>
-                        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <input type="radio" name="pct" checked={pctElegido === 100} onChange={() => setPctElegido(100)} />
-                          100% — {formatearPrecio(baseCalculo)} <span style={{ color: "var(--text-muted)", fontSize: 12 }}>(propuesto)</span>
-                        </label>
-                        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <input type="radio" name="pct" checked={pctElegido === 70} onChange={() => setPctElegido(70)} />
-                          70% — {formatearPrecio(baseCalculo * 0.7)}
-                        </label>
-                        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <input type="radio" name="pct" checked={pctElegido === "otro"} onChange={() => setPctElegido("otro")} />
-                          Otro
-                          {pctElegido === "otro" && (
-                            <input
-                              className="campo mono"
-                              type="number"
-                              min={0}
-                              max={100}
-                              style={{ width: 80, marginLeft: 4 }}
-                              value={pctOtro}
-                              onChange={(e) => setPctOtro(e.target.value)}
-                              placeholder="%"
-                            />
-                          )}
-                        </label>
-                      </div>
-                      <div className="mono" style={{ fontSize: 30, fontWeight: 500 }}>
+
+                      <CampoPorcentaje idCampo="pct-devolucion" idImporte="pct-devolucion-importe" valorTexto={pctTexto} onCambiar={setPctTexto} error={errorPorcentaje} disabled={isPending} />
+
+                      <div id="pct-devolucion-importe" className="mono" style={{ fontSize: 30, fontWeight: 500, marginTop: 12 }} aria-live="polite">
                         {formatearPrecio(montoCalculado)}
                       </div>
-                      <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>
-                        Saldo actual: {formatearPrecio(detalle.saldoActualCliente)} · Quedará con: {formatearPrecio(saldoResultante)}
+                      <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>
+                        Precio pagado {formatearPrecio(baseCalculo)} × {porcentajeNumerico ?? "—"}%
                       </div>
-                    </div>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>
+                        Saldo actual de {detalle.cliente}: {formatearPrecio(detalle.saldoActualCliente)} · Quedará con: {formatearPrecio(saldoResultante)}
+                      </div>
+
+                      {difiereDelSugerido && (
+                        <div
+                          style={{
+                            marginTop: 10,
+                            padding: "10px 12px",
+                            border: "1px solid var(--warning)",
+                            background: "var(--warning-tint)",
+                            color: "var(--warning)",
+                            fontSize: 13,
+                          }}
+                        >
+                          Estás otorgando {porcentajeNumerico}% en lugar del {sugeridoCrudo}% sugerido. Se registrará que tú lo elegiste.
+                        </div>
+                      )}
+
+                      <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 10, display: "flex", gap: 6 }}>
+                        <span aria-hidden="true">ⓘ</span>
+                        <span>Siempre se abona como saldo a favor. Nunca se devuelve en efectivo ni a tarjeta.</span>
+                      </div>
+                    </fieldset>
 
                     <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16, marginBottom: 18 }}>
                       <div style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
@@ -303,8 +356,8 @@ export function TablaDevolucionesAdmin({ devoluciones }: { devoluciones: FilaDev
                         <BotonAdmin
                           className="cut cut-12"
                           style={{ width: "100%", marginBottom: 10 }}
-                          onClick={confirmarAprobar}
-                          disabled={pctElegido === "otro" && !pctOtro}
+                          onClick={() => setMostrarConfirmarAprobar(true)}
+                          disabled={!porcentajeValido}
                           cargando={isPending}
                           textoCargando="Procesando…"
                         >
@@ -337,6 +390,30 @@ export function TablaDevolucionesAdmin({ devoluciones }: { devoluciones: FilaDev
               </>
             )}
             {!cargando && error && !detalle && <p style={{ color: "var(--danger-text)" }}>{error}</p>}
+          </div>
+        </div>
+      )}
+
+      {mostrarConfirmarAprobar && detalle && item && porcentajeNumerico !== null && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-aprobar-devolucion-titulo">
+          <div className="modal sg-in">
+            <h2 id="modal-aprobar-devolucion-titulo" style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 18, margin: "0 0 10px" }}>
+              {`¿Aprobar la devolución ${detalle.folio}?`}
+            </h2>
+            <div style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 18 }}>
+              {`Se abonan ${formatearPrecio(montoCalculado)} (${porcentajeNumerico}%) de saldo a favor a ${detalle.cliente}`}
+              {destinoPieza === "nueva" ? ` y se suma ${item.qty} pieza${item.qty === 1 ? "" : "s"} al stock de ${item.sku}.` : "."}
+              {" "}El abono queda registrado y no se puede borrar.
+            </div>
+            {error && <p style={{ fontSize: 13, color: "var(--danger-text)", marginBottom: 14 }}>{error}</p>}
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button className="btn btn-fantasma cut cut-10" onClick={() => setMostrarConfirmarAprobar(false)} disabled={isPending}>
+                Cancelar
+              </button>
+              <BotonAdmin className="cut cut-10" onClick={confirmarAprobar} cargando={isPending} textoCargando="Procesando…">
+                {`Aprobar y abonar ${formatearPrecio(montoCalculado)}`}
+              </BotonAdmin>
+            </div>
           </div>
         </div>
       )}

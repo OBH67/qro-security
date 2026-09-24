@@ -14,9 +14,15 @@ function revalidarDevoluciones() {
   revalidatePath("/admin/devoluciones");
 }
 
+/** P9 (RN-6 modificada): 10-100, entero — misma regla que valida
+ * `resolver_devolucion()` en SQL (defensa en profundidad, no redundancia
+ * inútil: aquí se traduce a los mensajes exactos de diseño-pagos-stripe.md
+ * §8 antes de intentar la llamada). */
 export async function aprobarDevolucionAction(returnId: string, porcentaje: number, reingresarComoNuevo: boolean): Promise<ResultadoAction<ReturnRow>> {
   return conSesionStaff(["admin"], async (sesion) => {
-    if (!Number.isFinite(porcentaje) || porcentaje < 0 || porcentaje > 100) throw new Error("El porcentaje de saldo debe estar entre 0 y 100.");
+    if (!Number.isFinite(porcentaje)) throw new Error("Escribe un porcentaje entre 10 y 100.");
+    if (porcentaje < 10 || porcentaje > 100) throw new Error("El porcentaje debe estar entre 10% y 100%.");
+    if (!Number.isInteger(porcentaje)) throw new Error("Usa un número entero, sin decimales.");
     const devolucion = await mutations.aprobarDevolucion({ returnId, changedBy: sesion.userId, porcentaje, reingresarComoNuevo });
     revalidarDevoluciones();
     return devolucion;

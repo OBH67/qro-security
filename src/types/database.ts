@@ -409,6 +409,10 @@ export interface ReturnRow {
   reviewed_by: string | null;
   reviewed_at: string | null;
   resolution_note: string | null;
+  // P9 (RN-6 modificada): true si el admin aprobó con un porcentaje
+  // distinto del sugerido por la condición declarada — junto con
+  // reviewed_by/reviewed_at deja registro de que fue una elección suya.
+  percentage_overridden: boolean;
   created_at: string;
 }
 
@@ -418,7 +422,8 @@ export interface ReturnItemRow {
   order_item_id: string;
   qty: number;
   condition: CondicionDevolucion;
-  percentage: string; // estimado al solicitar (RN-6); el admin lo corrige al resolver
+  percentage: string; // final (RN-6 modificada, P9): el que aprobó el admin, 10-100 entero
+  percentage_suggested: string; // sugerido por la condición al solicitar (100 sellado / 70 abierto / 0 otro), inmutable
   credit_amount: string;
 }
 
