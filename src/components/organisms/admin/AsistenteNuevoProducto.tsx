@@ -94,8 +94,12 @@ export function AsistenteNuevoProducto({ datosFormulario }: { datosFormulario: D
   async function guardarGeneralYAvanzar() {
     setError(null);
     const datos = datosGenerales();
-    const esquema = producto ? esquemaProducto.omit({ sku: true }) : esquemaProducto;
-    const validacion = esquema.safeParse(datos);
+    // Zod 4 no deja usar `.omit()` sobre un esquema con `.refine()` — se
+    // valida siempre el esquema completo; `datosGenerales()` ya manda el
+    // sku correcto en los dos casos (el recién escrito, o el mismo que
+    // ya tiene el producto una vez creado, porque el campo queda
+    // deshabilitado y su valor no cambia).
+    const validacion = esquemaProducto.safeParse(datos);
     if (!validacion.success) {
       setError(validacion.error.issues[0]?.message ?? "Revisa los campos obligatorios.");
       return;

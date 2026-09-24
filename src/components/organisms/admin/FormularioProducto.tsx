@@ -71,6 +71,7 @@ export function FormularioProducto({
   function guardar() {
     setError(null);
     const datos = {
+      sku: producto.sku,
       name,
       description,
       brandId,

@@ -43,7 +43,15 @@ export async function crearProductoAction(datosCrudos: unknown): Promise<Resulta
 
 export async function actualizarProductoAction(productId: string, datosCrudos: unknown): Promise<ResultadoAction<ProductRow>> {
   return conSesionStaff([...ROLES_CATALOGO], async (sesion) => {
-    const datos = esquemaProducto.omit({ sku: true }).parse(datosCrudos);
+    // Zod 4 no deja usar `.omit()` sobre un esquema con `.refine()`
+    // ("cannot be used on object schemas containing refinements") — se
+    // valida el esquema completo (con sku) en vez de omitirlo; el sku no
+    // se puede editar (campo deshabilitado en el formulario) pero el
+    // cliente siempre manda el valor actual del producto, así que sigue
+    // siendo válido. `actualizarProductoAdmin` de todas formas nunca lo
+    // reenvía al RPC — es de solo lectura aquí, no se usa para nada más
+    // que pasar la validación.
+    const datos = esquemaProducto.parse(datosCrudos);
     const producto = await actualizarProductoAdmin(productId, sesion.userId, {
       name: datos.name,
       description: datos.description || null,
