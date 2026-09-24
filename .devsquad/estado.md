@@ -3212,3 +3212,61 @@ migraciones anteriores). Validado con `tsc --noEmit`/`eslint` limpios y
 la migración con `pglast`; no se pudo probar contra R2/Supabase reales
 en este entorno — conviene que la dueña pruebe subir una foto y un PDF
 a un producto real antes de darlo por cerrado.
+
+### Incremento (2026-09-24): "Nuevo producto" se convierte en un
+asistente de 4 pasos, en vez de pestañas de navegación libre
+
+La dueña pidió volver un wizard la pantalla de alta, dado que las 4
+pestañas (General/Fotos/Especificaciones/Documentos) son en realidad
+un orden obligatorio — las últimas 3 ya dependían de que el producto
+existiera (confirmado por su propio mensaje anterior sobre "ninguna
+funcionalidad... está implementada"). Se confirmó el alcance con ella:
+el wizard reemplaza las pestañas SOLO al crear ("Nuevo producto");
+editar un producto ya existente sigue con pestañas de navegación
+libre, porque ahí no hay ningún orden que forzar.
+
+- `CamposGeneralesProducto.tsx` (nuevo): los campos de la pestaña
+  "General" se extrajeron de `FormularioProducto.tsx` a un componente
+  compartido — evita mantener dos copias del mismo formulario entre el
+  editor (pestañas) y el asistente (wizard).
+- `AsistenteNuevoProducto.tsx` (nuevo): reemplaza a `FormularioProducto`
+  en `catalogo/nuevo/page.tsx`. Mismo estilo de stepper que ya usa el
+  importador CSV (`① Paso ──── ② Paso`, diseño.md §11.8) para que se
+  sienta consistente con el resto del panel.
+  - **Paso 1 (General)** — "Crear producto y continuar" valida con el
+    mismo `esquemaProducto` (Zod) del lado del cliente antes de llamar
+    al servidor (evita un viaje redondo por un campo obviamente vacío)
+    y ahí sí **crea el producto de verdad** — no es un simple "Siguiente"
+    de formulario, es el alta real.
+  - **Paso 2 (Fotos)** y **paso 4 (Documentos)** reutilizan
+    `GestorFotosProducto`/`GestorDocumentosProducto` tal cual — cada
+    archivo ya se sube/guarda solo, "Siguiente" no dispara nada extra.
+  - **Paso 3 (Especificaciones)** reutiliza `EditorEspecificacionesProducto`
+    — "Siguiente" sí guarda (llama `actualizarProductoAction` con los
+    datos generales + `attributes`), porque a diferencia de fotos/
+    documentos sus valores viven en `products.attributes`, no en su
+    propia tabla.
+  - Volver al paso 1 con "Atrás" y corregir algo ya no vuelve a crear
+    el producto — como para ese punto ya existe, "Crear producto y
+    continuar" pasa a actualizar el mismo producto (mismo criterio que
+    usa `FormularioProducto` para editar).
+  - Desde el paso 2 en adelante aparece "Terminar después — el
+    producto ya quedó guardado": el producto es real desde el paso 1,
+    así que abandonar el asistente a medias no pierde nada, solo deja
+    fotos/especificaciones/documentos pendientes (editables después
+    desde Catálogo → el producto → pestañas).
+- `FormularioProducto.tsx` se simplificó: ya no maneja el caso "sin
+  producto" (antes tenía SKU editable, `crearProductoAction`, etc.,
+  todo detrás de `esEdicion ? ... : ...`) — ahora es puramente el
+  editor de un producto que ya existe.
+
+**Nota de diseño, no un bug**: crear el producto en el paso 1 significa
+que ya es visible en el catálogo público de inmediato (estado
+"Activo" por defecto), aunque el admin no haya llegado al paso 4
+todavía — igual que ya pasaba antes de este cambio (un "Guardar" único
+también creaba el producto activo de un solo golpe). Si se abandona el
+asistente a medias, el producto no queda "roto", solo incompleto — se
+termina de llenar después editándolo normal.
+
+Validado con `tsc --noEmit`/`eslint` limpios; no se pudo probar el
+flujo completo en un navegador real en este entorno.
