@@ -43,6 +43,13 @@
   --danger-text: #ff7a86;
   --danger-tint: rgba(255, 77, 94, 0.07);
 
+  /* Épica P — diseño-pagos-stripe.md §1: únicos dos tokens nuevos del sitio.
+   * --processing: estado "Pago en proceso" (violeta), distinto de
+   * pendiente (ámbar) y comprobante recibido (cian lleno). Se toma la
+   * ranura 7 de la paleta de datos (--chart-7), que el tablero no usa. */
+  --processing: #9085e9;
+  --processing-tint: rgba(144, 133, 233, 0.07);
+
   /* Bordes y separadores — diseno.md §2.1 */
   --border-subtle: #16283a;
   --border: #1f3244;
