@@ -375,6 +375,10 @@ export interface PaymentRow {
   card_last4: string | null;
   idempotency_key: string;
   needs_review: boolean;
+  /** 0030: monto que Stripe confirmó recibido (P4.4) — nulo hasta el primer
+   * evento con `amount_received`. Puede diferir de `amount_cents` (pago
+   * parcial o de más de SPEI, arquitectura §4.3). */
+  amount_received_cents: number | null;
   created_at: string;
   updated_at: string;
 }
