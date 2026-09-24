@@ -49,6 +49,12 @@
    * ranura 7 de la paleta de datos (--chart-7), que el tablero no usa. */
   --processing: #9085e9;
   --processing-tint: rgba(144, 133, 233, 0.07);
+  /* --voucher-paper/--voucher-ink: única superficie clara del sitio —
+   * limitada al recuadro del código de barras OXXO (§3), porque los
+   * escáneres de caja necesitan barras oscuras sobre fondo claro. No se
+   * generaliza a ninguna otra tarjeta ni componente. */
+  --voucher-paper: #ffffff;
+  --voucher-ink: #07111c;
 
   /* Bordes y separadores — diseno.md §2.1 */
   --border-subtle: #16283a;

@@ -77,3 +77,18 @@ export function truncar(texto: string, maxCaracteres: number): string {
   if (texto.length <= maxCaracteres) return texto;
   return texto.slice(0, maxCaracteres - 1).trimEnd() + "…";
 }
+
+/** `clabeGroups` (index.html:1140) — agrupa una cadena de dígitos de 4 en 4
+ * separados por un espacio, para que se lean en voz alta o se copien más
+ * fácil (CLABE, referencia OXXO). diseño-pagos-stripe.md §3/§4: "mismo
+ * criterio que `clabeGroups`". El valor que de verdad se copia al
+ * portapapeles nunca usa esta versión agrupada (siempre el original sin
+ * espacios). */
+export function agruparDigitos(valor: string, tamanoGrupo = 4): string {
+  const limpio = valor.replace(/\s+/g, "");
+  const grupos: string[] = [];
+  for (let i = 0; i < limpio.length; i += tamanoGrupo) {
+    grupos.push(limpio.slice(i, i + tamanoGrupo));
+  }
+  return grupos.join(" ");
+}

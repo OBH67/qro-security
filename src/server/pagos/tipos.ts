@@ -37,7 +37,16 @@ export interface CtxPago {
 
 export type InicioPago =
   | { tipo: "subir_archivo"; urlFirmada: string; key: string }
-  | { tipo: "payment_element"; clientSecret: string; paymentIntentId: string };
+  | {
+      tipo: "payment_element";
+      clientSecret: string;
+      paymentIntentId: string;
+      /** `payments.expires_at` de este intento (0028) — 30 min para
+       * tarjeta, plazo de H4 para OXXO/SPEI. El checkout lo necesita para
+       * mostrar la fecha límite exacta en la ficha de pago (diseño-pagos-
+       * stripe.md §3/§4) sin volver a consultar el servidor. */
+      expiresAt: string;
+    };
 
 export interface DetallePagoRevision {
   metodo: MetodoPago;

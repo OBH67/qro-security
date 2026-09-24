@@ -28,7 +28,7 @@ export const estrategiaSpei: EstrategiaPago = {
 
     if (pago.stripe_payment_intent_id) {
       const existente = await obtenerPaymentIntent(pago.stripe_payment_intent_id);
-      return { tipo: "payment_element", clientSecret: existente.client_secret ?? "", paymentIntentId: existente.id };
+      return { tipo: "payment_element", clientSecret: existente.client_secret ?? "", paymentIntentId: existente.id, expiresAt: pago.expires_at ?? expiresAt };
     }
 
     // customer_balance (SPEI) exige un Stripe Customer (arquitectura §6).
@@ -46,7 +46,7 @@ export const estrategiaSpei: EstrategiaPago = {
     });
     await guardarPaymentIntent(pago.id, paymentIntent.id);
 
-    return { tipo: "payment_element", clientSecret: paymentIntent.client_secret ?? "", paymentIntentId: paymentIntent.id };
+    return { tipo: "payment_element", clientSecret: paymentIntent.client_secret ?? "", paymentIntentId: paymentIntent.id, expiresAt: pago.expires_at ?? expiresAt };
   },
 
   async instrucciones(pedidoId: string): Promise<InstruccionesPago | null> {

@@ -33,7 +33,7 @@ export const estrategiaTarjeta: EstrategiaPago = {
       // Reintento con la misma llave (P2.3): ya existe un PaymentIntent
       // para este intento, se reutiliza en vez de crear uno nuevo.
       const existente = await obtenerPaymentIntent(pago.stripe_payment_intent_id);
-      return { tipo: "payment_element", clientSecret: existente.client_secret ?? "", paymentIntentId: existente.id };
+      return { tipo: "payment_element", clientSecret: existente.client_secret ?? "", paymentIntentId: existente.id, expiresAt: pago.expires_at ?? expiresAt };
     }
 
     const paymentIntent = await crearPaymentIntentTarjeta({
@@ -43,7 +43,7 @@ export const estrategiaTarjeta: EstrategiaPago = {
     });
     await guardarPaymentIntent(pago.id, paymentIntent.id);
 
-    return { tipo: "payment_element", clientSecret: paymentIntent.client_secret ?? "", paymentIntentId: paymentIntent.id };
+    return { tipo: "payment_element", clientSecret: paymentIntent.client_secret ?? "", paymentIntentId: paymentIntent.id, expiresAt: pago.expires_at ?? expiresAt };
   },
 
   async detalleRevision(pedidoId: string): Promise<DetallePagoRevision | null> {

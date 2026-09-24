@@ -1,6 +1,6 @@
 import "server-only";
 import { crearClienteServidor } from "@/server/supabase/server";
-import type { EstadoPedido, OrderItemRow, OrderRow, PaymentProofRow } from "@/types/database";
+import type { EstadoPedido, InstruccionesPago, MetodoPagoStripe, OrderItemRow, OrderRow, PaymentProofRow } from "@/types/database";
 
 export interface PedidoConItems extends OrderRow {
   items: OrderItemRow[];
@@ -50,6 +50,30 @@ export async function obtenerPedidoPorFolio(userId: string, folio: string): Prom
   if (errorComprobantes) throw new Error(`No se pudo cargar el comprobante: ${errorComprobantes.message}`);
 
   return { ...pedido, items: items ?? [], comprobante: comprobantes?.[0] ?? null };
+}
+
+/** P3.2/P4.2: el voucher OXXO o la CLABE SPEI del intento más reciente de
+ * este pedido, para mostrarlos en el detalle del pedido en Mis pedidos
+ * (`FichaPagoOXXO`/`DatosPagoSPEI`, mismo componente que la pantalla
+ * inmediata post-pago). A propósito usa `crearClienteServidor()` (RLS,
+ * `payments_select_own`, 0028) en vez del cliente admin — es una lectura
+ * del propio cliente, no una operación de servidor con privilegios. */
+export async function obtenerPagoStripeDelPedido(
+  orderId: string,
+  method: MetodoPagoStripe,
+): Promise<{ instructions: InstruccionesPago | null; expiresAt: string | null } | null> {
+  const supabase = await crearClienteServidor();
+  const { data, error } = await supabase
+    .from("payments")
+    .select("instructions, expires_at")
+    .eq("order_id", orderId)
+    .eq("method", method)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`No se pudo cargar tu ficha de pago: ${error.message}`);
+  if (!data) return null;
+  return { instructions: (data.instructions as InstruccionesPago | null) ?? null, expiresAt: data.expires_at };
 }
 
 /** Datos bancarios configurables por el admin (C1.3/C1.6, H4) — nunca
