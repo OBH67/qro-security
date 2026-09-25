@@ -4097,3 +4097,96 @@ y las llaves) — lo prueba la dueña en el preview de Vercel.
   que migrarlos al mismo criterio antes de habilitarlos.
 - MSI, instructivo del Stripe Dashboard (Fase 6), checklist de producción
   (Fase 8), cron de 30 min (ya no aplica a tarjeta con el flujo nuevo).
+
+---
+
+## Épica P — OXXO expuso el mismo defecto que tarjeta (2026-09-25)
+
+Al probar OXXO en producción con la corrección de tarjeta ya mezclada, salió
+el mismo problema que 0032 corrigió para tarjeta, más un bug independiente
+que lo disparó:
+
+1. **Bug independiente:** Stripe rechazó el intento con
+   `parameter_missing: payment_method_data[billing_details][name]` — la
+   cuenta de prueba tiene el nombre vacío en su perfil (`first_name`/
+   `last_name` vacíos) y el código nunca tenía un respaldo para ese caso
+   (con tarjeta no se notó porque Link pide su propio nombre en el
+   formulario). **Corregido**: `nombreParaStripe()` usa el correo como
+   respaldo cuando el nombre está vacío, para tarjeta, OXXO y SPEI.
+2. **El defecto de fondo:** ese rechazo de Stripe confirmó que OXXO/SPEI
+   seguían con el flujo viejo — `iniciar_pago_stripe()` (0029) exige un
+   pedido ya creado, así que el checkout creaba el pedido (vaciando el
+   carrito) ANTES de intentar generar la ficha. Al fallar, quedaba el mismo
+   pedido huérfano y bucle al carrito que 0032 ya había corregido para
+   tarjeta, sin querer dejado igual para estos dos métodos.
+
+**Corrección — migración `0033_pago_oxxo_spei_sin_pedido_previo.sql`:**
+generaliza el patrón de 0032 a los 3 métodos. `preparar_pago_tarjeta()` se
+renombra a `preparar_pago_stripe()` (recibe el método). `crear_pedido_desde_pago()`
+pasa de 3 a 5 parámetros (**DROP + CREATE, no OR REPLACE** — mismo cuidado
+de siempre con la identidad de función en Postgres) y ahora decide el
+estado destino según el método: tarjeta → `comprobante_recibido` (ya se
+cobró, RN-11); OXXO/SPEI → `pago_en_proceso` (la ficha ya existe, el pago
+real llega después por webhook — mismo tratamiento que ya hacía
+`registrar_pago_stripe()`, sin tocarlo).
+
+TypeScript: `finalizarFichaDiferida()` (nueva, junto a `finalizarPagoTarjeta`
+en `checkoutTarjeta.ts`) verifica con Stripe que la ficha en verdad se
+generó (`next_action` con voucher/CLABE) antes de crear el pedido — nunca
+confía en que el navegador "dice que sí". El vencimiento de OXXO lo da
+Stripe (`next_action.oxxo_display_details.expires_after`, autoritativo);
+SPEI no trae uno, se usa el calculado al preparar (`checkout.expires_at`,
+settings `spei_expires_days`, mismo criterio que antes). `extraerInstrucciones()`
+se movió de `webhook.ts` a `pasarela.ts` para que la comparta el checkout.
+
+**Verificado en SQL** (Postgres 16 local, sin Docker, igual que 0032): OXXO
+y SPEI probados de punta a punta — preparar sin pedido con carrito intacto,
+rechazo de Stripe sin crear nada, ficha generada correctamente crea el
+pedido en `pago_en_proceso` y aparta inventario, webhook posterior lo pasa
+a la cola de revisión igual que siempre, reintento con la misma llave no
+duplica. `tsc`, lint y `npm run build` limpios.
+
+**NO verificado todavía:** el flujo real en el navegador con la cuenta de
+Stripe de prueba (lo prueba la dueña).
+
+**Pendiente, no urgente:** `iniciarPagoStripeAction` (server action) y el
+método `.iniciar()` de las 3 estrategias (`src/server/pagos/estrategias/`)
+quedan sin ningún llamador desde el checkout tras este cambio — sí los
+sigue usando el admin para `detalleRevision()`/`verificarEnProveedor()`,
+así que los archivos siguen vivos, pero ese método específico es código
+muerto. No se tocó en esta corrección para no ampliar el alcance mientras
+la dueña espera la prueba real.
+
+---
+
+## Épica P — Code review de la corrección OXXO/SPEI (2026-09-25)
+
+Se corrió `/code-review --level high` sobre el PR #20 antes de mezclarlo. 4
+hallazgos, verificados uno por uno:
+
+- **1 real y grave, corregido:** el respaldo que 0032 le dio a tarjeta en el
+  webhook (crear el pedido si el navegador se cierra justo después de que
+  Stripe acepta el pago) nunca se replicó para OXXO/SPEI en la corrección
+  de 0033. Sin esto, si el cliente cerraba el navegador entre "Stripe
+  generó la ficha" y "el servidor creó el pedido", el pago quedaba
+  aceptado, apuntando a ningún pedido, y sin forma de recuperarlo: en el
+  evento `payment_intent.succeeded` (cuando de verdad se paga en la
+  tienda) el `next_action` con el voucher/CLABE ya viene vacío, así que
+  no hay de dónde sacar los datos para crear el pedido en ese momento.
+  **Corregido:** el respaldo ahora engancha en `payment_intent.requires_action`
+  (el evento equivalente para OXXO/SPEI — es cuando Stripe ya generó la
+  ficha), llamando a la misma `finalizarFichaDiferida()` que usa el
+  navegador.
+- **2 menores, corregidas:** una consulta duplicada a `payments` en
+  `finalizarFichaDiferida()`, y dos llamadas independientes (saldo +
+  configuración de vigencia) que podían correr en paralelo en vez de una
+  tras otra.
+- **1 descartada:** duplicación de código entre `prepararPagoTarjetaAction`
+  y `prepararFichaDiferida` — real pero de bajo riesgo (no es un bug),
+  se deja para una limpieza aparte en vez de arriesgar el PR que la dueña
+  está esperando probar.
+
+Verificado en Postgres local: `crear_pedido_desde_pago()` sigue siendo
+idempotente después del cambio (una segunda llamada al mismo pago, como
+haría el webhook si el navegador ya había creado el pedido, regresa el
+mismo folio, no duplica). `tsc`, lint y `npm run build` limpios.

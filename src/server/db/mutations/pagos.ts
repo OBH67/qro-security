@@ -98,18 +98,22 @@ export async function registrarPagoStripe(params: {
   return (data as unknown as PaymentRow | null) ?? null;
 }
 
-/** 0032: cobro con tarjeta SIN pedido todavía (decisión de la dueña: el
- * pedido solo existe si Stripe aceptó el pago). Valida existencias y guarda
- * la foto del checkout; idempotente por (cliente, llave). */
-export async function prepararPagoTarjeta(params: {
+/** 0032/0033: cobro SIN pedido todavía, para los 3 métodos de Stripe
+ * (decisión de la dueña: el pedido solo existe si Stripe aceptó el pago —
+ * con tarjeta, "aceptado" es el cargo; con OXXO/SPEI, es que la ficha se
+ * generó). Valida existencias y guarda la foto del checkout; idempotente
+ * por (cliente, llave). */
+export async function prepararPagoStripe(params: {
   userId: string;
+  method: MetodoPagoStripe;
   checkout: CheckoutTarjeta;
   amountCents: number;
   idempotencyKey: string;
 }): Promise<PaymentRow> {
   const admin = crearClienteAdmin();
-  const { data, error } = await admin.rpc("preparar_pago_tarjeta", {
+  const { data, error } = await admin.rpc("preparar_pago_stripe", {
     p_user_id: params.userId,
+    p_method: params.method,
     p_checkout: params.checkout,
     p_amount_cents: params.amountCents,
     p_idempotency_key: params.idempotencyKey,
@@ -118,19 +122,26 @@ export async function prepararPagoTarjeta(params: {
   return data as unknown as PaymentRow;
 }
 
-/** 0032: crea el pedido de un cobro con tarjeta ya aceptado (o regresa el
- * que ya existe). `null` = el cobro ocurrió pero no se pudo crear el pedido;
- * el pago queda marcado a revisión con el motivo en `ultimo_error`. */
+/** 0032/0033: crea el pedido de un cobro ya aceptado (o regresa el que ya
+ * existe). Tarjeta: nace en la cola de revisión (ya se cobró de verdad).
+ * OXXO/SPEI: nace en `pago_en_proceso` (la ficha ya existe; el pago real
+ * llega después por webhook) — requieren `instructions`. `null` = el cobro
+ * ocurrió pero no se pudo crear el pedido; queda a revisión con el motivo
+ * en `ultimo_error`. */
 export async function crearPedidoDesdePago(params: {
   paymentId: string;
-  cardBrand: string | null;
-  cardLast4: string | null;
+  cardBrand?: string | null;
+  cardLast4?: string | null;
+  instructions?: InstruccionesPago | null;
+  expiresAt?: string | null;
 }): Promise<OrderRow | null> {
   const admin = crearClienteAdmin();
   const { data, error } = await admin.rpc("crear_pedido_desde_pago", {
     p_payment_id: params.paymentId,
-    p_card_brand: params.cardBrand,
-    p_card_last4: params.cardLast4,
+    p_card_brand: params.cardBrand ?? null,
+    p_card_last4: params.cardLast4 ?? null,
+    p_instructions: params.instructions ?? null,
+    p_expires_at: params.expiresAt ?? null,
   });
   if (error) throw new Error(traducirError(error.message));
   await despacharPendientes();
