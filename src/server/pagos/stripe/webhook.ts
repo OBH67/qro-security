@@ -4,7 +4,7 @@ import { stripeClient } from "./cliente";
 import { obtenerMetodoPago, extraerInstrucciones } from "./pasarela";
 import { env } from "@/server/config/env";
 import { registrarPagoStripe } from "@/server/db/mutations/pagos";
-import { finalizarPagoTarjeta, PedidoNoRegistradoError } from "@/server/pagos/checkoutTarjeta";
+import { finalizarPagoTarjeta, finalizarFichaDiferida, PagoNoCompletadoError, PedidoNoRegistradoError } from "@/server/pagos/checkoutTarjeta";
 import type { EstadoPago } from "@/types/database";
 
 /** El Route Handler (`src/app/api/webhooks/stripe/route.ts`) distingue
@@ -95,6 +95,27 @@ export async function procesarWebhookStripe(cuerpoCrudo: string, firma: string):
       console.info("[webhook stripe] pedido creado desde el webhook", pedido.folio);
     } catch (error) {
       if (!(error instanceof PedidoNoRegistradoError)) throw error;
+    }
+  }
+
+  // 0033: mismo respaldo para OXXO/SPEI, pero en `requires_action` — es el
+  // evento donde Stripe ya generó la ficha (`next_action` con voucher/
+  // CLABE), el equivalente exacto a "cobro aceptado" de tarjeta. En
+  // `succeeded` el pago real ya llegó pero `next_action` ya viene vacío
+  // (el voucher se pagó), así que ya no hay ficha que extraer — si el
+  // pedido no se creó en `requires_action`, no hay forma de recuperarlo
+  // aquí; por eso importa que este respaldo exista.
+  if (
+    evento.type === "payment_intent.requires_action" &&
+    pago &&
+    (pago.method === "oxxo" || pago.method === "spei") &&
+    !pago.order_id
+  ) {
+    try {
+      const { pedido } = await finalizarFichaDiferida(paymentIntent.id, pago.method);
+      console.info("[webhook stripe] pedido creado desde el webhook", pedido.folio);
+    } catch (error) {
+      if (!(error instanceof PedidoNoRegistradoError) && !(error instanceof PagoNoCompletadoError)) throw error;
     }
   }
 }

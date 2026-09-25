@@ -21,7 +21,7 @@ async function buscarPagoDelIntent(paymentIntentId: string, userIdEsperado?: str
   if (pago.stripe_payment_intent_id !== paymentIntent.id) {
     throw new Error(`El pago ${paymentId} no corresponde al PaymentIntent ${paymentIntentId}.`);
   }
-  return { paymentIntent, paymentId };
+  return { paymentIntent, paymentId, pago };
 }
 
 /**
@@ -76,7 +76,7 @@ export async function finalizarFichaDiferida(
   metodoEsperado: "oxxo" | "spei",
   userIdEsperado?: string,
 ): Promise<{ pedido: OrderRow; expiresAt: string | null }> {
-  const { paymentIntent, paymentId } = await buscarPagoDelIntent(paymentIntentId, userIdEsperado);
+  const { paymentIntent, paymentId, pago } = await buscarPagoDelIntent(paymentIntentId, userIdEsperado);
 
   const instrucciones = extraerInstrucciones(paymentIntent);
   if (!instrucciones || instrucciones.metodo !== metodoEsperado) {
@@ -90,8 +90,7 @@ export async function finalizarFichaDiferida(
   // preparar el pago, guardado en `checkout.expires_at` (settings
   // `spei_expires_days`, mismo criterio que antes en `estrategiaSpei`).
   const expiresAfter = paymentIntent.next_action?.oxxo_display_details?.expires_after;
-  const pago = await obtenerPagoPorId(paymentId);
-  const expiresAt = expiresAfter ? new Date(expiresAfter * 1000).toISOString() : (pago?.checkout?.expires_at ?? null);
+  const expiresAt = expiresAfter ? new Date(expiresAfter * 1000).toISOString() : (pago.checkout?.expires_at ?? null);
 
   const pedido = await crearPedidoDesdePago({ paymentId, instructions: instrucciones, expiresAt });
   if (!pedido) {

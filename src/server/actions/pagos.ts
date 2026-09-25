@@ -181,14 +181,16 @@ async function prepararFichaDiferida(datosCrudos: unknown, metodo: "oxxo" | "spe
     const datos = esquemaGenerarPedido.parse(datosCrudos);
     const { items, subtotal, shippingAddress, billingData } = await armarDatosPedido(sesion.userId, datos);
 
-    const saldo = datos.creditToApply > 0 ? await obtenerSaldoDisponible(sesion.userId) : 0;
+    const [saldo, dias] = await Promise.all([
+      datos.creditToApply > 0 ? obtenerSaldoDisponible(sesion.userId) : Promise.resolve(0),
+      obtenerDiasVigenciaPago(metodo === "oxxo" ? "oxxo_expires_days" : "spei_expires_days"),
+    ]);
     const credito = Math.max(0, Math.min(datos.creditToApply, saldo, subtotal));
     const amountCents = Math.round((subtotal - credito) * 100);
     if (amountCents <= 0) {
       throw new Error("Tu saldo a favor cubre todo el pedido; no hace falta generar una ficha de pago.");
     }
 
-    const dias = await obtenerDiasVigenciaPago(metodo === "oxxo" ? "oxxo_expires_days" : "spei_expires_days");
     const expiresAt = new Date(Date.now() + dias * 24 * 60 * 60_000).toISOString();
 
     const pago = await prepararPagoStripe({
