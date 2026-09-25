@@ -32,6 +32,28 @@ export async function crearPaymentIntentTarjeta(params: {
   );
 }
 
+/** 0032: cobro con tarjeta del checkout, antes de que exista el pedido.
+ * `metadata.payment_id` enlaza el cobro con su fila de `payments` (la usa
+ * el webhook para crear el pedido si el navegador se cierra). */
+export async function crearPaymentIntentCheckoutTarjeta(params: {
+  amountCents: number;
+  paymentId: string;
+  userId: string;
+  idempotencyKey: string;
+}): Promise<Stripe.PaymentIntent> {
+  return stripeClient.paymentIntents.create(
+    {
+      amount: params.amountCents,
+      currency: MONEDA,
+      // "link": la dueña decidió conservar Link de Stripe (25-sep); sin él,
+      // confirmar con Link fallaría porque el cobro solo aceptaría "card".
+      payment_method_types: ["card", "link"],
+      metadata: { payment_id: params.paymentId, user_id: params.userId },
+    },
+    { idempotencyKey: `checkout-tarjeta-${params.idempotencyKey}` },
+  );
+}
+
 export async function crearPaymentIntentOxxo(params: {
   amountCents: number;
   orderId: string;

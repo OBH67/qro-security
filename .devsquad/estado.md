@@ -4028,3 +4028,72 @@ de tocar nada:
 dueña tenga su cuenta de Stripe en modo test, probar el flujo real de
 punta a punta (tarjeta de prueba, voucher OXXO de prueba, CLABE de
 prueba) antes de activar Stripe con dinero real.
+
+---
+
+## Épica P — Corrección del pago con tarjeta (2026-09-25)
+
+**Qué falló en producción (reportado por la dueña con logs de Vercel):**
+el pago con tarjeta no se procesaba, sin error visible ni rastro en Vercel
+o Stripe; el pedido quedaba pidiendo comprobante; el checkout regresaba al
+carrito en bucle y dejó 4 pedidos huérfanos "Pendiente de pago".
+
+**Causas encontradas:**
+1. Las migraciones 0028-0031 **nunca se le pidieron a la dueña** para
+   correr en Supabase (este proyecto las aplica a mano en el SQL Editor).
+   Sin la tabla `payments` ni las funciones, iniciar el pago fallaba antes
+   de llegar a Stripe. Error de proceso de la épica, no del código.
+2. `fallo()` (Server Actions) regresaba el error como dato sin registrarlo,
+   y el checkout lo reemplazaba por un texto genérico: cero visibilidad.
+3. Diseño: el checkout creaba el pedido (como "transferencia", vaciando el
+   carrito) ANTES de iniciar el pago. Si el pago fallaba quedaba un pedido
+   huérfano pidiendo comprobante, y el `revalidatePath` refrescaba /pagar
+   con el carrito ya vacío → redirect a /carrito a medio pago.
+4. No se hizo ninguna prueba de punta a punta antes de mezclar a `main`
+   (Fase 7 del plan de la dueña).
+
+**Decisiones de la dueña (25-sep):** con tarjeta, el pedido solo existe si
+el pago fue aceptado (sin apartar inventario mientras se paga; se revisan
+existencias justo antes de cobrar); MSI entra en esta corrección pero
+DESPUÉS de validar tarjeta de contado; Link de Stripe se conserva; OXXO y
+SPEI no se prueban todavía (no están activados en su Stripe Sandbox).
+
+**Corrección (solo tarjeta):**
+- Migración `0032_pago_tarjeta_sin_pedido_previo.sql`: `payments.order_id`
+  nullable + `user_id`/`checkout`/`ultimo_error`; `preparar_pago_tarjeta()`
+  (valida existencias, sin pedido); `crear_pedido_desde_pago()` (crea el
+  pedido como "tarjeta" en la cola de revisión, RN-11; idempotente; si ya no
+  se puede crear, marca el cobro a revisión con el motivo y no lanza);
+  `registrar_pago_stripe()` ya no marca a revisión un pago cuyo pedido ya
+  está en revisión.
+- Flujo: `prepararPagoTarjetaAction` → `stripe.confirmPayment` →
+  `finalizarPedidoTarjetaAction` (verifica con Stripe, nunca con el
+  navegador). El webhook y `/pagar/confirmacion` (regreso de 3D Secure)
+  llaman la misma `finalizarPagoTarjeta()`, así nunca queda un cobro sin
+  pedido si el cliente cierra el navegador.
+- Errores: `fallo()` hace `console.error` (logs de Vercel) y el checkout
+  muestra el motivo real.
+- Cobro con `payment_method_types: ["card","link"]` (Link conservado).
+
+**Verificado:** las 32 migraciones se aplicaron en orden en un Postgres 16
+local (sin Docker, con los objetos mínimos de Supabase) y el flujo nuevo se
+probó en SQL: preparar sin crear pedido ni tocar carrito; crear un solo
+pedido idempotente (navegador + webhook); webhook tardío/duplicado sin
+revisión falsa; sin existencias al preparar → error claro; sin existencias
+tras cobrar → cobro a revisión con motivo, sin pedido, carrito intacto.
+`tsc`, lint y `npm run build` limpios.
+
+**NO verificado todavía:** el pago real con tarjeta de prueba de Stripe en
+el navegador (necesita la base de producción con las migraciones aplicadas
+y las llaves) — lo prueba la dueña en el preview de Vercel.
+
+**Pendientes:**
+- La dueña debe aplicar en el SQL Editor, cada archivo por separado y en
+  orden, las migraciones que falten de 0028-0032.
+- Cancelar desde el admin los 4 pedidos huérfanos de prueba del 25-sep.
+- Un cobro aceptado sin pedido (caso raro) solo queda en `payments` con
+  `needs_review` y en los logs; el panel admin todavía no lo muestra.
+- OXXO y SPEI siguen con el flujo anterior (pedido antes del pago) — hay
+  que migrarlos al mismo criterio antes de habilitarlos.
+- MSI, instructivo del Stripe Dashboard (Fase 6), checklist de producción
+  (Fase 8), cron de 30 min (ya no aplica a tarjeta con el flujo nuevo).

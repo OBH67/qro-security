@@ -16,6 +16,9 @@ export function ok<T>(data: T): ResultadoAction<T> {
 }
 
 export function fallo(error: unknown): ResultadoAction<never> {
+  // Sin este log el error solo viajaba al navegador como dato y no quedaba
+  // rastro en los logs de Vercel (incidente del checkout, 25-sep).
+  console.error("[server action]", error);
   const mensaje = error instanceof Error ? error.message : "Ocurrió un error inesperado. Intenta de nuevo.";
   return { ok: false, error: mensaje };
 }

@@ -4,6 +4,7 @@ import { stripeClient } from "./cliente";
 import { obtenerMetodoPago } from "./pasarela";
 import { env } from "@/server/config/env";
 import { registrarPagoStripe } from "@/server/db/mutations/pagos";
+import { finalizarPagoTarjeta, PedidoNoRegistradoError } from "@/server/pagos/checkoutTarjeta";
 import type { EstadoPago, InstruccionesPago } from "@/types/database";
 
 /** El Route Handler (`src/app/api/webhooks/stripe/route.ts`) distingue
@@ -90,7 +91,7 @@ export async function procesarWebhookStripe(cuerpoCrudo: string, firma: string):
     ultimos4 = tarjeta.ultimos4;
   }
 
-  await registrarPagoStripe({
+  const pago = await registrarPagoStripe({
     eventId: evento.id,
     eventType: evento.type,
     payload: evento as unknown as Record<string, unknown>,
@@ -102,4 +103,19 @@ export async function procesarWebhookStripe(cuerpoCrudo: string, firma: string):
     cardLast4: ultimos4,
     needsReview: necesitaRevision,
   });
+
+  console.info("[webhook stripe]", evento.type, paymentIntent.id, "pago:", pago?.id ?? "sin pago asociado");
+
+  // 0032: cobro con tarjeta aceptado cuyo pedido aún no existe (el cliente
+  // cerró el navegador antes de que su navegador lo creara). Si el pedido no
+  // se puede crear, el pago ya quedó a revisión: no se lanza para que Stripe
+  // no reintente sin fin.
+  if (evento.type === "payment_intent.succeeded" && pago && pago.method === "tarjeta" && !pago.order_id) {
+    try {
+      const pedido = await finalizarPagoTarjeta(paymentIntent.id);
+      console.info("[webhook stripe] pedido creado desde el webhook", pedido.folio);
+    } catch (error) {
+      if (!(error instanceof PedidoNoRegistradoError)) throw error;
+    }
+  }
 }

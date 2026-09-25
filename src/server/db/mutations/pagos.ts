@@ -2,7 +2,7 @@ import "server-only";
 import { crearClienteAdmin } from "@/server/supabase/admin";
 import { despacharPendientes } from "@/server/notifications/despachador";
 import { crearClienteStripe } from "@/server/pagos/stripe/pasarela";
-import type { EstadoPago, InstruccionesPago, MetodoPagoStripe, PaymentRow } from "@/types/database";
+import type { CheckoutTarjeta, EstadoPago, InstruccionesPago, MetodoPagoStripe, OrderRow, PaymentRow } from "@/types/database";
 
 function traducirError(mensaje: string): string {
   return mensaje.replace(/^ERROR:\s*/i, "").trim();
@@ -96,4 +96,51 @@ export async function registrarPagoStripe(params: {
   await despacharPendientes();
 
   return (data as unknown as PaymentRow | null) ?? null;
+}
+
+/** 0032: cobro con tarjeta SIN pedido todavía (decisión de la dueña: el
+ * pedido solo existe si Stripe aceptó el pago). Valida existencias y guarda
+ * la foto del checkout; idempotente por (cliente, llave). */
+export async function prepararPagoTarjeta(params: {
+  userId: string;
+  checkout: CheckoutTarjeta;
+  amountCents: number;
+  idempotencyKey: string;
+}): Promise<PaymentRow> {
+  const admin = crearClienteAdmin();
+  const { data, error } = await admin.rpc("preparar_pago_tarjeta", {
+    p_user_id: params.userId,
+    p_checkout: params.checkout,
+    p_amount_cents: params.amountCents,
+    p_idempotency_key: params.idempotencyKey,
+  });
+  if (error) throw new Error(traducirError(error.message));
+  return data as unknown as PaymentRow;
+}
+
+/** 0032: crea el pedido de un cobro con tarjeta ya aceptado (o regresa el
+ * que ya existe). `null` = el cobro ocurrió pero no se pudo crear el pedido;
+ * el pago queda marcado a revisión con el motivo en `ultimo_error`. */
+export async function crearPedidoDesdePago(params: {
+  paymentId: string;
+  cardBrand: string | null;
+  cardLast4: string | null;
+}): Promise<OrderRow | null> {
+  const admin = crearClienteAdmin();
+  const { data, error } = await admin.rpc("crear_pedido_desde_pago", {
+    p_payment_id: params.paymentId,
+    p_card_brand: params.cardBrand,
+    p_card_last4: params.cardLast4,
+  });
+  if (error) throw new Error(traducirError(error.message));
+  await despacharPendientes();
+  const pedido = data as unknown as OrderRow | null;
+  return pedido?.id ? pedido : null;
+}
+
+export async function obtenerPagoPorId(paymentId: string): Promise<PaymentRow | null> {
+  const admin = crearClienteAdmin();
+  const { data, error } = await admin.from("payments").select("*").eq("id", paymentId).maybeSingle();
+  if (error) throw new Error(`No se pudo leer el pago: ${error.message}`);
+  return data as PaymentRow | null;
 }
