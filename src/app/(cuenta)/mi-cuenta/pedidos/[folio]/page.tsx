@@ -2,11 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { obtenerSesionActual } from "@/server/auth/sesion";
-import { obtenerPedidoPorFolio, obtenerDatosBancarios } from "@/server/db/queries/pedidos";
+import { obtenerPedidoPorFolio, obtenerDatosBancarios, obtenerPagoStripeDelPedido } from "@/server/db/queries/pedidos";
 import { formatearPrecio } from "@/lib/formato";
-import { ETIQUETA_ESTADO } from "@/lib/pedido";
+import { etiquetaEstadoCliente, esMetodoStripe } from "@/lib/pedido";
+import { seConfirmoDespuesDeVencer } from "@/lib/pagos/fechaLimite";
 import { PasosPedido } from "@/components/molecules/PasosPedido";
 import { DatosTransferencia } from "@/components/organisms/DatosTransferencia";
+import { FichaPagoOXXO } from "@/components/organisms/pago/FichaPagoOXXO";
+import { DatosPagoSPEI } from "@/components/organisms/pago/DatosPagoSPEI";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +38,30 @@ export default async function PaginaDetallePedido({ params }: { params: Promise<
 
   const pendienteDeComprobante = pedido.status === "pendiente_pago" && pedido.payment_method === "transferencia";
   const cubiertoConSaldo = pedido.payment_method === "saldo_completo";
+  const metodoEsStripe = esMetodoStripe(pedido.payment_method);
+
+  // diseño-pagos-stripe.md §5.3: el pago Stripe de este pedido se consulta
+  // siempre que el método sea tarjeta/OXXO/SPEI, sin importar el estado
+  // actual — la misma fila de `payments` sirve para la ficha mientras está
+  // en curso (P3.2/P4.2), para saber si "pagó tarde" una vez ya está en
+  // `comprobante_recibido` (arquitectura §4.1) y para saber si su ficha
+  // venció mientras seguía en `pendiente_pago` (§5.3, fila "Pago vencido").
+  const pago = metodoEsStripe ? await obtenerPagoStripeDelPedido(pedido.id, pedido.payment_method as "tarjeta" | "oxxo" | "spei") : null;
+  const montoPedidoCents = Math.round(Number(pedido.total) * 100);
+
+  const fichaVencida = pago?.expiresAt ? new Date(pago.expiresAt).getTime() <= new Date().getTime() : false;
+  // arquitectura §4.1: se confirmó DESPUÉS de que la ficha/CLABE/30 min ya
+  // habían vencido — el pedido igual llegó a "comprobante_recibido"
+  // (re-apartado con éxito), pero el cliente nunca debe leer que perdió su
+  // dinero, solo que se está revisando.
+  const pagadaTarde = pedido.status === "comprobante_recibido" && metodoEsStripe && pago ? seConfirmoDespuesDeVencer(pago.expiresAt, pago.updatedAt) : false;
+  // P4.4: SPEI con monto parcial o de más — Stripe deja el intento en
+  // `revision` sin avanzar el pedido (registrar_pago_stripe(), 0029/0030).
+  const pagoParcialODeMas = pedido.status === "pago_en_proceso" && pago?.needsReview && pago.amountReceivedCents != null ? pago : null;
+  // Ficha/CLABE/30 min vencidos y el pedido ya regresó solo a
+  // pendiente_pago (liberar_apartado vía webhook o cron) — no confundir con
+  // "pagada tarde" (esa sí llegó a pagarse).
+  const pagoVencidoYPendiente = pedido.status === "pendiente_pago" && metodoEsStripe && pago && fichaVencida;
 
   return (
     <section>
@@ -50,10 +77,11 @@ export default async function PaginaDetallePedido({ params }: { params: Promise<
         Pedido <span className="font-data" style={{ fontSize: "0.85em" }}>{pedido.folio}</span>
       </h1>
       <p style={{ margin: "8px 0 0", fontSize: 14, color: "var(--text-muted)" }}>
-        {new Date(pedido.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })} · {ETIQUETA_ESTADO[pedido.status]}
+        {new Date(pedido.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })} ·{" "}
+        {etiquetaEstadoCliente(pedido.status, pedido.payment_method)}
       </p>
 
-      <PasosPedido estado={pedido.status} />
+      <PasosPedido estado={pedido.status} metodo={pedido.payment_method} expiresAt={pago?.expiresAt} />
 
       {pedido.status === "cancelado" && pedido.cancellation_reason && (
         <p style={{ margin: "0 0 20px", fontSize: 14, color: "var(--text-muted)" }}>Motivo: {pedido.cancellation_reason}</p>
@@ -67,6 +95,63 @@ export default async function PaginaDetallePedido({ params }: { params: Promise<
           mostrarBotonSubir
           hrefSubir={`/mi-cuenta/pedidos/${pedido.folio}/comprobante`}
         />
+      )}
+
+      {pagoVencidoYPendiente && (
+        <div style={{ marginTop: 30, padding: "16px 18px", border: "1px solid var(--warning)", background: "var(--warning-tint)" }}>
+          <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.55, color: "var(--text-primary)" }}>
+            {pedido.payment_method === "oxxo" ? "Tu ficha de OXXO venció." : pedido.payment_method === "spei" ? "Tu CLABE para SPEI venció." : "Tu intento de pago con tarjeta venció."}{" "}
+            Elige cómo pagar.
+          </p>
+          <Link href="/pagar" style={{ display: "inline-block", marginTop: 10, fontSize: 13.5, color: "var(--warning)" }}>
+            Pagar ahora
+          </Link>
+        </div>
+      )}
+
+      {pedido.status === "pago_en_proceso" && pedido.payment_method === "oxxo" && (
+        <FichaPagoOXXO
+          folio={pedido.folio}
+          montoCents={montoPedidoCents}
+          expiresAt={pago?.expiresAt ?? null}
+          instrucciones={pago?.instructions?.metodo === "oxxo" ? pago.instructions : null}
+          estado={pago?.instructions?.metodo === "oxxo" ? "lista" : "generando"}
+          contexto="detalle-pedido"
+        />
+      )}
+
+      {pedido.status === "pago_en_proceso" && pedido.payment_method === "spei" && (
+        <DatosPagoSPEI
+          folio={pedido.folio}
+          montoCents={montoPedidoCents}
+          expiresAt={pago?.expiresAt ?? null}
+          instrucciones={pago?.instructions?.metodo === "spei" ? pago.instructions : null}
+          estado={pago?.instructions?.metodo === "spei" ? "lista" : "generando"}
+          contexto="detalle-pedido"
+          pagoParcial={pagoParcialODeMas ? { recibidoCents: pagoParcialODeMas.amountReceivedCents ?? 0, esperadoCents: pagoParcialODeMas.amountCents } : null}
+        />
+      )}
+
+      {pedido.status === "pago_en_proceso" && pedido.payment_method === "tarjeta" && (
+        <div style={{ marginTop: 30, padding: "16px 18px", border: "1px solid var(--processing)", background: "var(--processing-tint)" }}>
+          <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.55, color: "var(--text-primary)" }}>
+            Estamos confirmando tu pago con tu banco. Esto suele tardar unos segundos; puedes cerrar esta página.
+          </p>
+        </div>
+      )}
+
+      {pedido.status === "comprobante_recibido" && metodoEsStripe && (
+        <div style={{ marginTop: 30, padding: "16px 18px", border: "1px solid var(--accent)", background: "var(--accent-tint)" }}>
+          <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.55, color: "var(--text-primary)" }}>
+            {pagadaTarde
+              ? "Recibimos tu pago después de la fecha límite. Lo estamos revisando y te contactaremos en menos de 24 horas."
+              : pedido.payment_method === "tarjeta"
+                ? `Recibimos tu pago con tarjeta${pago?.cardLast4 ? ` terminada en ${pago.cardLast4}` : ""}. Lo estamos revisando y te avisaremos cuando tu pedido esté listo para envío.`
+                : pedido.payment_method === "oxxo"
+                  ? "Recibimos tu pago en OXXO. Lo estamos revisando y te avisaremos cuando tu pedido esté listo para envío."
+                  : "Recibimos tu transferencia SPEI. Lo estamos revisando y te avisaremos cuando tu pedido esté listo para envío."}
+          </p>
+        </div>
       )}
 
       {cubiertoConSaldo && pedido.status === "comprobante_recibido" && (

@@ -5,7 +5,12 @@ import type { Metadata } from "next";
 import { obtenerDetallePedidoAdmin } from "@/server/db/queries/admin/pedidos";
 import { formatearPrecio } from "@/lib/formato";
 import { AccionesPedido } from "@/components/organisms/admin/AccionesPedido";
-import type { EstadoPedido } from "@/types/database";
+import { DetallePagoStripe } from "@/components/organisms/admin/DetallePagoStripe";
+import { BannerRevisionPago } from "@/components/organisms/admin/BannerRevisionPago";
+import { EstadoPagoStripeAdminProvider } from "@/components/providers/EstadoPagoStripeAdminProvider";
+import { ChipMetodoPago } from "@/components/atoms/ChipMetodoPago";
+import { urlDashboardStripe } from "@/server/pagos/stripe/pasarela";
+import type { EstadoPago, EstadoPedido, MetodoPagoStripe } from "@/types/database";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +19,10 @@ export async function generateMetadata({ params }: { params: Promise<{ folio: st
   return { title: `${folio} — Panel SG Querétaro` };
 }
 
+// diseño-pagos-stripe.md §1 (D-P1, violeta `--processing`, aprobado).
 const ESTILO_ESTADO: Record<EstadoPedido, React.CSSProperties> = {
   pendiente_pago: { background: "transparent", border: "1px solid var(--warning)", color: "var(--warning)" },
+  pago_en_proceso: { background: "transparent", border: "1px solid var(--processing)", color: "var(--processing)" },
   comprobante_recibido: { background: "var(--accent)", color: "#07111C" },
   listo_envio: { background: "transparent", border: "1px solid var(--accent)", color: "var(--accent)" },
   enviado: { background: "transparent", border: "1px solid var(--accent)", color: "var(--accent)" },
@@ -24,6 +31,7 @@ const ESTILO_ESTADO: Record<EstadoPedido, React.CSSProperties> = {
 };
 const ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
   pendiente_pago: "Pendiente de pago",
+  pago_en_proceso: "Pago en proceso",
   comprobante_recibido: "Comprobante recibido",
   listo_envio: "Listo para envío",
   enviado: "Enviado",
@@ -38,6 +46,7 @@ const PASOS_HISTORIAL: { estado: EstadoPedido; label: string }[] = [
   { estado: "entregado", label: "Entregado" },
 ];
 const PASO_CANCELADO: { estado: EstadoPedido; label: string } = { estado: "cancelado", label: "Cancelado" };
+const ESTADOS_PAGO_SIN_CONCLUIR: EstadoPago[] = ["iniciado", "requiere_accion", "procesando"];
 
 /** panel-admin-maqueta.html:377-508 — dos variantes de la misma pantalla
  * (detalle normal con comprobante, y RN-11 pagado con saldo al 100%),
@@ -47,9 +56,19 @@ export default async function PaginaDetallePedidoAdmin({ params }: { params: Pro
   const detalle = await obtenerDetallePedidoAdmin(folio);
   if (!detalle) notFound();
 
-  const { pedido, items, comprobante, historial, cliente, movimientosSaldo, saldoDisponibleCliente } = detalle;
+  const { pedido, items, comprobante, pagoStripe, historial, cliente, movimientosSaldo, saldoDisponibleCliente } = detalle;
   const esRN11 = pedido.payment_method === "saldo_completo";
+  const esPagoStripeMetodo = pedido.payment_method === "tarjeta" || pedido.payment_method === "oxxo" || pedido.payment_method === "spei";
   const direccion = pedido.shipping_address;
+
+  // §6.4: el bloque de pago se ve "reducido" (sin Consultar/decline/dl)
+  // mientras Stripe todavía no concluye el intento — con monto distinto o
+  // `partially_funded` el pago YA tiene un veredicto técnico (pagado/en
+  // revisión) aunque el pedido siga en `pago_en_proceso`, así que se rige
+  // por el estado del propio pago, no por el del pedido.
+  const pagoAunSinConcluir = pagoStripe ? ESTADOS_PAGO_SIN_CONCLUIR.includes(pagoStripe.status) : false;
+  const urlStripeDashboard = pagoStripe?.stripePaymentIntentId ? urlDashboardStripe(pagoStripe.stripePaymentIntentId) : null;
+  const montoPagadoCentavos = pagoStripe?.amountReceivedCents ?? pagoStripe?.amountCents ?? 0;
 
   return (
     <div>
@@ -61,11 +80,30 @@ export default async function PaginaDetallePedidoAdmin({ params }: { params: Pro
         <h1 className="title mono" style={{ fontSize: 22, margin: 0 }}>
           {pedido.folio}
         </h1>
-        <span className="badge" style={{ ...ESTILO_ESTADO[pedido.status], marginLeft: "auto" }}>
-          {ETIQUETA_ESTADO[pedido.status]}
-        </span>
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+          <ChipMetodoPago metodo={pedido.payment_method} />
+          <span className="badge" style={ESTILO_ESTADO[pedido.status]}>
+            {ETIQUETA_ESTADO[pedido.status]}
+          </span>
+        </div>
       </div>
 
+      {/* §6.3: casos de revisión especiales — banner ámbar arriba de la
+          columna izquierda. Solo cubre los dos casos con bandera real en
+          `payments.needs_review` (arquitectura §4.1/§4.3); "no se pudo
+          cancelar en Stripe" (§4.2) no tiene señal en el esquema actual. */}
+      {pagoStripe?.needsReview && (
+        <BannerRevisionPago
+          orderId={pedido.id}
+          folio={pedido.folio}
+          tipo={pedido.status === "pendiente_pago" ? "pagado_sin_inventario" : "monto_distinto"}
+          montoRecibidoCents={pagoStripe.amountReceivedCents ?? 0}
+          montoEsperadoCents={pagoStripe.amountCents}
+          correoCliente={cliente?.email ?? null}
+        />
+      )}
+
+      <EstadoPagoStripeAdminProvider>
       <div className="admin-grid-2-ancho" style={{ gap: 16 }}>
         {esRN11 ? (
           <div className="tarjeta" style={{ padding: 18, height: "fit-content" }}>
@@ -94,26 +132,50 @@ export default async function PaginaDetallePedidoAdmin({ params }: { params: Pro
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div className="tarjeta" style={{ padding: 18 }}>
-              <h3 style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 13, letterSpacing: 0.5, color: "var(--text-muted)", textTransform: "uppercase", margin: "0 0 10px" }}>Comprobante de pago</h3>
-              {comprobante ? (
-                <>
-                  <div style={{ background: "var(--bg-inset)", border: "1px solid var(--border)", height: 420, position: "relative", overflow: "hidden" }}>
-                    <Image src={comprobante.urlLectura} alt="Comprobante de pago" fill style={{ objectFit: "contain" }} unoptimized />
-                  </div>
-                  <a href={comprobante.urlLectura} target="_blank" rel="noopener noreferrer" className="btn btn-fantasma btn-sm" style={{ marginTop: 10 }}>
-                    ↓ Ver / descargar original
-                  </a>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
-                    Subido {new Date(comprobante.uploaded_at).toLocaleString("es-MX", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                  </div>
-                </>
+            {esPagoStripeMetodo ? (
+              pagoStripe ? (
+                <DetallePagoStripe
+                  orderId={pedido.id}
+                  metodo={pedido.payment_method as MetodoPagoStripe}
+                  status={pagoStripe.status}
+                  stripePaymentIntentId={pagoStripe.stripePaymentIntentId}
+                  amountCents={pagoStripe.amountCents}
+                  amountReceivedCents={pagoStripe.amountReceivedCents}
+                  cardBrand={pagoStripe.cardBrand}
+                  cardLast4={pagoStripe.cardLast4}
+                  expiresAt={pagoStripe.expiresAt}
+                  instructions={pagoStripe.instructions}
+                  updatedAt={pagoStripe.updatedAt}
+                  urlStripeDashboard={urlStripeDashboard}
+                  pedidoEnProceso={pagoAunSinConcluir}
+                />
               ) : (
-                <div style={{ background: "var(--bg-inset)", border: "1px solid var(--border)", height: 200, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-dim)", fontSize: 13 }}>
-                  Sin comprobante subido todavía.
+                <div className="tarjeta" role="alert" style={{ padding: 18, fontSize: 13, color: "var(--text-secondary)" }}>
+                  No pudimos cargar los datos del pago. El pedido no cambió.
                 </div>
-              )}
-            </div>
+              )
+            ) : (
+              <div className="tarjeta" style={{ padding: 18 }}>
+                <h3 style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 13, letterSpacing: 0.5, color: "var(--text-muted)", textTransform: "uppercase", margin: "0 0 10px" }}>Comprobante de pago</h3>
+                {comprobante ? (
+                  <>
+                    <div style={{ background: "var(--bg-inset)", border: "1px solid var(--border)", height: 420, position: "relative", overflow: "hidden" }}>
+                      <Image src={comprobante.urlLectura} alt="Comprobante de pago" fill style={{ objectFit: "contain" }} unoptimized />
+                    </div>
+                    <a href={comprobante.urlLectura} target="_blank" rel="noopener noreferrer" className="btn btn-fantasma btn-sm" style={{ marginTop: 10 }}>
+                      ↓ Ver / descargar original
+                    </a>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
+                      Subido {new Date(comprobante.uploaded_at).toLocaleString("es-MX", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ background: "var(--bg-inset)", border: "1px solid var(--border)", height: 200, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-dim)", fontSize: 13 }}>
+                    Sin comprobante subido todavía.
+                  </div>
+                )}
+              </div>
+            )}
             <div className="tarjeta" style={{ padding: 18 }}>
               <h3 style={{ fontFamily: "var(--font-title)", fontWeight: 600, fontSize: 13, letterSpacing: 0.5, color: "var(--text-muted)", textTransform: "uppercase", margin: "0 0 10px" }}>Productos del pedido</h3>
               {items.map((it) => (
@@ -189,6 +251,26 @@ export default async function PaginaDetallePedidoAdmin({ params }: { params: Pro
                     </dd>
                   </div>
                 </dl>
+              </>
+            ) : esPagoStripeMetodo ? (
+              <>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5, fontFamily: "var(--font-title)", fontWeight: 600 }}>Importe esperado</div>
+                <div className="mono" style={{ fontSize: 30, fontWeight: 500, margin: "4px 0 14px" }}>
+                  {formatearPrecio(pedido.total)}
+                </div>
+                {pagoStripe && pagoStripe.amountReceivedCents !== null && (
+                  <div style={{ borderTop: "1px solid var(--border)", paddingTop: 14 }}>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5, fontFamily: "var(--font-title)", fontWeight: 600 }}>Cobrado por Stripe</div>
+                    <div className="mono" style={{ fontSize: 30, fontWeight: 500, margin: "4px 0 8px" }}>
+                      {formatearPrecio(pagoStripe.amountReceivedCents / 100)}
+                    </div>
+                    {pagoStripe.amountReceivedCents === pagoStripe.amountCents ? (
+                      <div style={{ color: "var(--success)", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>✓ Los montos coinciden</div>
+                    ) : (
+                      <div style={{ color: "var(--warning)", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>⚠ Los montos no coinciden</div>
+                    )}
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -266,9 +348,10 @@ export default async function PaginaDetallePedidoAdmin({ params }: { params: Pro
               <span style={{ color: "var(--text-muted)" }}>Factura</span> {pedido.wants_invoice ? `Sí · RFC ${pedido.billing_data?.rfc ?? "—"}` : "No"}
             </div>
           </div>
-          <AccionesPedido orderId={pedido.id} folio={pedido.folio} status={pedido.status} />
+          <AccionesPedido orderId={pedido.id} folio={pedido.folio} status={pedido.status} paymentMethod={pedido.payment_method} montoPagadoCentavos={montoPagadoCentavos} />
         </div>
       </div>
+      </EstadoPagoStripeAdminProvider>
     </div>
   );
 }

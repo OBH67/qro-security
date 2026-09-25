@@ -161,6 +161,9 @@ export interface ProfileRow {
   role: RolUsuario;
   email_verified: boolean;
   created_at: string;
+  /** 0028: nulo hasta el primer pago SPEI — customer_balance exige un
+   * Stripe Customer (arquitectura-pagos-stripe.md §6). */
+  stripe_customer_id: string | null;
 }
 
 export interface AddressRow {
@@ -231,13 +234,21 @@ export interface ItemCarritoResuelto {
 
 export type EstadoPedido =
   | "pendiente_pago"
+  /** 0028: pago con tarjeta/OXXO/SPEI en curso — inventario apartado,
+   * esperando confirmación del webhook de Stripe (RN-15). No aparece en
+   * la bandeja de revisión del admin todavía. */
+  | "pago_en_proceso"
   | "comprobante_recibido"
   | "listo_envio"
   | "enviado"
   | "entregado"
   | "cancelado";
 
-export type MetodoPago = "transferencia" | "saldo_completo";
+/** 0028: + tarjeta/oxxo/spei (Épica P). El método real de un pedido nuevo
+ * se corrige al iniciar el intento de pago (`iniciar_pago_stripe()`),
+ * no al crearlo — `crear_pedido()` sigue asumiendo 'transferencia' por
+ * defecto (o 'saldo_completo' si el saldo cubre el 100%). */
+export type MetodoPago = "transferencia" | "saldo_completo" | "tarjeta" | "oxxo" | "spei";
 
 export interface DireccionCongelada {
   label: string;
@@ -303,7 +314,10 @@ export interface OrderStatusHistoryRow {
   from_status: EstadoPedido | null;
   to_status: EstadoPedido;
   changed_by: string | null;
-  source: "panel" | "correo" | "sistema" | "cliente";
+  /** 0028: + 'stripe' — el webhook de Stripe es quien mueve el pedido de
+   * pago_en_proceso a comprobante_recibido (o lo libera), no un humano
+   * ni el propio cliente. */
+  source: "panel" | "correo" | "sistema" | "cliente" | "stripe";
   note: string | null;
   changed_at: string;
 }
@@ -323,6 +337,64 @@ export interface PaymentProofRow {
   uploaded_at: string;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// Épica P — pagos con Stripe (0028/0029_pagos_stripe_*.sql)
+// ─────────────────────────────────────────────────────────────────────────
+
+export type MetodoPagoStripe = "tarjeta" | "oxxo" | "spei";
+export type EstadoPago =
+  | "iniciado"
+  | "requiere_accion"
+  | "procesando"
+  | "pagado"
+  | "fallido"
+  | "vencido"
+  | "cancelado"
+  | "revision";
+
+/** Voucher OXXO o CLABE SPEI — arquitectura-pagos-stripe.md §6. Nunca
+ * contiene datos de tarjeta (PCI SAQ A). El vencimiento vive en
+ * `payments.expires_at`, no aquí (Stripe no siempre lo expone en el
+ * mismo lugar para ambos métodos). */
+export type InstruccionesPago =
+  | { metodo: "oxxo"; referencia: string; urlVoucher: string }
+  | { metodo: "spei"; clabe: string; banco: string; beneficiario: string; referencia: string };
+
+export interface PaymentRow {
+  id: string;
+  order_id: string;
+  method: MetodoPagoStripe;
+  provider: "stripe";
+  stripe_payment_intent_id: string | null;
+  amount_cents: number;
+  currency: string;
+  status: EstadoPago;
+  expires_at: string | null;
+  instructions: InstruccionesPago | null;
+  card_brand: string | null;
+  card_last4: string | null;
+  idempotency_key: string;
+  needs_review: boolean;
+  /** 0030: monto que Stripe confirmó recibido (P4.4) — nulo hasta el primer
+   * evento con `amount_received`. Puede diferir de `amount_cents` (pago
+   * parcial o de más de SPEI, arquitectura §4.3). */
+  amount_received_cents: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Infraestructura interna del webhook (idempotencia, P5.2) — sin acceso
+ * de cliente, admin solo lectura. */
+export interface StripeWebhookEventRow {
+  event_id: string;
+  type: string;
+  payload: Record<string, unknown>;
+  received_at: string;
+  processed_at: string | null;
+  result: string | null;
+  error: string | null;
+}
+
 export type EstadoDevolucion = "solicitada" | "en_revision" | "aprobada" | "rechazada";
 export type CondicionDevolucion = "sellado" | "abierto" | "otro";
 
@@ -337,6 +409,10 @@ export interface ReturnRow {
   reviewed_by: string | null;
   reviewed_at: string | null;
   resolution_note: string | null;
+  // P9 (RN-6 modificada): true si el admin aprobó con un porcentaje
+  // distinto del sugerido por la condición declarada — junto con
+  // reviewed_by/reviewed_at deja registro de que fue una elección suya.
+  percentage_overridden: boolean;
   created_at: string;
 }
 
@@ -346,7 +422,8 @@ export interface ReturnItemRow {
   order_item_id: string;
   qty: number;
   condition: CondicionDevolucion;
-  percentage: string; // estimado al solicitar (RN-6); el admin lo corrige al resolver
+  percentage: string; // final (RN-6 modificada, P9): el que aprobó el admin, 10-100 entero
+  percentage_suggested: string; // sugerido por la condición al solicitar (100 sellado / 70 abierto / 0 otro), inmutable
   credit_amount: string;
 }
 
@@ -461,6 +538,8 @@ export interface Database {
       order_items: Tabla<OrderItemRow>;
       order_status_history: Tabla<OrderStatusHistoryRow>;
       payment_proofs: Tabla<PaymentProofRow>;
+      payments: Tabla<PaymentRow>;
+      stripe_webhook_events: Tabla<StripeWebhookEventRow>;
     };
     Views: {
       catalogo_productos: { Row: CatalogoProductoRow };
@@ -494,6 +573,32 @@ export interface Database {
           p_spei_tracking_key?: string | null;
         };
         Returns: OrderRow;
+      };
+      iniciar_pago_stripe: {
+        Args: {
+          p_order_id: string;
+          p_method: MetodoPagoStripe;
+          p_amount_cents: number;
+          p_expires_at: string;
+          p_idempotency_key: string;
+          p_changed_by?: string | null;
+        };
+        Returns: PaymentRow;
+      };
+      registrar_pago_stripe: {
+        Args: {
+          p_event_id: string;
+          p_event_type: string;
+          p_payload: Record<string, unknown>;
+          p_payment_intent_id: string;
+          p_status: EstadoPago;
+          p_amount_received_cents?: number | null;
+          p_instructions?: InstruccionesPago | null;
+          p_card_brand?: string | null;
+          p_card_last4?: string | null;
+          p_needs_review?: boolean;
+        };
+        Returns: PaymentRow;
       };
     };
   };

@@ -25,18 +25,26 @@ const PERIODOS: { valor: PeriodoTablero; label: string }[] = [
 
 const ETIQUETA_ESTADO: Record<string, string> = {
   pendiente_pago: "Pendiente de pago",
+  // Épica P: se agrega al embudo ("¿Dónde están mis pedidos?") — es un
+  // tramo real para pedidos con Stripe, aunque RN-15 diga que no requiere
+  // acción del admin (por eso no está entre las tarjetas de atención de
+  // arriba, solo aquí como foto informativa).
+  pago_en_proceso: "Pago en proceso",
   comprobante_recibido: "Comprobante recibido",
   listo_envio: "Listo para envío",
   enviado: "Enviado",
 };
+// diseño-pagos-stripe.md §1 (D-P1, violeta `--processing` = #9085E9).
 const COLOR_ETAPA: Record<string, string> = {
   pendiente_pago: "#176F7B",
+  pago_en_proceso: "#9085E9",
   comprobante_recibido: "#1E93A3",
   listo_envio: "#26B8CC",
   enviado: "#3CE7FF",
 };
 const HREF_ETAPA: Record<string, string> = {
   pendiente_pago: "/admin/pedidos?estado=pendiente_pago",
+  pago_en_proceso: "/admin/pedidos?estado=pago_en_proceso",
   comprobante_recibido: "/admin/pedidos?estado=comprobante_recibido",
   listo_envio: "/admin/pedidos?estado=listo_envio",
   enviado: "/admin/pedidos?estado=enviado",

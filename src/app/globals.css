@@ -43,6 +43,19 @@
   --danger-text: #ff7a86;
   --danger-tint: rgba(255, 77, 94, 0.07);
 
+  /* Épica P — diseño-pagos-stripe.md §1: únicos dos tokens nuevos del sitio.
+   * --processing: estado "Pago en proceso" (violeta), distinto de
+   * pendiente (ámbar) y comprobante recibido (cian lleno). Se toma la
+   * ranura 7 de la paleta de datos (--chart-7), que el tablero no usa. */
+  --processing: #9085e9;
+  --processing-tint: rgba(144, 133, 233, 0.07);
+  /* --voucher-paper/--voucher-ink: única superficie clara del sitio —
+   * limitada al recuadro del código de barras OXXO (§3), porque los
+   * escáneres de caja necesitan barras oscuras sobre fondo claro. No se
+   * generaliza a ninguna otra tarjeta ni componente. */
+  --voucher-paper: #ffffff;
+  --voucher-ink: #07111c;
+
   /* Bordes y separadores — diseno.md §2.1 */
   --border-subtle: #16283a;
   --border: #1f3244;
@@ -186,6 +199,16 @@
   }
   70% {
     box-shadow: 0 0 0 10px rgba(255, 181, 71, 0);
+  }
+}
+/* diseño-pagos-stripe.md §5.1: anillo del paso "Pago en proceso" en
+ * PasosPedido — gira en vez de pulsar (pulso = "te toca a ti", giro =
+ * "estamos esperando a alguien más"; distinto en forma Y movimiento, no
+ * solo en color, para daltonismo). Respeta la regla global de
+ * prefers-reduced-motion de arriba, que ya apaga toda animación. */
+@keyframes sgSpin {
+  to {
+    transform: rotate(360deg);
   }
 }
 @keyframes sgRec {

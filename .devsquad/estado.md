@@ -3588,3 +3588,443 @@ encabezado), `admin/(protegido)/page.tsx` (enlace de la tarjeta).
 
 Validado con `tsc --noEmit`/`eslint` limpios; no se pudo confirmar
 visualmente en un dispositivo real en este entorno.
+
+## Épica P — Pagos con Stripe (2026-09-24, en descubrimiento/arquitectura)
+
+Feature grande a petición de la dueña: agregar Stripe como método de
+pago en línea, PRINCIPAL en el checkout, manteniendo el comprobante de
+transferencia como segunda opción tal como funciona hoy. Reemplaza la
+**Decisión #1** ("sin pasarela de pago") — ver `perfil.md`, ya
+actualizado.
+
+Documentos nuevos (anexos aparte de `requerimientos.md`/
+`arquitectura.md` por su tamaño — se fusionan más adelante):
+- `.devsquad/requerimientos-pagos-stripe.md` — 8 historias (P1-P8),
+  reglas nuevas RN-12/13/14, PA-7.
+- `.devsquad/arquitectura-pagos-stripe.md` — patrón **Strategy**
+  (`src/server/pagos/`, interfaz `EstrategiaPago` + registro),
+  Checkout hospedado de Stripe en modo `payment` (nunca
+  `subscription`), tabla `payments`, tabla `stripe_webhook_events`
+  (idempotencia por `event_id`), función `registrar_pago_stripe()`.
+  `payment_proofs` no se toca.
+
+**Decisiones de negocio ya cerradas con la dueña** (no volver a
+preguntar):
+- Stripe pasa a revisión manual igual que un comprobante — **NUNCA**
+  pasa solo a "Listo para envío" por el webhook (mantiene RN-11
+  pareja entre los dos métodos). Esto se confirmó dos veces porque su
+  primera respuesta se contradijo a sí misma; la respuesta final y
+  definitiva es esta.
+- El inventario se aparta al INICIAR el intento de pago (igual que
+  comprobante hoy), no hasta que se aprueba — un segundo intento sobre
+  la misma pieza ya apartada se cancela.
+- Se puede combinar saldo a favor + Stripe (pago parcial con tarjeta).
+- Reembolsos: siempre a saldo/nota de crédito, nunca efectivo, aunque
+  se haya pagado con tarjeta.
+- Sin facturación/CFDI por ahora (sin cambio).
+- La comisión de Stripe (~4.18% + $3.48 MXN por cobro, IVA incluido)
+  la absorbe el negocio como costo operativo, no se refleja en el
+  precio al cliente.
+- Solo tarjeta por ahora; diseñado con Strategy para poder agregar
+  OXXO/SPEI después sin tocar lo existente.
+- Modo prueba primero (tarjetas de prueba de Stripe, sin mover dinero
+  real); a producción hasta confirmar que el flujo funciona bien.
+
+**Dos historias nuevas, pedidas en la misma conversación, no
+específicas de Stripe pero incluidas en la épica**:
+- P6: aviso "Quedan X" en la tarjeta/ficha de producto del catálogo
+  PÚBLICO cuando el stock disponible es menor a 3 (hoy solo existe
+  esa alerta en el panel admin, "Se te va a acabar").
+- P7: en devoluciones, el admin podrá elegir CUALQUIER porcentaje de
+  10% a 100% al aprobar (hoy son valores fijos) — sigue yendo a saldo,
+  nunca efectivo.
+
+**Decisión de arquitectura pendiente de aprobar por la dueña**: un
+estado nuevo `pago_en_proceso` para pedidos con Stripe apartado pero
+aún sin confirmar — evita que aparezcan en la bandeja de "comprobante
+recibido" del admin antes de que el pago sea real. Implica ajustar
+`apartar_pedido()`/`liberar_apartado()` para aceptar el estado
+destino (sin duplicar la lógica de candado/concurrencia), y de paso
+corregir el bug ya documentado de `from_status` en
+`liberar_apartado()` (incremento del 24 de septiembre, "Sincronizar
+payment_proofs.status").
+
+**Los 5 pendientes de la primera ronda ya se resolvieron**, más una
+segunda ronda que amplió el alcance (la dueña pegó una segunda versión
+del documento de investigación de mercado, otra vez con una
+"mensualidad de monitoreo" que se le preguntó directo y confirmó que
+NO aplica — sigue siendo solo pagos únicos por pedido):
+
+- **Checkout**: Stripe **Payment Element embebido** dentro del sitio
+  (nunca redirige a una página externa de Stripe) — reemplaza la
+  recomendación inicial de Checkout hospedado.
+- **OXXO y SPEI se agregan en esta misma fase**, junto con tarjeta —
+  ya no quedan para después. Confirmación asíncrona (minutos u horas).
+- **Sin panel propio de transacciones**: se usa el Stripe Dashboard
+  directamente, dando de alta a la dueña (y después a quien ella
+  decida) con un rol restringido — sin llaves API ni configuración de
+  cuenta.
+- Reembolso de un pago con tarjeta ya cobrado: siempre a saldo a
+  favor, nunca se regresa a la tarjeta (RN-16).
+- Tiempo de apartado: **30 minutos** para tarjeta (confirmado por la
+  dueña); **2 días, configurable de 1 a 3** para OXXO/SPEI (decisión
+  técnica del arquitecto, justificada — cabe dentro de la cancelación
+  automática de 3 días; evitar "no apartar hasta confirmar" porque
+  dejaría vender la misma pieza dos veces sin ningún camino de
+  reembolso a tarjeta).
+- Corrección técnica encontrada por el arquitecto: los eventos
+  `checkout.session.async_payment_succeeded/failed` que mencionaba el
+  documento de la dueña solo existen con Stripe Checkout — como se
+  eligió Payment Element, los eventos reales a manejar son
+  `payment_intent.succeeded/processing/requires_action/payment_failed/
+  canceled/partially_funded` (nombres exactos de OXXO/SPEI por
+  verificar en la documentación vigente antes de programar).
+- Cuenta de Stripe: sigue **pendiente, acción de la dueña** (crearla,
+  activar OXXO y transferencias, capturar las llaves) — no bloquea
+  seguir con diseño, solo bloquea escribir código contra la API real.
+
+**Documentos actualizados a v2**: `requerimientos-pagos-stripe.md`
+(historias P1-P10, RN-15/RN-16, tareas de configuración de la dueña
+separadas de las de código), `arquitectura-pagos-stripe.md` (Payment
+Element, 3 estrategias — tarjeta/OXXO/SPEI — compartiendo un
+adaptador común `PasarelaStripe`, tablas `payments`/
+`stripe_webhook_events`, `profiles.stripe_customer_id`, cron cada 5
+min que vence apartados). `perfil.md` ya refleja tarjeta+OXXO+SPEI,
+sin suscripciones.
+
+**No quedan ambigüedades de negocio pendientes.** El diseñador entregó
+`.devsquad/diseño-pagos-stripe.md` v1 con las 7 pantallas/estados
+nuevos (selector de 4 métodos de pago, ficha de pago OXXO con
+voucher, pantalla de datos SPEI con CLABE copiable, estado "pago en
+proceso" en Mis pedidos/`PasosPedido`, detalle del pago en la bandeja
+del admin, aviso "Quedan X" reutilizando "Últimas N piezas", campo de
+porcentaje de devolución 10-100%) y una lista de 8 decisiones
+(D-P1 a D-P8) que requerían aprobación de la dueña.
+
+**Diseño aprobado en su totalidad.** De las 8 decisiones, la dueña
+confirmó explícitamente las 2 que sí requerían su palabra y no
+aprobó las otras 6 por no objetar los valores recomendados
+(consistente con su forma de trabajar en esta épica):
+
+- **D-P4 (confirmado por la dueña): OXXO sí le cobra una comisión
+  aparte al cliente al pagar en tienda.** El texto de la ficha OXXO
+  pasa de condicional ("OXXO puede cobrarte...") a afirmativo ("OXXO
+  cobra una comisión aparte al cliente."). Esta comisión la paga el
+  cliente en caja — es distinta de la comisión de Stripe que absorbe
+  el negocio (documentada en `arquitectura-pagos-stripe.md`).
+- **D-P6 (autorizado por la dueña): cambio puntual de texto en
+  `index.html`**, archivo protegido por la regla de traducción
+  literal. Alcance exacto, sin excepción: únicamente las dos frases
+  "100% sellado" y "70% abierto" (relacionadas con el % de devolución
+  fijo, que ya no aplica porque el % ahora lo decide el admin al
+  revisar) — ningún otro texto, estructura o estilo de ese archivo se
+  toca. Redacción propuesta en el diseño: "El porcentaje de tu saldo
+  a favor lo define nuestro equipo al revisar tu devolución."
+- D-P1 (violeta para "pago en proceso"), D-P2 ("Pago recibido" para
+  el cliente en pedidos Stripe), D-P3 (recuadro blanco para el código
+  de barras OXXO), D-P5 (reutilizar "Últimas N piezas" para "Quedan
+  X"), D-P7 (descargar ficha OXXO = abrir el voucher oficial de
+  Stripe, sin PDF propio), D-P8 (atajos 100%/70%/50% en devoluciones)
+  quedan aprobados por defecto.
+
+**La dueña dio luz verde para implementar.** Arranca la fase de
+`coder`, en incrementos secuenciales (cada uno se revisa antes de
+seguir con el siguiente):
+
+**Incremento 1 — backend (listo, commits `020e727`/`6e207cc`):**
+migraciones `0028_pagos_stripe_esquema.sql` (tablas `payments` con
+`instructions jsonb`, `stripe_webhook_events` con PK `event_id` para
+idempotencia, `profiles.stripe_customer_id`, nuevo valor
+`pago_en_proceso` en `order_status`, RLS) y
+`0029_pagos_stripe_funciones.sql` (`apartar_pedido()` con nuevo
+parámetro `p_target_status` vía DROP+CREATE, retrocompatible;
+`liberar_apartado()` acepta `pago_en_proceso` como origen **y corrige
+el bug de `from_status` documentado en el incremento del 24 de
+septiembre** — se capturaba después del `UPDATE`, quedando siempre
+igual a `to_status`; `iniciar_pago_stripe()`, `registrar_pago_stripe()`).
+Verificado a mano: el webhook nunca transiciona un pedido pagado
+directo a "Listo para envío" — `registrar_pago_stripe()` lo manda a
+`comprobante_recibido` (misma cola de revisión manual que hoy),
+cumpliendo la regla confirmada dos veces por la dueña. `src/server/pagos/`
+con el patrón Strategy (`tipos.ts`, `registro.ts`, adaptador
+`PasarelaStripe`, estrategias `tarjeta`/`oxxo`/`spei`/`comprobante`),
+webhook en `src/app/api/webhooks/stripe/route.ts` (runtime Node,
+cuerpo crudo, verifica firma). Paquete `stripe` instalado. Variables
+de entorno `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET`/
+`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` documentadas como placeholders en
+`.env.example` (la dueña las captura cuando tenga su cuenta Stripe).
+`npx tsc --noEmit` y lint limpios.
+
+Decisiones técnicas del coder que quedan anotadas (no bloquean, pero
+conviene que arquitecto/dueña las vean más adelante):
+- Falta el cron que libera automáticamente los apartados de **tarjeta**
+  a los 30 min (`vencer_pagos_stripe()` de la arquitectura) — no
+  estaba en el alcance de este incremento. OXXO/SPEI ya se liberan
+  solos vía el webhook `canceled` cuando Stripe cancela el
+  PaymentIntent al vencer voucher/CLABE. **Pendiente para el próximo
+  incremento backend.**
+- Cuando `liberar_apartado()` se dispara automáticamente por Stripe
+  (tarjeta vencida, OXXO/SPEI cancelado), se omite el correo de
+  "pago rechazado" porque su plantilla actual dice literalmente
+  "rechazamos el comprobante que subiste" — texto incorrecto para un
+  intento de pago con tarjeta. Falta una plantilla propia ("tu intento
+  de pago no se completó, puedes reintentar"). **Pendiente, es
+  contenido/copy, no se inventó.**
+- El aviso de "pago Stripe confirmado" reutiliza literalmente los
+  `event_type` `comprobante.recibido` — sus plantillas dicen
+  "comprobante" en el texto. Mismo pendiente que el punto anterior.
+
+**D-P6 (commit `4626752`) — hecho, pero con alcance reducido a lo
+inequívocamente autorizado.** Se cambiaron únicamente las dos frases
+tal como estaban en las líneas 1309 y 1978 de `index.html`: "Las
+devoluciones se abonan... 100%/70%..." y la respuesta del FAQ "¿Cómo
+funcionan las devoluciones?", por un texto que dice que el porcentaje
+lo define el equipo al revisar. **Se encontraron 3 lugares más con la
+misma afirmación de 100%/70% que el diseñador NO citó explícitamente
+en `diseño-pagos-stripe.md` §8 (que solo mencionaba l. 1309, 1978 y
+"tarjetas de devoluciones") y que por lo tanto NO se tocaron, para no
+exceder la autorización sobre un archivo protegido:**
+1. Un banner cerca de l. 774 ("Devoluciones en saldo a favor: 100% si
+   el producto está sellado, 70% si está abierto.") — mismo tipo de
+   cambio de texto que los dos ya hechos, técnicamente trivial.
+2. Las **tarjetas de devoluciones** (`devCards`, l. 2498-2500): cada
+   tarjeta muestra un **porcentaje fijo como badge visual grande**
+   (46px, "100%" / "70%"), no solo texto de párrafo — esto sí requiere
+   una decisión de diseño real (¿se quita el badge? ¿dice "Hasta
+   100%"? ¿se rediseña la tarjeta?), no es un simple cambio de texto.
+3. Una entrada del FAQ del chat de ayuda (l. 2532) con la misma
+   afirmación fija.
+**Pendiente: decidir con la dueña/diseñador si estos 3 también se
+corrigen** (dejarlos así generaría mensajes contradictorios en el
+sitio — unos dicen "depende de la revisión", otros siguen prometiendo
+100%/70% fijo) y, para el caso 2, cómo debe verse la tarjeta sin un
+porcentaje fijo que mostrar.
+
+Siguen los incrementos de frontend: checkout (selector de 4 métodos +
+Payment Element) — **listo, commits `6959d43`/`bcdf1c2`.** Selector
+de 4 métodos (`OpcionMetodoPago`, `SelectorMetodoPago`) con tarjeta
+preseleccionada; `<Elements mode="payment">` con PaymentIntent
+diferido (patrón oficial de Stripe: el pedido y el intento de pago se
+crean hasta que el cliente pulsa "Pagar", no antes); Payment Element
+themeado con Stripe Appearance API (paleta oscura/cian, nunca el azul
+default de Stripe); saldo a favor combinable sin remontar el
+formulario (`elements.update()`); todos los estados de diseño §2.6;
+pantalla de éxito que dice "Recibimos tu pago" y explica que se
+revisa antes de enviarse — **nunca "confirmado"**, cumpliendo RN-11/
+RN-12. `npx tsc --noEmit` y lint limpios. Verificado a mano leyendo
+`CheckoutForm.tsx` completo.
+
+**Alcance de este incremento, tal como se pidió:** para OXXO/SPEI el
+botón aparta inventario y crea el PaymentIntent (RN-13 cumplido), pero
+todavía no genera el voucher/CLABE ni la pantalla siguiente — por
+ahora redirige al detalle del pedido ya existente. Es un paso
+intermedio esperado, no un bug: la pantalla "ficha OXXO"/"datos SPEI"
+es el siguiente incremento (en curso).
+
+**Ambigüedad que el coder reportó en vez de inventar (P1.6):** el
+diseño dice que el tope de monto de OXXO "se toma de la configuración/
+Stripe vigente, nunca fijo", pero no existe ese ajuste en
+`settings` (a diferencia de `oxxo_expires_days`/`spei_expires_days`
+que sí existen). El coder dejó OXXO siempre habilitado sin inventar un
+tope. **Pendiente: definir con arquitecto/dueña de dónde sale ese tope**
+(¿nuevo `settings.oxxo_max_amount_cents`? ¿se consulta a Stripe en
+vivo?) antes de que haga falta en el siguiente incremento (§3 sí
+menciona el tope en la ficha OXXO).
+
+Pantallas OXXO/SPEI (P3, P4) — **listo, commits `8719111`/`d4e67b7`/
+`a673aa3`.** Al pulsar el botón, `confirmOxxoPayment()`/
+`confirmCustomerBalancePayment()` (patrón oficial de Stripe para
+confirmar sin Payment Element) regresan las instrucciones del voucher/
+CLABE, que se muestran en la misma pantalla del checkout
+(`FichaPagoOXXO`/`DatosPagoSPEI`) y también en el detalle del pedido
+en Mis pedidos mientras siga en `pago_en_proceso` — misma tarjeta
+reutilizada en los dos lugares (P3.2). **D-P4 verificado a mano: el
+paso 02 dice en afirmativo "OXXO cobra una comisión aparte al
+cliente"**, tal como confirmó la dueña. Recuadro de código de barras
+en `--voucher-paper` (única superficie clara del sitio), referencia
+agrupada de 4 en 4 en IBM Plex Mono, fecha límite en ámbar con ⚠,
+banner violeta de apartado, botón que abre la ficha oficial de Stripe
+(`hosted_voucher_url`) en pestaña nueva — nunca un PDF propio (D-P7).
+`npx tsc --noEmit`, lint y `npm run build` limpios (el build solo
+falla después por faltar las variables reales de Stripe/Supabase/R2
+en este sandbox, no por el código).
+
+**2 pendientes que el coder reportó en vez de inventar (no bloquean,
+quedan para el siguiente incremento):**
+1. El estado "pagada tarde / ya liberada" (cuando OXXO confirma el
+   pago después de que el apartado ya venció) no se implementó — es
+   parte de la integración de `pago_en_proceso` en Mis pedidos/
+   tablero/admin que sigue.
+2. **P4.4 SPEI, pago parcial o de más**: no se implementó porque el
+   monto recibido / si necesita revisión (`amount_received_cents`,
+   `needs_review` de la tabla `payments`) no está expuesto todavía en
+   ninguna consulta con RLS del lado del cliente. Se resuelve junto
+   con el siguiente incremento.
+
+Siguen: estado "pago en proceso" en Mis pedidos/`PasosPedido`/tablero/
+filtros del admin (§5, §10) — **listo, commits `6a23467`/`bda3fb8`/
+`f834e1e`.** Migración `0030_pagos_monto_recibido.sql` (persiste
+`payments.amount_received_cents`, que el webhook ya recibía pero
+nunca guardaba); `PasosPedido` con el paso "Pago en proceso" en
+violeta real; Mis pedidos con chip/color correcto, "Pago recibido"
+para el cliente en pedidos Stripe (D-P2), banners de "confirmando con
+tu banco" / "pagada tarde" (heurística: `updated_at > expires_at` con
+método Stripe, documentada) / ficha vencida; SPEI ahora avisa si llegó
+un monto parcial o de más (P4.4); tablero y filtros del admin con el
+color real y un bug real corregido de paso (el conteo "todos" no
+sumaba `pago_en_proceso`). Verificado a mano: la consulta
+`obtenerPagoStripeDelPedido()` que expone datos al CLIENTE hace
+`select` explícito de solo 8 columnas (instructions, expires_at,
+montos, needs_review, updated_at, status, card_last4) — nunca expone
+`stripe_payment_intent_id`, `card_brand` ni el payload crudo del
+webhook, dejando esos datos sensibles solo para el admin en la
+siguiente tarea. `npx tsc --noEmit`, lint y `npm run build` limpios.
+
+Sigue: detalle de pago de Stripe en la bandeja de revisión del admin
+(§6 — ID de pago, marca/últimos 4, decline codes, casos de revisión
+especiales; el chip de filtro de esa tarea fue solo funcional, el
+diseño pulido de §6.1 queda para ahí) — **en curso, en paralelo con lo
+siguiente**, y porcentaje de devolución libre — pendiente.
+
+**"Quedan X" en catálogo público (P8) — listo, commits `cae0af3`/
+`4ded661`.** Etiqueta ámbar sobre la foto ("QUEDA 1"/"QUEDAN 2") en
+la tarjeta del catálogo y en la ficha de producto, para 1-2 piezas
+disponibles — umbral verificado contra el propio widget "Se te va a
+acabar" del tablero admin (`obtenerStockCritico`), no inventado. El
+texto de existencias también se refuerza ("¡Quedan 2!" en vez de
+"Últimas 2 piezas"). D-P5 respetado: no se creó un aviso aparte, se
+reforzó el patrón `etiquetaStock` ya existente. `npx tsc --noEmit` y
+lint limpios. Nota menor sin bloquear: en la ficha de producto el chip
+nuevo se traslapa con una esquina decorativa del demo en la foto
+grande (mismo `top:10;left:10`) — cosmético, un ajuste de una línea
+si se prefiere otra posición.
+
+**Admin — detalle de pago Stripe en la bandeja de revisión (P6) —
+listo, commits `52554bb`/`4572158`/`13fafd6`.** Chip de método en la
+bandeja, bloque de detalle técnico (`DetallePagoStripe`: ID de pago
+copiable, enlace al Stripe Dashboard, "Consultar estado en Stripe" en
+vivo con decline code — todo esto SOLO visible aquí, nunca al
+cliente), banners de casos de revisión especiales.
+
+**RN-11 verificada, no requirió cambios**: "Validar pago" ya
+funcionaba igual para Stripe que para comprobante (gated solo en
+`status === 'comprobante_recibido'`, sin depender de `payment_proofs`).
+
+**RN-16 aplicada correctamente a un caso nuevo que no estaba escrito
+explícitamente**: "Rechazar" SÍ tenía que divergir, y el coder lo
+razonó bien en vez de copiar el flujo de comprobante — un comprobante
+rechazado no cobró nada, así que regresa a `pendiente_pago` sin más;
+un pago de Stripe rechazado YA fue cobrado de verdad, así que
+`rechazarPagoStripe()` (nueva mutation, sin SQL nuevo: compone
+`aplicar_saldo()` + `liberar_apartado()` ya aprobadas) abona el monto
+como saldo a favor y cancela el pedido — **nunca se llama a la API de
+reembolso de Stripe, nunca vuelve a la tarjeta**, tal como exige RN-16
+también para pagos con tarjeta. Verificado a mano leyendo el código.
+`npx tsc --noEmit`, lint y build limpios.
+
+**2 pendientes que el coder reportó en vez de inventar (no
+bloquean):**
+1. El caso "no se pudo cancelar en Stripe" (arquitectura §4.2) no se
+   implementó — no hay ninguna bandera en el esquema actual para
+   detectarlo.
+2. El reflow de tarjeta en móvil (§10) para la bandeja de pedidos no
+   se construyó — la tabla base nunca tuvo ese patrón, no es un
+   pendiente introducido por este incremento.
+
+**Con esto, todos los incrementos de la Épica P que dependían
+directamente de Stripe están completos** (backend, checkout, OXXO/
+SPEI, integración de `pago_en_proceso`, bandeja admin).
+
+**Porcentaje de devolución libre 10-100% (P9, RN-6 modificada) —
+listo, commit `1400074`.** Migración `0031_devolucion_porcentaje_libre.sql`:
+`return_items.percentage_suggested` (guarda el sugerido de forma
+inmutable, para poder comparar después), `returns.percentage_overridden`
+(auditoría de "el admin lo eligió a propósito", P9), y
+`resolver_devolucion()` ahora EXIGE el porcentaje entero 10-100 con los
+3 mensajes de error exactos del diseño — validado en SQL, no solo en
+el cliente. UI: campo numérico + deslizador + chips 100/70/50 (D-P8),
+nota ámbar si difiere del sugerido, modal de confirmación con el
+importe real (el flujo anterior no tenía modal de confirmación pese a
+que `diseño.md` §11.10 ya lo pedía — se agregó de una vez).
+
+**Caso no cubierto por el diseño, resuelto sin inventar en silencio:**
+para devoluciones con condición "otro" (sin estimado automático, el
+asesor decide), el sugerido antiguo era 0%, incompatible con el nuevo
+piso de 10%. El coder prellenó el campo con 10 (el mínimo permitido) y
+cambió el texto a "Esta condición no tiene un porcentaje automático —
+elige tú cuánto otorgar", sin la nota ámbar de "difiere del sugerido"
+porque no hay una sugerencia real que comparar. **Pendiente opcional:
+confirmar con la dueña/Diseñador si prefieren otro texto o valor por
+defecto para este caso** — es un ajuste de una línea si no.
+
+`npx tsc --noEmit`, lint y `npm run build` limpios en los 8 incrementos
+de esta épica.
+
+---
+
+## Épica P — CIERRE: todos los incrementos de código completos
+
+Con esto, los 8 incrementos de implementación de Pagos con Stripe
+quedan terminados y revisados uno por uno antes de seguir con el
+siguiente: (1) migraciones + Strategy pattern + webhook, (2) checkout
+con selector de 4 métodos + Payment Element, (3) fichas OXXO/SPEI,
+(4) `pago_en_proceso` en Mis pedidos/PasosPedido/tablero, (5) detalle
+de pago en la bandeja de revisión del admin, (6) porcentaje de
+devolución libre, (7) aviso "Quedan X" en catálogo público, (8) el
+cambio de texto autorizado en `index.html` (D-P6).
+
+**Pendientes reales que quedaron fuera de alcance a propósito, sin
+inventarse, documentados arriba en cada sección — para revisar con
+BSA/arquitecto cuando convenga (ninguno bloquea usar la app hoy):**
+- Cron `vencer_pagos_stripe()` que libere automáticamente los
+  apartados de tarjeta a los 30 min (OXXO/SPEI ya se liberan solos vía
+  webhook).
+- Plantilla de correo propia para "tu intento de pago no se completó"
+  (hoy se omite el correo en vez de mandar uno con el texto incorrecto
+  de comprobante).
+- Tope de monto de OXXO (P1.6) — de dónde sale ese número.
+- Caso "no se pudo cancelar en Stripe" (arquitectura §4.2).
+- 3 ocurrencias más del texto fijo "100%/70%" en `index.html` que el
+  diseñador no citó explícitamente (banner, badge visual de las
+  tarjetas de devoluciones, FAQ del chat) — dejadas sin tocar por
+  disciplina sobre un archivo protegido.
+- Texto/valor por defecto para devoluciones con condición "otro" bajo
+  el nuevo esquema de porcentaje libre.
+
+**Sigue pendiente, acción de la dueña (no bloquea nada de lo anterior,
+solo bloquea probar contra la API real de Stripe):** crear la cuenta
+de Stripe, activar OXXO y SPEI/transferencias, capturar
+`STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET`/
+`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` en las variables de entorno de
+Vercel, y dar de alta su usuario del Stripe Dashboard con rol
+restringido (sin llaves API ni configuración de cuenta) para ver
+transacciones/clientes ahí en vez de un panel propio.
+
+**Revisión de código completa hecha (commit `71ed7f0`).** Se corrió
+`/code-review --level high` sobre todo el diff de la épica contra
+`main` (los 8 incrementos). 4 hallazgos, verificados uno por uno antes
+de tocar nada:
+- **2 reales, corregidos:** (1) `webhook.ts` mostraba el texto literal
+  "null" si Stripe regresaba el banco/beneficiario de SPEI vacío (le
+  faltaba el mismo `?? ""` que ya tenía su gemelo del lado cliente);
+  (2) la bandeja del admin etiquetaba como "monto distinto" cualquier
+  pago con revisión pendiente que no estuviera en `pendiente_pago`,
+  aunque el único caso real de "monto distinto" en el SQL es
+  `pago_en_proceso` — un webhook duplicado sobre un pedido ya
+  avanzado quedaba con la causa equivocada en pantalla (el botón de
+  abonar en sí siempre estuvo protegido: `liberar_apartado()` rechaza
+  cancelar un pedido `enviado`/`entregado`, así que nunca hubo riesgo
+  de cancelar un envío ya hecho, solo un letrero engañoso).
+- **2 descartados tras verificar el código real:** una supuesta llamada
+  "innecesaria" a `despacharPendientes()` en un webhook idempotente
+  (en realidad es un no-op seguro si no hay nada pendiente, mismo
+  patrón que el resto del proyecto) y un supuesto problema de espacios
+  en blanco al armar el nombre del cliente para Stripe (los campos son
+  `string` no nulos en el tipo, `.trim()` ya cubre el caso vacío).
+
+`npx tsc --noEmit` limpio después de las 2 correcciones.
+
+**Recomendado antes de mezclar esta rama a producción:** cuando la
+dueña tenga su cuenta de Stripe en modo test, probar el flujo real de
+punta a punta (tarjeta de prueba, voucher OXXO de prueba, CLABE de
+prueba) antes de activar Stripe con dinero real.

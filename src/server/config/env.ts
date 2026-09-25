@@ -59,6 +59,20 @@ const envSchema = z.object({
   ORDER_AUTO_CANCEL_DAYS: z.coerce.number().int().positive().default(3),
   // Confirmado por la dueña del proyecto (requerimientos.md PA-3, 2026-09-20): 30 días.
   RETURN_WINDOW_DAYS: z.coerce.number().int().positive().default(30),
+
+  // ── 10.6 Stripe (Épica P — pagos con tarjeta, OXXO, SPEI) ──────────
+  // SECRETA — CRÍTICA. Llave secreta del servidor: crea, consulta y
+  // cancela PaymentIntents (src/server/pagos/stripe/). La captura la
+  // dueña al crear su cuenta de Stripe (requerimientos-pagos-stripe.md
+  // §5). Arranca en modo prueba (llave "sk_test_...").
+  STRIPE_SECRET_KEY: z.string().min(1),
+  // SECRETA — CRÍTICA. Verifica la firma de cada evento entrante en
+  // /api/webhooks/stripe (arquitectura-pagos-stripe.md §5) — sin esto,
+  // cualquiera podría simular un pago confirmado.
+  STRIPE_WEBHOOK_SECRET: z.string().min(1),
+  // Llave pública del Payment Element embebido (tarjeta/OXXO/SPEI). No es
+  // secreta, viaja al navegador.
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -1,0 +1,105 @@
+import "server-only";
+import Stripe from "stripe";
+import { stripeClient } from "./cliente";
+import { obtenerMetodoPago } from "./pasarela";
+import { env } from "@/server/config/env";
+import { registrarPagoStripe } from "@/server/db/mutations/pagos";
+import type { EstadoPago, InstruccionesPago } from "@/types/database";
+
+/** El Route Handler (`src/app/api/webhooks/stripe/route.ts`) distingue
+ * "firma inválida" (400, P5.1) de cualquier otro error (500, para que
+ * Stripe reintente) solo por el tipo de esta excepción — nunca inspecciona
+ * el SDK de Stripe directo (esa dependencia se queda aquí). */
+export class FirmaWebhookInvalidaError extends Error {}
+
+/** arquitectura-pagos-stripe.md §5: los únicos seis eventos que nos
+ * interesan (Payment Element + PaymentIntents, NO
+ * `checkout.session.async_payment_*` — esos son solo de Checkout
+ * Sessions). Cualquier otro evento que Stripe llegara a mandar se ignora
+ * sin error, para que no se siga reintentando. */
+const ESTADO_POR_EVENTO: Partial<Record<Stripe.Event.Type, EstadoPago>> = {
+  "payment_intent.succeeded": "pagado",
+  "payment_intent.processing": "procesando",
+  "payment_intent.requires_action": "requiere_accion",
+  "payment_intent.payment_failed": "fallido",
+  "payment_intent.canceled": "cancelado",
+  "payment_intent.partially_funded": "revision",
+};
+
+function extraerInstrucciones(paymentIntent: Stripe.PaymentIntent): InstruccionesPago | null {
+  const oxxo = paymentIntent.next_action?.oxxo_display_details;
+  if (oxxo) {
+    return { metodo: "oxxo", referencia: oxxo.number ?? "", urlVoucher: oxxo.hosted_voucher_url ?? "" };
+  }
+
+  const transferencia = paymentIntent.next_action?.display_bank_transfer_instructions;
+  const direccionMx = transferencia?.financial_addresses?.find((f) => f.type === "mx_bank_transfer");
+  if (transferencia && direccionMx?.spei) {
+    return {
+      metodo: "spei",
+      clabe: direccionMx.spei.clabe ?? "",
+      banco: direccionMx.spei.bank_name ?? "",
+      beneficiario: direccionMx.spei.account_holder_name ?? "",
+      referencia: transferencia.reference ?? "",
+    };
+  }
+
+  return null;
+}
+
+/** Marca/últimos 4 (P6.1) — solo se consultan cuando hace falta (pago
+ * confirmado o en curso): una llamada extra a Stripe por evento, tolerable
+ * en un webhook. `payment_method` viaja como id sin expandir en el evento. */
+async function extraerTarjeta(paymentIntent: Stripe.PaymentIntent): Promise<{ marca: string | null; ultimos4: string | null }> {
+  if (typeof paymentIntent.payment_method !== "string") return { marca: null, ultimos4: null };
+  try {
+    const metodo = await obtenerMetodoPago(paymentIntent.payment_method);
+    return { marca: metodo.card?.brand ?? null, ultimos4: metodo.card?.last4 ?? null };
+  } catch {
+    // No bloquea el registro del pago por no poder anotar la marca.
+    return { marca: null, ultimos4: null };
+  }
+}
+
+/** P5.1/P5.2: verifica la firma con el cuerpo CRUDO (nunca `request.json()`,
+ * que ya lo habría parseado y roto la verificación) y traduce el evento a
+ * `registrar_pago_stripe()` (0029), que es quien de verdad decide el
+ * efecto (idempotencia, RN-11, §4.1, §4.3 — toda la lógica de negocio
+ * vive en SQL, esta función solo hace de traductor Stripe → RPC). */
+export async function procesarWebhookStripe(cuerpoCrudo: string, firma: string): Promise<void> {
+  let evento: Stripe.Event;
+  try {
+    evento = await stripeClient.webhooks.constructEventAsync(cuerpoCrudo, firma, env.STRIPE_WEBHOOK_SECRET);
+  } catch (error) {
+    const mensaje = error instanceof Error ? error.message : "Firma de webhook inválida.";
+    throw new FirmaWebhookInvalidaError(mensaje);
+  }
+
+  const estado = ESTADO_POR_EVENTO[evento.type];
+  if (!estado) return; // Evento fuera de la lista de P5 — se ignora, sin error.
+
+  const paymentIntent = evento.data.object as Stripe.PaymentIntent;
+  const instrucciones = extraerInstrucciones(paymentIntent);
+  const necesitaRevision = evento.type === "payment_intent.partially_funded";
+
+  let marca: string | null = null;
+  let ultimos4: string | null = null;
+  if (evento.type === "payment_intent.succeeded" || evento.type === "payment_intent.processing") {
+    const tarjeta = await extraerTarjeta(paymentIntent);
+    marca = tarjeta.marca;
+    ultimos4 = tarjeta.ultimos4;
+  }
+
+  await registrarPagoStripe({
+    eventId: evento.id,
+    eventType: evento.type,
+    payload: evento as unknown as Record<string, unknown>,
+    paymentIntentId: paymentIntent.id,
+    status: estado,
+    amountReceivedCents: paymentIntent.amount_received,
+    instructions: instrucciones,
+    cardBrand: marca,
+    cardLast4: ultimos4,
+    needsReview: necesitaRevision,
+  });
+}

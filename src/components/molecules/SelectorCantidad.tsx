@@ -70,7 +70,7 @@ export function SelectorCantidad({
         </button>
       </div>
       {enTope && (
-        <p style={{ margin: "12px 0 0", fontSize: 13, color: "var(--warning)" }}>Solo hay {maximo} piezas.</p>
+        <p style={{ margin: "12px 0 0", fontSize: 13, color: "var(--warning)" }}>Solo quedan {maximo} piezas.</p>
       )}
     </div>
   );

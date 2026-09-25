@@ -1306,7 +1306,7 @@ input,select,textarea{font:inherit;color:inherit}
 
         <sc-if value="{{ secDevoluciones }}" hint-placeholder-val="{{ false }}">
           <div style="max-width:680px">
-            <p style="margin:0;font-size:15.5px;line-height:1.65;color:#9FB2C3">Las devoluciones se abonan como saldo a favor para comprar productos: 100% del valor si el producto está sellado de fábrica y 70% si está abierto o sin empaque.</p>
+            <p style="margin:0;font-size:15.5px;line-height:1.65;color:#9FB2C3">Las devoluciones se abonan como saldo a favor para comprar productos. El porcentaje lo define nuestro equipo al revisar tu devolución.</p>
             <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px">
               <button onClick="{{ newReturn }}" style="padding:14px 22px;background:#3CE7FF;color:#07111C;font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:15px;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%)">Solicitar devolución</button>
               <button onClick="{{ goDev }}" style="padding:14px 22px;border:1px solid #1F3244;color:#EAF2F8;font-family:'Chakra Petch',sans-serif;font-weight:500;font-size:15px" style-hover="border-color:#3CE7FF;color:#3CE7FF">Ver la política completa</button>
@@ -1975,7 +1975,7 @@ class Component extends DCLogic {
     { q:'¿Cómo pago mi pedido?', a:'Por transferencia o depósito SPEI. Al generar tu pedido te mostramos la CLABE, el beneficiario y el importe exacto. Después subes tu comprobante en Mis pedidos.' },
     { q:'¿Cuánto tarda el envío?', a:'La guía se genera cuando confirmamos tu comprobante. Tu asesor te confirma el costo y el tiempo de entrega según tu dirección.' },
     { q:'¿Puedo pedir factura?', a:'Sí. Activa "Quiero factura" al crear tu cuenta o al confirmar el pedido y captura tu RFC, régimen fiscal y uso de CFDI.' },
-    { q:'¿Cómo funcionan las devoluciones?', a:'El valor se devuelve como saldo a favor para comprar productos: 100% si el producto está sellado de fábrica y 70% si está abierto o sin empaque.' },
+    { q:'¿Cómo funcionan las devoluciones?', a:'El valor se devuelve como saldo a favor para comprar productos. El porcentaje lo define nuestro equipo al revisar tu devolución.' },
     { q:'¿Instalan el equipo?', a:'Vendemos equipo y cotizamos servicios de instalación y monitoreo. Solicita información en la sección de Servicios y un asesor te contacta.' }
   ];
 

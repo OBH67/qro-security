@@ -7,6 +7,7 @@ import type { ProductoTarjeta } from "@/lib/producto";
 import { Etiqueta } from "@/components/atoms/Etiqueta";
 import { Boton } from "@/components/atoms/Boton";
 import { IndicadorStock } from "@/components/molecules/IndicadorStock";
+import { AvisoQuedan } from "@/components/molecules/AvisoQuedan";
 import { useCarrito } from "@/components/providers/CarritoProvider";
 import { useToast } from "@/components/providers/ToastProvider";
 
@@ -62,6 +63,7 @@ export function TarjetaProducto({ producto }: { producto: ProductoTarjeta }) {
           overflow: "hidden",
         }}
       >
+        {producto.avisoQuedan && <AvisoQuedan texto={producto.avisoQuedan} />}
         {producto.imagenUrl ? (
           <Image
             src={producto.imagenUrl}
