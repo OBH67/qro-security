@@ -74,6 +74,29 @@ export async function crearPaymentIntentOxxo(params: {
   );
 }
 
+/** 0033: OXXO/SPEI del checkout, antes de que exista el pedido (mismo
+ * criterio que `crearPaymentIntentCheckoutTarjeta`, 0032) — `metadata.
+ * payment_id` es lo único que el navegador y el webhook tienen para
+ * encontrar la fila de `payments` y, con ella, crear el pedido. */
+export async function crearPaymentIntentCheckoutOxxo(params: {
+  amountCents: number;
+  paymentId: string;
+  userId: string;
+  idempotencyKey: string;
+  expiresAfterDays: number;
+}): Promise<Stripe.PaymentIntent> {
+  return stripeClient.paymentIntents.create(
+    {
+      amount: params.amountCents,
+      currency: MONEDA,
+      payment_method_types: ["oxxo"],
+      payment_method_options: { oxxo: { expires_after_days: params.expiresAfterDays } },
+      metadata: { payment_id: params.paymentId, user_id: params.userId },
+    },
+    { idempotencyKey: `checkout-oxxo-${params.idempotencyKey}` },
+  );
+}
+
 /** SPEI vía Stripe requiere un Stripe Customer (customer_balance +
  * bank_transfer.type = 'mx_bank_transfer', arquitectura §2/§6) —
  * `customerId` lo resuelve `obtenerOCrearStripeCustomerId()`
@@ -102,6 +125,30 @@ export async function crearPaymentIntentSpei(params: {
   );
 }
 
+/** 0033: SPEI del checkout, antes de que exista el pedido — ver
+ * `crearPaymentIntentCheckoutOxxo`. */
+export async function crearPaymentIntentCheckoutSpei(params: {
+  amountCents: number;
+  paymentId: string;
+  userId: string;
+  idempotencyKey: string;
+  customerId: string;
+}): Promise<Stripe.PaymentIntent> {
+  return stripeClient.paymentIntents.create(
+    {
+      amount: params.amountCents,
+      currency: MONEDA,
+      customer: params.customerId,
+      payment_method_types: ["customer_balance"],
+      payment_method_options: {
+        customer_balance: { funding_type: "bank_transfer", bank_transfer: { type: "mx_bank_transfer" } },
+      },
+      metadata: { payment_id: params.paymentId, user_id: params.userId },
+    },
+    { idempotencyKey: `checkout-spei-${params.idempotencyKey}` },
+  );
+}
+
 export async function cancelarPaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
   return stripeClient.paymentIntents.cancel(paymentIntentId);
 }
@@ -124,4 +171,28 @@ export async function crearClienteStripe(params: { email: string; nombre: string
  * modo (prueba/producción) según la sesión de quien lo abre. */
 export function urlDashboardStripe(paymentIntentId: string): string {
   return `https://dashboard.stripe.com/payments/${paymentIntentId}`;
+}
+
+/** Extrae la ficha OXXO/CLABE SPEI de un PaymentIntent (compartida por el
+ * webhook y por `finalizarFicha{Oxxo,Spei}()` — el navegador ya recibe el
+ * mismo `next_action` al confirmar, sin esperar al webhook). */
+export function extraerInstrucciones(paymentIntent: Stripe.PaymentIntent): import("@/types/database").InstruccionesPago | null {
+  const oxxo = paymentIntent.next_action?.oxxo_display_details;
+  if (oxxo) {
+    return { metodo: "oxxo", referencia: oxxo.number ?? "", urlVoucher: oxxo.hosted_voucher_url ?? "" };
+  }
+
+  const transferencia = paymentIntent.next_action?.display_bank_transfer_instructions;
+  const direccionMx = transferencia?.financial_addresses?.find((f) => f.type === "mx_bank_transfer");
+  if (transferencia && direccionMx?.spei) {
+    return {
+      metodo: "spei",
+      clabe: direccionMx.spei.clabe ?? "",
+      banco: direccionMx.spei.bank_name ?? "",
+      beneficiario: direccionMx.spei.account_holder_name ?? "",
+      referencia: transferencia.reference ?? "",
+    };
+  }
+
+  return null;
 }

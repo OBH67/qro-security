@@ -39,7 +39,10 @@ export default async function PaginaPagar() {
         saldoDisponible={saldoDisponible}
         oxxoExpiraDias={oxxoExpiraDias}
         speiExpiraDias={speiExpiraDias}
-        clienteNombre={`${sesion.perfil.first_name} ${sesion.perfil.last_name}`.trim()}
+        // Stripe exige un nombre en billing_details para tarjeta/OXXO/SPEI;
+        // el perfil puede tener el nombre vacío (incidente real, 25-sep con
+        // OXXO) — el correo siempre existe como respaldo.
+        clienteNombre={`${sesion.perfil.first_name} ${sesion.perfil.last_name}`.trim() || sesion.email}
         clienteEmail={sesion.email}
       />
     </section>

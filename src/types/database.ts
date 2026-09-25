@@ -369,6 +369,10 @@ export interface CheckoutTarjeta {
   wants_invoice: boolean;
   credit_to_apply: number;
   notes: string | null;
+  /** Solo OXXO/SPEI: vencimiento calculado al preparar el pago (settings
+   * `oxxo_expires_days`/`spei_expires_days`). OXXO usa el vencimiento que
+   * Stripe regresa al confirmar en vez de este valor cuando está disponible. */
+  expires_at?: string;
 }
 
 export interface PaymentRow {
@@ -616,9 +620,10 @@ export interface Database {
         };
         Returns: PaymentRow;
       };
-      preparar_pago_tarjeta: {
+      preparar_pago_stripe: {
         Args: {
           p_user_id: string;
+          p_method: MetodoPagoStripe;
           p_checkout: CheckoutTarjeta;
           p_amount_cents: number;
           p_idempotency_key: string;
@@ -630,6 +635,8 @@ export interface Database {
           p_payment_id: string;
           p_card_brand?: string | null;
           p_card_last4?: string | null;
+          p_instructions?: InstruccionesPago | null;
+          p_expires_at?: string | null;
         };
         Returns: OrderRow | null;
       };

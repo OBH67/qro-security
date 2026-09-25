@@ -1,11 +1,11 @@
 import "server-only";
 import Stripe from "stripe";
 import { stripeClient } from "./cliente";
-import { obtenerMetodoPago } from "./pasarela";
+import { obtenerMetodoPago, extraerInstrucciones } from "./pasarela";
 import { env } from "@/server/config/env";
 import { registrarPagoStripe } from "@/server/db/mutations/pagos";
 import { finalizarPagoTarjeta, PedidoNoRegistradoError } from "@/server/pagos/checkoutTarjeta";
-import type { EstadoPago, InstruccionesPago } from "@/types/database";
+import type { EstadoPago } from "@/types/database";
 
 /** El Route Handler (`src/app/api/webhooks/stripe/route.ts`) distingue
  * "firma inválida" (400, P5.1) de cualquier otro error (500, para que
@@ -26,27 +26,6 @@ const ESTADO_POR_EVENTO: Partial<Record<Stripe.Event.Type, EstadoPago>> = {
   "payment_intent.canceled": "cancelado",
   "payment_intent.partially_funded": "revision",
 };
-
-function extraerInstrucciones(paymentIntent: Stripe.PaymentIntent): InstruccionesPago | null {
-  const oxxo = paymentIntent.next_action?.oxxo_display_details;
-  if (oxxo) {
-    return { metodo: "oxxo", referencia: oxxo.number ?? "", urlVoucher: oxxo.hosted_voucher_url ?? "" };
-  }
-
-  const transferencia = paymentIntent.next_action?.display_bank_transfer_instructions;
-  const direccionMx = transferencia?.financial_addresses?.find((f) => f.type === "mx_bank_transfer");
-  if (transferencia && direccionMx?.spei) {
-    return {
-      metodo: "spei",
-      clabe: direccionMx.spei.clabe ?? "",
-      banco: direccionMx.spei.bank_name ?? "",
-      beneficiario: direccionMx.spei.account_holder_name ?? "",
-      referencia: transferencia.reference ?? "",
-    };
-  }
-
-  return null;
-}
 
 /** Marca/últimos 4 (P6.1) — solo se consultan cuando hace falta (pago
  * confirmado o en curso): una llamada extra a Stripe por evento, tolerable
