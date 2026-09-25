@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Elements, useElements, useStripe } from "@stripe/react-stripe-js";
 import { formatearPrecio } from "@/lib/formato";
 import { generarPedidoAction } from "@/server/actions/pedidos";
-import { iniciarPagoStripeAction } from "@/server/actions/pagos";
+import { iniciarPagoStripeAction, prepararPagoTarjetaAction, finalizarPedidoTarjetaAction } from "@/server/actions/pagos";
 import { obtenerStripePromise } from "@/lib/stripe/clienteNavegador";
 import { aparienciaStripe, fuentesStripe } from "@/lib/stripe/apariencia";
 import { Boton } from "@/components/atoms/Boton";
@@ -62,7 +62,7 @@ export function CheckoutForm({
         mode: "payment",
         amount: totalCentavosInicial,
         currency: "mxn",
-        paymentMethodTypes: ["card"],
+        paymentMethodTypes: ["card", "link"],
         appearance: aparienciaStripe,
         fonts: fuentesStripe,
         loader: "never",
@@ -187,14 +187,96 @@ function ContenidoCheckout({
 
   function manejarErrorApartado(mensaje: string) {
     setEstadoEnvio("idle");
+    console.error("[checkout]", mensaje);
     if (mensaje.includes("Ya no hay piezas suficientes")) {
       setTipoErrorGeneral("sin_inventario");
       setError(mensaje);
     } else {
       setTipoErrorGeneral("servidor");
-      // §2.6: "Decir que no hubo cargo es obligatorio en todo error de pago."
-      setError("No pudimos iniciar tu pago. No se hizo ningún cargo. Inténtalo de nuevo en un momento.");
+      // Antes se reemplazaba por un texto genérico y el motivo real se
+      // perdía (incidente del 25-sep): ahora se muestra el motivo.
+      setError(mensaje);
     }
+  }
+
+  /** Tarjeta (0032, decisión de la dueña): el pedido solo existe si Stripe
+   * acepta el pago. 1) el servidor valida y crea el cobro, sin pedido ni
+   * tocar el carrito; 2) Stripe confirma la tarjeta en el navegador; 3) el
+   * servidor verifica con Stripe y crea el pedido. Si algo falla antes del
+   * paso 3, no queda ningún pedido y el carrito sigue igual. */
+  async function pagarConTarjeta() {
+    setError(null);
+    setTipoErrorGeneral(null);
+    setErrorTarjeta(null);
+    if (!addressId) {
+      setError("Elige una dirección de envío.");
+      return;
+    }
+    if (wantsInvoice && !billingProfileId) {
+      setError("Elige o captura tus datos fiscales para pedir factura.");
+      return;
+    }
+    if (!stripe || !elements) {
+      setEstadoFormularioTarjeta("error_carga");
+      return;
+    }
+
+    const { error: errorSubmit } = await elements.submit();
+    if (errorSubmit) {
+      setErrorTarjeta(errorSubmit.message ?? "Revisa los datos de tu tarjeta.");
+      return;
+    }
+
+    setEstadoEnvio("procesando");
+    // Llave nueva por intento: si la tarjeta se rechaza, el siguiente clic
+    // es un cobro nuevo, no el mismo cobro fallido.
+    const preparado = await prepararPagoTarjetaAction({
+      addressId,
+      wantsInvoice,
+      billingProfileId: wantsInvoice ? billingProfileId : undefined,
+      agree: true,
+      idempotencyKey: crypto.randomUUID(),
+      creditToApply,
+    });
+    if (!preparado.ok) {
+      manejarErrorApartado(preparado.error);
+      return;
+    }
+
+    const confirmacion = await stripe.confirmPayment({
+      elements,
+      clientSecret: preparado.data.clientSecret,
+      confirmParams: {
+        return_url: `${window.location.origin}/pagar/confirmacion`,
+        payment_method_data: { billing_details: { name: clienteNombre, email: clienteEmail } },
+      },
+      redirect: "if_required",
+    });
+    if (confirmacion.error) {
+      setEstadoEnvio("idle");
+      console.error("[checkout] Stripe rechazó el pago", confirmacion.error);
+      setErrorTarjeta(
+        `Tu banco rechazó el pago. No se hizo ningún cargo y no se creó ningún pedido. ${confirmacion.error.message ?? ""}`.trim(),
+      );
+      return;
+    }
+
+    if (confirmacion.paymentIntent.status === "processing") {
+      // Raro con tarjeta: el banco aún no decide. El pedido lo crea el
+      // webhook cuando Stripe confirme; no se crea aquí para no registrar un
+      // pedido de un pago que todavía podría fallar.
+      setEstadoEnvio("idle");
+      setTipoErrorGeneral("servidor");
+      setError("Tu banco está procesando el pago. En cuanto lo confirme verás tu pedido en Mis pedidos; no vuelvas a pagar.");
+      return;
+    }
+
+    const finalizado = await finalizarPedidoTarjetaAction(confirmacion.paymentIntent.id);
+    if (!finalizado.ok) {
+      manejarErrorApartado(finalizado.error);
+      return;
+    }
+    setPantallaExito({ folio: finalizado.data.folio, total: totalConSaldo });
   }
 
   /** Flujo sin cambios (P1.2): comprobante o el caso "saldo cubre el
@@ -419,6 +501,8 @@ function ContenidoCheckout({
   function alPulsarBoton() {
     if (saldoCubreTodo || metodo === "comprobante") {
       void generarPedidoSimple();
+    } else if (metodo === "tarjeta") {
+      void pagarConTarjeta();
     } else {
       void pagarConStripe();
     }

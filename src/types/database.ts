@@ -360,9 +360,25 @@ export type InstruccionesPago =
   | { metodo: "oxxo"; referencia: string; urlVoucher: string }
   | { metodo: "spei"; clabe: string; banco: string; beneficiario: string; referencia: string };
 
+/** 0032: foto del checkout guardada al preparar un cobro con tarjeta. El
+ * pedido se crea con estos datos solo cuando Stripe acepta el pago. */
+export interface CheckoutTarjeta {
+  items: { product_id: string; qty: number }[];
+  shipping_address: DireccionCongelada;
+  billing_data: DatosFiscalesCongelados | null;
+  wants_invoice: boolean;
+  credit_to_apply: number;
+  notes: string | null;
+}
+
 export interface PaymentRow {
   id: string;
-  order_id: string;
+  /** 0032: nulo en un cobro con tarjeta cuyo pedido aún no existe. */
+  order_id: string | null;
+  user_id: string | null;
+  checkout: CheckoutTarjeta | null;
+  /** 0032: motivo por el que no se pudo crear el pedido de un cobro ya aceptado. */
+  ultimo_error: string | null;
   method: MetodoPagoStripe;
   provider: "stripe";
   stripe_payment_intent_id: string | null;
@@ -599,6 +615,23 @@ export interface Database {
           p_needs_review?: boolean;
         };
         Returns: PaymentRow;
+      };
+      preparar_pago_tarjeta: {
+        Args: {
+          p_user_id: string;
+          p_checkout: CheckoutTarjeta;
+          p_amount_cents: number;
+          p_idempotency_key: string;
+        };
+        Returns: PaymentRow;
+      };
+      crear_pedido_desde_pago: {
+        Args: {
+          p_payment_id: string;
+          p_card_brand?: string | null;
+          p_card_last4?: string | null;
+        };
+        Returns: OrderRow | null;
       };
     };
   };
