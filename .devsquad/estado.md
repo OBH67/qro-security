@@ -4156,3 +4156,37 @@ sigue usando el admin para `detalleRevision()`/`verificarEnProveedor()`,
 así que los archivos siguen vivos, pero ese método específico es código
 muerto. No se tocó en esta corrección para no ampliar el alcance mientras
 la dueña espera la prueba real.
+
+---
+
+## Épica P — Code review de la corrección OXXO/SPEI (2026-09-25)
+
+Se corrió `/code-review --level high` sobre el PR #20 antes de mezclarlo. 4
+hallazgos, verificados uno por uno:
+
+- **1 real y grave, corregido:** el respaldo que 0032 le dio a tarjeta en el
+  webhook (crear el pedido si el navegador se cierra justo después de que
+  Stripe acepta el pago) nunca se replicó para OXXO/SPEI en la corrección
+  de 0033. Sin esto, si el cliente cerraba el navegador entre "Stripe
+  generó la ficha" y "el servidor creó el pedido", el pago quedaba
+  aceptado, apuntando a ningún pedido, y sin forma de recuperarlo: en el
+  evento `payment_intent.succeeded` (cuando de verdad se paga en la
+  tienda) el `next_action` con el voucher/CLABE ya viene vacío, así que
+  no hay de dónde sacar los datos para crear el pedido en ese momento.
+  **Corregido:** el respaldo ahora engancha en `payment_intent.requires_action`
+  (el evento equivalente para OXXO/SPEI — es cuando Stripe ya generó la
+  ficha), llamando a la misma `finalizarFichaDiferida()` que usa el
+  navegador.
+- **2 menores, corregidas:** una consulta duplicada a `payments` en
+  `finalizarFichaDiferida()`, y dos llamadas independientes (saldo +
+  configuración de vigencia) que podían correr en paralelo en vez de una
+  tras otra.
+- **1 descartada:** duplicación de código entre `prepararPagoTarjetaAction`
+  y `prepararFichaDiferida` — real pero de bajo riesgo (no es un bug),
+  se deja para una limpieza aparte en vez de arriesgar el PR que la dueña
+  está esperando probar.
+
+Verificado en Postgres local: `crear_pedido_desde_pago()` sigue siendo
+idempotente después del cambio (una segunda llamada al mismo pago, como
+haría el webhook si el navegador ya había creado el pedido, regresa el
+mismo folio, no duplica). `tsc`, lint y `npm run build` limpios.
